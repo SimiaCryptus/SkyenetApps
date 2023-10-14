@@ -88,6 +88,12 @@ object AppServer {
                     applicationName = "BehaviorScriptCoder",
                     baseURL = "$domainName/roblox_script/"
                 )
+            ),
+            newWebAppContext(
+                "/socratic_analysis", SocraticAnalysis(
+                    applicationName = "SocraticAnalysis",
+                    baseURL = "$domainName/socratic_analysis/"
+                )
             )
         )
         try {

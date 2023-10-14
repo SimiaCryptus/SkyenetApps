@@ -21,14 +21,6 @@ class SoftwareProjectGenerator(
     oauthConfig = oauthConfig,
 ) {
 
-    @Language("Markdown")
-    private val todo = """
-    
-    * Separate projects/files into individual message elements
-    * On review iteration, overwrite the message element
-    
-    """
-
     interface ProjectAPI {
 
         data class ProjectParameters(
@@ -55,14 +47,13 @@ class SoftwareProjectGenerator(
             val requirements: List<String> = listOf(),
         )
 
-        fun implementFile(file: FileSpec): FileImpl
+        fun implementFile(projectParameters: ProjectParameters, file: FileSpec): FileImpl
 
         data class FileImpl(
             val filepath: String = "",
             val language: String = "",
             val text: String = "",
         )
-
 
     }
 
@@ -110,7 +101,7 @@ class SoftwareProjectGenerator(
                 sendUpdate("""<div>${
                     sessionUI.hrefLink {
                         val sendUpdate = session.newUpdate(ChatSession.randomID(), spinner)
-                        onFileSelect(sessionId, fileSpec, sendUpdate)
+                        onFileSelect(sessionId, projectParameters, fileSpec, sendUpdate)
                     }
                 }${fileSpec.filepath}</a></div>""", false)
             }
@@ -118,11 +109,14 @@ class SoftwareProjectGenerator(
     }
 
     private fun onFileSelect(
-        sessionId: String, file: ProjectAPI.FileSpec, sendUpdate: (String, Boolean) -> Unit
+        sessionId: String,
+        projectParameters: ProjectAPI.ProjectParameters,
+        file: ProjectAPI.FileSpec,
+        sendUpdate: (String, Boolean) -> Unit
     ) {
         //language=HTML
         sendUpdate("<hr/><div><em>${file.filepath}</em></div>", true)
-        val fileImpl = projectAPI.implementFile(file)
+        val fileImpl = projectAPI.implementFile(projectParameters, file)
         val fileImplText = fileImpl.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         //language=HTML
         sendUpdate("<pre>${fileImplText}</pre>", false)
