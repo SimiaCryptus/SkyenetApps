@@ -107,8 +107,6 @@ open class SocraticMarkdown(
         val questions = examinationQuestions.map { question ->
             virtualAPI.examine(markdownData, question)
         }.reduce { a, b -> a + b }
-        //sessionDiv.append("""<pre>${JsonUtil.toJson(questions)}</pre>""", true)
-        sessionDiv.append("""<div>${renderMarkdown(questions.toMarkdown())}</div>""", true)
         iterate(sessionUI, sessionDiv, markdownData, { summary: String, feedback: String ->
             //language=HTML
             sessionDiv.append("""<div>$feedback</div>""", true)
@@ -119,7 +117,10 @@ open class SocraticMarkdown(
                 sessionDiv,
                 sessionId
             )
-        }, actions(session), ::renderMarkdown)
+        }, actions(session), { """
+            <div>${renderMarkdown(it)}</div>
+            <div>${renderMarkdown(questions.toMarkdown())}</div>
+            """.trimIndent() })
     }
 
     open fun actions(session: PersistentSessionBase) = mapOf(

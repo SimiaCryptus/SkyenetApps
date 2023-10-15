@@ -33,6 +33,24 @@ object AppServer {
     fun domainName(isServer: Boolean) = if (isServer) "https://apps.simiacrypt.us" else "http://$localName:$port"
     var domainName: String = ""
 
+    val childWebApps = listOf(
+        ChildWebApp(
+            "/awsagent",
+            AwsSkyenetCodingSessionServer(oauthConfig = null),
+            isAuthenticated = true
+        ),
+        ChildWebApp("/storygen", StoryGenerator()),
+//        ChildWebApp("/news", NewsStoryGenerator()),
+        ChildWebApp("/cookbook", CookbookGenerator()),
+        ChildWebApp("/science", SkyenetScienceBook()),
+        ChildWebApp("/software", SoftwareProjectGenerator()),
+        ChildWebApp("/roblox_cmd", AdminCommandCoder()),
+        ChildWebApp("/roblox_script", BehaviorScriptCoder()),
+//        ChildWebApp("/storyiterator", StoryIterator()),
+//        ChildWebApp("/socratic_analysis", SocraticAnalysis()),
+        ChildWebApp("/socratic_markdown", SocraticMarkdown())
+    )
+
     @JvmStatic
     fun main(args: Array<String>) {
         val isServer = args.contains("--server")
@@ -43,24 +61,6 @@ object AppServer {
             redirectUri = "$domainName/oauth2callback",
             applicationName = "Demo",
             key = { decryptResource("client_secret_google_oauth.json.kms").byteInputStream() }
-        )
-
-        val childWebApps = listOf(
-            ChildWebApp(
-                "/awsagent",
-                AwsSkyenetCodingSessionServer(oauthConfig = null),
-                isAuthenticated = true
-            ),
-            ChildWebApp("/storygen", StoryGenerator()),
-            ChildWebApp("/news", NewsStoryGenerator()),
-            ChildWebApp("/cookbook", CookbookGenerator()),
-            ChildWebApp("/science", SkyenetScienceBook()),
-            ChildWebApp("/software", SoftwareProjectGenerator()),
-            ChildWebApp("/roblox_cmd", AdminCommandCoder()),
-            ChildWebApp("/roblox_script", BehaviorScriptCoder()),
-            ChildWebApp("/storyiterator", StoryIterator()),
-            ChildWebApp("/socratic_analysis", SocraticAnalysis()),
-            ChildWebApp("/socratic_markdown", SocraticMarkdown())
         )
 
         val server = start(
@@ -85,10 +85,10 @@ object AppServer {
                 
                                 <div id="toolbar">
                                     ${
-                                childWebApps.joinToString("<br/>") {
-                                    """<a href="${it.path}">${it.server.applicationName}</a>"""
-                                }
-                            }
+                                        childWebApps.joinToString("<br/>") {
+                                            """<a href="${it.path}">${it.server.applicationName}</a>"""
+                                        }
+                                    }
                                 </div>
                 
                                 </body>
