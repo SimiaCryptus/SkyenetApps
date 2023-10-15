@@ -9,7 +9,7 @@ import com.simiacryptus.skyenet.body.SkyenetMacroChat
 import com.simiacryptus.util.describe.Description
 
 class StoryGenerator(
-    applicationName: String,
+    applicationName: String = "StoryGenerator",
     baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.3

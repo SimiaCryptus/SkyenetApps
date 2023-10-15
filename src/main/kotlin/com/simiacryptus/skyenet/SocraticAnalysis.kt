@@ -6,7 +6,7 @@ import com.simiacryptus.skyenet.body.*
 import com.simiacryptus.util.JsonUtil
 
 class SocraticAnalysis(
-    applicationName: String,
+    applicationName: String = "SocraticAnalysis",
     baseURL: String,
     temperature: Double = 0.3,
     oauthConfig: String? = null,

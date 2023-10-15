@@ -6,7 +6,7 @@ import com.simiacryptus.skyenet.body.*
 import com.simiacryptus.util.JsonUtil
 
 class StoryIterator(
-    applicationName: String,
+    applicationName: String = "StoryIterator",
     baseURL: String,
     temperature: Double = 0.3,
     oauthConfig: String? = null,

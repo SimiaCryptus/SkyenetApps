@@ -8,7 +8,7 @@ import com.simiacryptus.skyenet.body.SessionDiv
 import com.simiacryptus.skyenet.body.SkyenetMacroChat
 
 class NewsStoryGenerator(
-    applicationName: String,
+    applicationName: String = "NewsStoryGenerator",
     baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.3

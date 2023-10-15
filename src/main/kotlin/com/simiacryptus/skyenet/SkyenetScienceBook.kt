@@ -10,7 +10,7 @@ import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.describe.Description
 
 class SkyenetScienceBook(
-    applicationName: String,
+    applicationName: String = "ScienceBookGenerator",
     baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.3

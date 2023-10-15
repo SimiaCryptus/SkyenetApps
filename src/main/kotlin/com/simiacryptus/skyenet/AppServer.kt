@@ -7,8 +7,13 @@ import com.simiacryptus.skyenet.body.WebSocketServer
 import com.simiacryptus.skyenet.roblox.AdminCommandCoder
 import com.simiacryptus.skyenet.roblox.BehaviorScriptCoder
 import com.simiacryptus.skyenet.util.AwsUtil.decryptResource
+import jakarta.servlet.Servlet
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
+import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
@@ -16,6 +21,12 @@ import java.awt.Desktop
 import java.net.URI
 
 object AppServer {
+
+    data class ChildWebApp(
+        val path: String,
+        val server: WebSocketServer,
+        val isAuthenticated: Boolean = false
+    )
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -31,70 +42,96 @@ object AppServer {
             key = { decryptResource("client_secret_google_oauth.json.kms").byteInputStream() }
         )
 
+        val childWebApps = listOf(
+            ChildWebApp(
+                "/awsagent",
+                AwsSkyenetCodingSessionServer(baseURL = "$domainName/awsagent/", oauthConfig = null),
+                isAuthenticated = true
+            ),
+            ChildWebApp(
+                "/storygen",
+                StoryGenerator(baseURL = "$domainName/storygen/")
+            ),
+            ChildWebApp(
+                "/news",
+                NewsStoryGenerator(baseURL = "$domainName/news/")
+            ),
+            ChildWebApp(
+                "/cookbook",
+                CookbookGenerator(baseURL = "$domainName/cookbook/")
+            ),
+            ChildWebApp(
+                "/science",
+                SkyenetScienceBook(baseURL = "$domainName/science/")
+            ),
+            ChildWebApp(
+                "/software",
+                SoftwareProjectGenerator(baseURL = "$domainName/software/")
+            ),
+            ChildWebApp(
+                "/roblox_cmd",
+                AdminCommandCoder(baseURL = "$domainName/roblox_cmd/")
+            ),
+            ChildWebApp(
+                "/roblox_script",
+                BehaviorScriptCoder(baseURL = "$domainName/roblox_script/")
+            ),
+            ChildWebApp(
+                "/storyiterator",
+                StoryIterator(baseURL = "$domainName/storyiterator/")
+            ),
+            ChildWebApp(
+                "/socratic_analysis",
+                SocraticAnalysis(baseURL = "$domainName/socratic_analysis/")
+            ),
+            ChildWebApp(
+                "/socratic_markdown",
+                SocraticMarkdown(baseURL = "$domainName/socratic_markdown/")
+            )
+        )
+
         val server = start(
             port,
-            authentication.configure(
+            *(arrayOf(authentication.configure(
                 newWebAppContext(
                     "/",
-                    Resource.newResource(javaClass.classLoader.getResource("welcome"))
+                    Resource.newResource(javaClass.classLoader.getResource("welcome")),
+                    object : HttpServlet() {
+                        override fun doGet(req: HttpServletRequest?, resp: HttpServletResponse?) {
+                            resp?.contentType = "text/html"
+                            resp?.writer?.write("""
+                                <!DOCTYPE html>
+                                <html lang="en">
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <title>SimiaCryptus Skyenet Apps</title>
+                                    <link href="chat.css" rel="stylesheet"/>
+                                    <link rel="icon" type="image/png" href="favicon.png"/>
+                                </head>
+                                <body>
+                
+                                <div id="toolbar">
+                                    ${
+                                childWebApps.joinToString("<br/>") {
+                                    """<a href="${it.path}">${it.server.applicationName}</a>"""
+                                }
+                            }
+                                </div>
+                
+                                </body>
+                                </html>
+                            """.trimIndent())
+                        }
+                    }
                 ), false
-            ),
-            authentication.configure(
-                newWebAppContext(
-                    "/awsagent", AwsSkyenetCodingSessionServer(
-                        baseURL = "$domainName/awsagent/",
-                        oauthConfig = null
+            )) + childWebApps.map {
+                if (it.isAuthenticated) authentication.configure(
+                    newWebAppContext(
+                        it.path,
+                        it.server
                     )
-                )
-            ),
-            newWebAppContext(
-                "/storygen", StoryGenerator(
-                    applicationName = "StoryGenerator",
-                    baseURL = "$domainName/storygen/"
-                )
-            ),
-            newWebAppContext(
-                "/news", NewsStoryGenerator(
-                    applicationName = "NewsStoryGenerator",
-                    baseURL = "$domainName/news/"
-                )
-            ),
-            newWebAppContext(
-                "/cookbook", CookbookGenerator(
-                    applicationName = "CookbookGenerator",
-                    baseURL = "$domainName/cookbook/"
-                )
-            ),
-            newWebAppContext(
-                "/science", SkyenetScienceBook(
-                    applicationName = "ScienceBookGenerator",
-                    baseURL = "$domainName/science/"
-                )
-            ),
-            newWebAppContext(
-                "/software", SoftwareProjectGenerator(
-                    applicationName = "SoftwareProjectGenerator",
-                    baseURL = "$domainName/software/"
-                )
-            ),
-            newWebAppContext(
-                "/roblox_cmd", AdminCommandCoder(
-                    applicationName = "AdminCommandCoder",
-                    baseURL = "$domainName/roblox_cmd/"
-                )
-            ),
-            newWebAppContext(
-                "/roblox_script", BehaviorScriptCoder(
-                    applicationName = "BehaviorScriptCoder",
-                    baseURL = "$domainName/roblox_script/"
-                )
-            ),
-            newWebAppContext(
-                "/storyiterator", StoryIterator(
-                    applicationName = "StoryIterator",
-                    baseURL = "$domainName/storyiterator/"
-                )
-            )
+                ) else newWebAppContext(it.path, it.server)
+            })
         )
         try {
             Desktop.getDesktop().browse(URI("$domainName/"))
@@ -122,13 +159,18 @@ object AppServer {
         return webAppContext
     }
 
-    fun newWebAppContext(path: String, baseResource: Resource?): WebAppContext {
-        val awsagentContext = WebAppContext()
-        JettyWebSocketServletContainerInitializer.configure(awsagentContext, null)
-        awsagentContext.baseResource = baseResource
-        awsagentContext.contextPath = path
-        awsagentContext.welcomeFiles = arrayOf("index.html")
-        return awsagentContext
+    fun newWebAppContext(path: String, baseResource: Resource?, indexServlet: Servlet? = null): WebAppContext {
+        val context = WebAppContext()
+        JettyWebSocketServletContainerInitializer.configure(context, null)
+        context.baseResource = baseResource
+        context.contextPath = path
+        context.welcomeFiles = arrayOf("index.html")
+        // Handle /index.html (and /) with the html returned by indexHtml()
+        if (indexServlet != null) {
+            context.addServlet(ServletHolder("index", indexServlet), "/index.html")
+            context.addServlet(ServletHolder("index", indexServlet), "/")
+        }
+        return context
     }
 
 }

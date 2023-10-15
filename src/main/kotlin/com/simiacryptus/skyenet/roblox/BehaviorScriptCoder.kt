@@ -9,7 +9,7 @@ import java.awt.Desktop
 import java.net.URI
 
 class BehaviorScriptCoder(
-    applicationName: String,
+    applicationName: String = "BehaviorScriptCoder",
     baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.1

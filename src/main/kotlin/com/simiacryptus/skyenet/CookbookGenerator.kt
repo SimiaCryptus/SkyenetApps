@@ -10,7 +10,7 @@ import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.describe.Description
 
 class CookbookGenerator(
-    applicationName: String,
+    applicationName: String = "CookbookGenerator",
     baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.3

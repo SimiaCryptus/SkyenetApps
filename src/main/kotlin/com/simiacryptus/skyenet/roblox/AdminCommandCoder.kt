@@ -9,7 +9,7 @@ import java.awt.Desktop
 import java.net.URI
 
 class AdminCommandCoder(
-    applicationName: String,
+    applicationName: String = "AdminCommandCoder",
     baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.1
