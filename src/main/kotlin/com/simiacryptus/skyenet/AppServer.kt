@@ -90,9 +90,9 @@ object AppServer {
                 )
             ),
             newWebAppContext(
-                "/socratic_analysis", SocraticAnalysis(
-                    applicationName = "SocraticAnalysis",
-                    baseURL = "$domainName/socratic_analysis/"
+                "/storyiterator", StoryIterator(
+                    applicationName = "StoryIterator",
+                    baseURL = "$domainName/storyiterator/"
                 )
             )
         )

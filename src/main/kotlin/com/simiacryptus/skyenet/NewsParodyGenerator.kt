@@ -4,6 +4,7 @@ import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.proxy.ChatProxy
 import com.simiacryptus.skyenet.body.ChatSessionFlexmark
 import com.simiacryptus.skyenet.body.PersistentSessionBase
+import com.simiacryptus.skyenet.body.SessionDiv
 import com.simiacryptus.skyenet.body.SkyenetMacroChat
 
 class NewsParodyGenerator(
@@ -67,15 +68,15 @@ class NewsParodyGenerator(
         userMessage: String,
         session: PersistentSessionBase,
         sessionUI: SessionUI,
-        sendUpdate: (String, Boolean) -> Unit
+        sessionDiv: SessionDiv
     ) {
         try {
-            sendUpdate(ChatSessionFlexmark.renderMarkdown(userMessage), true)
+            sessionDiv.append(ChatSessionFlexmark.renderMarkdown(userMessage), true)
             newsParodyAPI.generateNewsCategories(userMessage).items.forEach { category ->
-                sendUpdate(
+                sessionDiv.append(
                     """${
                         sessionUI.hrefLink {
-                            processCategory(sessionUI, sendUpdate, category)
+                            processCategory(sessionUI, sessionDiv, category)
                         }
                     }${category.title}</a>""",
                     true
@@ -89,25 +90,25 @@ class NewsParodyGenerator(
 
     private fun processCategory(
         sessionUI: SessionUI,
-        sendUpdate: (String, Boolean) -> Unit,
+        sessionDiv: SessionDiv,
         category: NewsParodyAPI.NewsCategory
     ) {
-        sendUpdate("""<hr/><div><em>${category.title}</em></div>""", true)
+        sessionDiv.append("""<hr/><div><em>${category.title}</em></div>""", true)
         newsParodyAPI.generateNewsStoryIdeas(category).items.forEach { idea ->
-            sendUpdate(
-                """${ sessionUI.hrefLink { processIdea(sendUpdate, idea) } }${idea.headline}</a>""",
+            sessionDiv.append(
+                """${ sessionUI.hrefLink { processIdea(sessionDiv, idea) } }${idea.headline}</a>""",
                 false
             )
         }
     }
 
     private fun processIdea(
-        sendUpdate: (String, Boolean) -> Unit,
+        sessionDiv: SessionDiv,
         idea: NewsParodyAPI.NewsStoryDescription
     ) {
-        sendUpdate("""<hr/><div><em>${idea.headline}</em></div>""", true)
+        sessionDiv.append("""<hr/><div><em>${idea.headline}</em></div>""", true)
         val story = newsParodyAPI.generateNewsStoryText(idea)
-        sendUpdate(
+        sessionDiv.append(
             ChatSessionFlexmark.renderMarkdown(story.text),
             false
         )

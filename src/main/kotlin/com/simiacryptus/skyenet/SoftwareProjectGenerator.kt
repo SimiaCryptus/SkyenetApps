@@ -2,12 +2,8 @@ package com.simiacryptus.skyenet
 
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.proxy.ChatProxy
-import com.simiacryptus.skyenet.body.ChatSession
-import com.simiacryptus.skyenet.body.ChatSessionFlexmark
-import com.simiacryptus.skyenet.body.PersistentSessionBase
-import com.simiacryptus.skyenet.body.SkyenetMacroChat
+import com.simiacryptus.skyenet.body.*
 import com.simiacryptus.util.JsonUtil
-import org.intellij.lang.annotations.Language
 
 class SoftwareProjectGenerator(
     applicationName: String,
@@ -68,12 +64,12 @@ class SoftwareProjectGenerator(
         userMessage: String,
         session: PersistentSessionBase,
         sessionUI: SessionUI,
-        sendUpdate: (String, Boolean) -> Unit
+        sessionDiv: SessionDiv
     ) {
         try {
-            sendUpdate("""<div>${ChatSessionFlexmark.renderMarkdown(userMessage)}</div>""", true)
+            sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(userMessage)}</div>""", true)
             val projectParameters = projectAPI.parseProject(userMessage)
-            reviewProject(session, sessionUI, projectParameters, sendUpdate, sessionId)
+            reviewProject(session, sessionUI, projectParameters, sessionDiv, sessionId)
         } catch (e: Throwable) {
             logger.warn("Error", e)
         }
@@ -83,28 +79,38 @@ class SoftwareProjectGenerator(
         session: PersistentSessionBase,
         sessionUI: SessionUI,
         projectParameters: ProjectAPI.ProjectParameters,
-        sendUpdate: (String, Boolean) -> Unit,
+        sessionDiv: SessionDiv,
         sessionId: String
     ) {
-        iterate(sessionUI, projectParameters, sendUpdate, { feedback ->
+        iterate(sessionUI, sessionDiv, projectParameters, { projectParameters: ProjectAPI.ProjectParameters, feedback: String ->
             //language=HTML
-            sendUpdate("""<div>$feedback</div>""", true)
-            reviewProject(session, sessionUI, projectAPI.modify(projectParameters, feedback), sendUpdate, sessionId)
-        }, "Create File Specs") {
-            val sendUpdate = session.newUpdate(ChatSession.randomID(), spinner)
-            sendUpdate("", true)
-            val fileSpecs = projectAPI.expandProject(projectParameters)
+            sessionDiv.append("""<div>$feedback</div>""", true)
+            reviewProject(session, sessionUI, projectAPI.modify(projectParameters, feedback), sessionDiv, sessionId)
+        }, mapOf("Create File Specs" to { projectParameters: ProjectAPI.ProjectParameters ->
+            projectToFiles(session, sessionUI, projectParameters, sessionDiv, sessionId)
+        }))
+    }
+
+    private fun projectToFiles(
+        session: PersistentSessionBase,
+        sessionUI: SessionUI,
+        projectParameters: ProjectAPI.ProjectParameters,
+        sessionDiv: SessionDiv,
+        sessionId: String
+    ) {
+        val sessionDiv = session.newSessionDiv(ChatSession.randomID(), spinner)
+        sessionDiv.append("", true)
+        val fileSpecs = projectAPI.expandProject(projectParameters)
+        //language=HTML
+        sessionDiv.append("""<div><pre>${JsonUtil.toJson(fileSpecs)}</pre></div>""", false)
+        fileSpecs.items.forEach { fileSpec ->
             //language=HTML
-            sendUpdate("""<div><pre>${JsonUtil.toJson(fileSpecs)}</pre></div>""", false)
-            fileSpecs.items.forEach { fileSpec ->
-                //language=HTML
-                sendUpdate("""<div>${
-                    sessionUI.hrefLink {
-                        val sendUpdate = session.newUpdate(ChatSession.randomID(), spinner)
-                        onFileSelect(sessionId, projectParameters, fileSpec, sendUpdate)
-                    }
-                }${fileSpec.filepath}</a></div>""", false)
-            }
+            sessionDiv.append("""<div>${
+                sessionUI.hrefLink {
+                    val sessionDiv = session.newSessionDiv(ChatSession.randomID(), spinner)
+                    onFileSelect(sessionId, projectParameters, fileSpec, sessionDiv)
+                }
+            }${fileSpec.filepath}</a></div>""", false)
         }
     }
 
@@ -112,14 +118,14 @@ class SoftwareProjectGenerator(
         sessionId: String,
         projectParameters: ProjectAPI.ProjectParameters,
         file: ProjectAPI.FileSpec,
-        sendUpdate: (String, Boolean) -> Unit
+        sessionDiv: SessionDiv
     ) {
         //language=HTML
-        sendUpdate("<hr/><div><em>${file.filepath}</em></div>", true)
+        sessionDiv.append("<hr/><div><em>${file.filepath}</em></div>", true)
         val fileImpl = projectAPI.implementFile(projectParameters, file)
         val fileImplText = fileImpl.text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         //language=HTML
-        sendUpdate("<pre>${fileImplText}</pre>", false)
+        sessionDiv.append("<pre>${fileImplText}</pre>", false)
         val toFile = sessionDataStorage.getSessionDir(sessionId).toPath().resolve(file.filepath).toFile()
         toFile.parentFile.mkdirs()
         toFile.writeText(fileImplText)

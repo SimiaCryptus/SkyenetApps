@@ -4,6 +4,7 @@ import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.proxy.ChatProxy
 import com.simiacryptus.skyenet.body.ChatSessionFlexmark
 import com.simiacryptus.skyenet.body.PersistentSessionBase
+import com.simiacryptus.skyenet.body.SessionDiv
 import com.simiacryptus.skyenet.body.SkyenetMacroChat
 import com.simiacryptus.util.JsonUtil
 
@@ -76,10 +77,10 @@ class AutoGPTClone(
         userMessage: String,
         session: PersistentSessionBase,
         sessionUI: SessionUI,
-        sendUpdate: (String, Boolean) -> Unit
+        sessionDiv: SessionDiv
     ) {
         try {
-            sendUpdate("""<div>${ChatSessionFlexmark.renderMarkdown(userMessage)}</div>""", true)
+            sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(userMessage)}</div>""", true)
             val prompt = projectAPI.parsePrompt(userMessage)
             val agentConfig = AutoGptAPI.AgentConfig(
                 commands = listOf("Do it"),
@@ -92,7 +93,7 @@ class AutoGPTClone(
                 ),
             )
             val response = projectAPI.respond(prompt, agentConfig)
-            sendUpdate(
+            sessionDiv.append(
                 """<div>${ChatSessionFlexmark.renderMarkdown("""
                     |```json
                     |${JsonUtil.toJson(response)}

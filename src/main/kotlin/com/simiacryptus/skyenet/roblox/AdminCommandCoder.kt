@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.roblox
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.body.ChatSessionFlexmark
 import com.simiacryptus.skyenet.body.PersistentSessionBase
+import com.simiacryptus.skyenet.body.SessionDiv
 import com.simiacryptus.skyenet.body.SkyenetMacroChat
 import java.awt.Desktop
 import java.net.URI
@@ -24,9 +25,9 @@ class AdminCommandCoder(
         userMessage: String,
         session: PersistentSessionBase,
         sessionUI: SessionUI,
-        sendUpdate: (String, Boolean) -> Unit
+        sessionDiv: SessionDiv
     ) {
-        sendUpdate("""<div>$userMessage</div>""", true)
+        sessionDiv.append("""<div>$userMessage</div>""", true)
 
         val model = OpenAIClient.Models.GPT4
         val response = api.chat(
@@ -64,7 +65,7 @@ class AdminCommandCoder(
             ), model
         )
 
-        sendUpdate("""<div>${ChatSessionFlexmark.renderMarkdown(response.choices.get(0).message?.content ?: "")}</div>""", true)
+        sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(response.choices.get(0).message?.content ?: "")}</div>""", true)
     }
 
     companion object {

@@ -5,7 +5,7 @@ import com.simiacryptus.openai.proxy.ChatProxy
 import com.simiacryptus.skyenet.body.*
 import com.simiacryptus.util.JsonUtil
 
-class SocraticAnalysis(
+class StoryIterator(
     applicationName: String,
     baseURL: String,
     temperature: Double = 0.3,
@@ -22,7 +22,15 @@ class SocraticAnalysis(
         data class Summary(
             val title: String = "",
             val description: String = "",
-            val notes: List<String> = listOf(),
+            val themes: List<String> = listOf(),
+            val characters : List<Character> = listOf(),
+            val events: List<String> = listOf(),
+        )
+
+        data class Character(
+            val name: String = "",
+            val description: String = "",
+            val personality: String = "",
         )
 
         fun parse(topicSummary: String): Summary
@@ -42,7 +50,7 @@ class SocraticAnalysis(
 
         data class Question(
             val question: String = "",
-            val suggestedAnswers: List<String> = listOf(),
+            val choices: List<String> = listOf(),
         )
 
         fun update(
