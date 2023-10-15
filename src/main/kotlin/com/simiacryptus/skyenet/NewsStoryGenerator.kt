@@ -9,14 +9,12 @@ import com.simiacryptus.skyenet.body.SkyenetMacroChat
 
 class NewsStoryGenerator(
     applicationName: String = "NewsStoryGenerator",
-    baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.3
 ) : SkyenetMacroChat(
     applicationName = applicationName,
-    baseURL = baseURL,
-    temperature = temperature,
-    oauthConfig = oauthConfig
+    oauthConfig = oauthConfig,
+    temperature = temperature
 ) {
     interface NewsStoryAPI {
 

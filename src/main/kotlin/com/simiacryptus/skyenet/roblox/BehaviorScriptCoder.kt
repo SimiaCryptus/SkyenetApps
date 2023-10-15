@@ -10,14 +10,12 @@ import java.net.URI
 
 class BehaviorScriptCoder(
     applicationName: String = "BehaviorScriptCoder",
-    baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.1
 ) : SkyenetMacroChat(
     applicationName = applicationName,
-    baseURL = baseURL,
-    temperature = temperature,
-    oauthConfig = oauthConfig
+    oauthConfig = oauthConfig,
+    temperature = temperature
 ) {
 
     override fun processMessage(
@@ -78,7 +76,7 @@ class BehaviorScriptCoder(
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val httpServer = BehaviorScriptCoder("RobloxLuaCoder", baseURL).start(port)
+            val httpServer = BehaviorScriptCoder("RobloxLuaCoder").start(port)
             Desktop.getDesktop().browse(URI(baseURL))
             httpServer.join()
         }

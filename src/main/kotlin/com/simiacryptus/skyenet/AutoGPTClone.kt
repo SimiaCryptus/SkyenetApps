@@ -15,9 +15,8 @@ class AutoGPTClone(
     oauthConfig: String? = null,
 ) : SkyenetMacroChat(
     applicationName = applicationName,
-    baseURL = baseURL,
-    temperature = temperature,
     oauthConfig = oauthConfig,
+    temperature = temperature,
 ) {
     interface AutoGptAPI {
 

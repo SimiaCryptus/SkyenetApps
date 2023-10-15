@@ -11,14 +11,12 @@ import com.simiacryptus.util.describe.Description
 
 class CookbookGenerator(
     applicationName: String = "CookbookGenerator",
-    baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.3
 ) : SkyenetMacroChat(
     applicationName = applicationName,
-    baseURL = baseURL,
-    temperature = temperature,
-    oauthConfig = oauthConfig
+    oauthConfig = oauthConfig,
+    temperature = temperature
 ) {
     interface CookbookAuthorAPI {
         fun parseRecipeSpec(spec: String): RecipeSpec

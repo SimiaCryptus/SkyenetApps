@@ -7,14 +7,12 @@ import com.simiacryptus.util.JsonUtil
 
 class SoftwareProjectGenerator(
     applicationName: String = "SoftwareProjectGenerator",
-    baseURL: String,
     temperature: Double = 0.3,
     oauthConfig: String? = null,
 ) : SkyenetMacroChat(
     applicationName = applicationName,
-    baseURL = baseURL,
-    temperature = temperature,
     oauthConfig = oauthConfig,
+    temperature = temperature,
 ) {
 
     interface ProjectAPI {

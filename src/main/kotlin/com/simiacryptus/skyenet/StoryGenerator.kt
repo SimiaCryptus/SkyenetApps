@@ -10,14 +10,12 @@ import com.simiacryptus.util.describe.Description
 
 class StoryGenerator(
     applicationName: String = "StoryGenerator",
-    baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.3
 ) : SkyenetMacroChat(
     applicationName = applicationName,
-    baseURL = baseURL,
-    temperature = temperature,
-    oauthConfig = oauthConfig
+    oauthConfig = oauthConfig,
+    temperature = temperature
 ) {
     interface StoryAPI {
 

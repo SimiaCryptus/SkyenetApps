@@ -10,14 +10,12 @@ import java.net.URI
 
 class AdminCommandCoder(
     applicationName: String = "AdminCommandCoder",
-    baseURL: String,
     oauthConfig: String? = null,
     temperature: Double = 0.1
 ) : SkyenetMacroChat(
     applicationName = applicationName,
-    baseURL = baseURL,
-    temperature = temperature,
-    oauthConfig = oauthConfig
+    oauthConfig = oauthConfig,
+    temperature = temperature
 ) {
 
     override fun processMessage(
@@ -75,7 +73,7 @@ class AdminCommandCoder(
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val httpServer = AdminCommandCoder("RobloxLuaCoder", baseURL).start(port)
+            val httpServer = AdminCommandCoder("RobloxLuaCoder").start(port)
             Desktop.getDesktop().browse(URI(baseURL))
             httpServer.join()
         }

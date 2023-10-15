@@ -14,9 +14,7 @@ import com.simiacryptus.skyenet.body.SkyenetCodingSessionServer
 import com.simiacryptus.skyenet.heart.ScalaLocalInterpreter
 import com.simiacryptus.util.describe.AbbrevWhitelistYamlDescriber
 import org.eclipse.jetty.server.Server
-import java.awt.Desktop
 import java.io.File
-import java.net.URI
 import java.util.Map
 
 object AwsAgent {
@@ -53,13 +51,11 @@ object AwsAgent {
     }
 
     open class AwsSkyenetCodingSessionServer(
-        baseURL: String,
         oauthConfig: File? = AwsAgent.oauthConfig,
     )  : SkyenetCodingSessionServer(
         applicationName = "AwsAgent",
-        oauthConfig = oauthConfig?.absolutePath,
         typeDescriber = AbbrevWhitelistYamlDescriber("com.simiacryptus", "com.github.simiacryptus"),
-        baseURL = baseURL,
+        oauthConfig = oauthConfig?.absolutePath,
         model = OpenAIClient.Models.GPT4,
         apiKey = OpenAIClient.keyTxt
     ) {
@@ -77,7 +73,7 @@ object AwsAgent {
             ScalaLocalInterpreter::class.java.getConstructor(Map::class.java).newInstance(hands)
     }
 
-    fun codingSessionServer(baseURL: String) = AwsSkyenetCodingSessionServer(baseURL)
+    fun codingSessionServer(baseURL: String) = AwsSkyenetCodingSessionServer()
 
     fun writeToTempFile(text: String, filename: String): File {
         val tempFile = File.createTempFile(filename, ".tmp")

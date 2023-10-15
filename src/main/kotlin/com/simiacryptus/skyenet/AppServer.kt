@@ -28,13 +28,16 @@ object AppServer {
         val isAuthenticated: Boolean = false
     )
 
+    val localName = "localhost"
+    val port = 8081
+    fun domainName(isServer: Boolean) = if (isServer) "https://apps.simiacrypt.us" else "http://$localName:$port"
+    var domainName: String = ""
+
     @JvmStatic
     fun main(args: Array<String>) {
-        OpenAIClient.keyTxt = decryptResource("openai.key.kms")
         val isServer = args.contains("--server")
-        val localName = "localhost"
-        val port = 8081
-        val domainName = if (isServer) "https://apps.simiacrypt.us" else "http://$localName:$port"
+        domainName = domainName(isServer)
+        OpenAIClient.keyTxt = decryptResource("openai.key.kms")
 
         val authentication = AuthenticatedWebsite(
             redirectUri = "$domainName/oauth2callback",
@@ -45,49 +48,19 @@ object AppServer {
         val childWebApps = listOf(
             ChildWebApp(
                 "/awsagent",
-                AwsSkyenetCodingSessionServer(baseURL = "$domainName/awsagent/", oauthConfig = null),
+                AwsSkyenetCodingSessionServer(oauthConfig = null),
                 isAuthenticated = true
             ),
-            ChildWebApp(
-                "/storygen",
-                StoryGenerator(baseURL = "$domainName/storygen/")
-            ),
-            ChildWebApp(
-                "/news",
-                NewsStoryGenerator(baseURL = "$domainName/news/")
-            ),
-            ChildWebApp(
-                "/cookbook",
-                CookbookGenerator(baseURL = "$domainName/cookbook/")
-            ),
-            ChildWebApp(
-                "/science",
-                SkyenetScienceBook(baseURL = "$domainName/science/")
-            ),
-            ChildWebApp(
-                "/software",
-                SoftwareProjectGenerator(baseURL = "$domainName/software/")
-            ),
-            ChildWebApp(
-                "/roblox_cmd",
-                AdminCommandCoder(baseURL = "$domainName/roblox_cmd/")
-            ),
-            ChildWebApp(
-                "/roblox_script",
-                BehaviorScriptCoder(baseURL = "$domainName/roblox_script/")
-            ),
-            ChildWebApp(
-                "/storyiterator",
-                StoryIterator(baseURL = "$domainName/storyiterator/")
-            ),
-            ChildWebApp(
-                "/socratic_analysis",
-                SocraticAnalysis(baseURL = "$domainName/socratic_analysis/")
-            ),
-            ChildWebApp(
-                "/socratic_markdown",
-                SocraticMarkdown(baseURL = "$domainName/socratic_markdown/")
-            )
+            ChildWebApp("/storygen", StoryGenerator()),
+            ChildWebApp("/news", NewsStoryGenerator()),
+            ChildWebApp("/cookbook", CookbookGenerator()),
+            ChildWebApp("/science", SkyenetScienceBook()),
+            ChildWebApp("/software", SoftwareProjectGenerator()),
+            ChildWebApp("/roblox_cmd", AdminCommandCoder()),
+            ChildWebApp("/roblox_script", BehaviorScriptCoder()),
+            ChildWebApp("/storyiterator", StoryIterator()),
+            ChildWebApp("/socratic_analysis", SocraticAnalysis()),
+            ChildWebApp("/socratic_markdown", SocraticMarkdown())
         )
 
         val server = start(
@@ -155,7 +128,7 @@ object AppServer {
 
     fun newWebAppContext(path: String, server: WebSocketServer): WebAppContext {
         val webAppContext = newWebAppContext(path, server.baseResource)
-        server.configure(webAppContext)
+        server.configure(webAppContext, baseUrl = "$domainName/$path")
         return webAppContext
     }
 
@@ -165,7 +138,6 @@ object AppServer {
         context.baseResource = baseResource
         context.contextPath = path
         context.welcomeFiles = arrayOf("index.html")
-        // Handle /index.html (and /) with the html returned by indexHtml()
         if (indexServlet != null) {
             context.addServlet(ServletHolder("index", indexServlet), "/index.html")
             context.addServlet(ServletHolder("index", indexServlet), "/")

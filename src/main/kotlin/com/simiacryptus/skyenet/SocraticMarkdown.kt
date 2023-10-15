@@ -12,7 +12,6 @@ import com.simiacryptus.util.describe.Description
 
 open class SocraticMarkdown(
     applicationName: String = "SocraticMarkdown",
-    baseURL: String,
     temperature: Double = 0.3,
     oauthConfig: String? = null,
     private val examinationQuestions: List<String> = listOf(
@@ -21,9 +20,8 @@ open class SocraticMarkdown(
     )
 ) : SkyenetMacroChat(
     applicationName = applicationName,
-    baseURL = baseURL,
-    temperature = temperature,
     oauthConfig = oauthConfig,
+    temperature = temperature,
 ) {
 
     interface API {
