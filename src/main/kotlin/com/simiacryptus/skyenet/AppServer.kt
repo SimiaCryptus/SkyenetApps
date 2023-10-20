@@ -97,7 +97,7 @@ object AppServer {
                         }
                     }
                 ), false
-            )) + childWebApps.map {
+            ), newWebAppContext("/proxy", ProxyHttpServlet())) + childWebApps.map {
                 if (it.isAuthenticated) authentication.configure(
                     newWebAppContext(
                         it.path,
@@ -142,6 +142,15 @@ object AppServer {
             context.addServlet(ServletHolder("index", indexServlet), "/index.html")
             context.addServlet(ServletHolder("index", indexServlet), "/")
         }
+        return context
+    }
+
+    fun newWebAppContext(path: String, servlet: Servlet): WebAppContext {
+        val context = WebAppContext()
+        JettyWebSocketServletContainerInitializer.configure(context, null)
+        context.contextPath = path
+        //context.welcomeFiles = arrayOf("index.html")
+        context.addServlet(ServletHolder("index", servlet), "/")
         return context
     }
 
