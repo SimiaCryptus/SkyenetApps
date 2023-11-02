@@ -48,7 +48,8 @@ object AppServer {
         ChildWebApp("/roblox_script", BehaviorScriptCoder()),
 //        ChildWebApp("/storyiterator", StoryIterator()),
 //        ChildWebApp("/socratic_analysis", SocraticAnalysis()),
-        ChildWebApp("/socratic_markdown", SocraticMarkdown())
+        ChildWebApp("/socratic_markdown", SocraticMarkdown()),
+        ChildWebApp("/idea_mapper", IdeaMapper())
     )
 
     @JvmStatic

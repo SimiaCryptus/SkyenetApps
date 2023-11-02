@@ -12,7 +12,7 @@ plugins {
     `maven-publish`
     id("signing")
     id("com.github.johnrengelman.shadow") version "7.1.2"
-    id("org.jetbrains.kotlin.jvm") version "1.7.21"
+    id("org.jetbrains.kotlin.jvm") version "1.7.22"
 }
 
 repositories {
@@ -32,9 +32,9 @@ kotlin {
 val kotlin_version = "1.7.21"
 val jetty_version = "11.0.17"
 val scala_version = "2.13.8"
-val skyenet_version = "1.0.17"
+val skyenet_version = "1.0.20"
 dependencies {
-    implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.19")
+    implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.23")
 
     implementation(group = "com.simiacryptus.skyenet", name = "core", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "groovy", version = skyenet_version)
@@ -49,9 +49,9 @@ dependencies {
     implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
     implementation(group = "com.amazonaws", name = "aws-java-sdk", version = "1.12.454")
 
-    implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.5")
-    implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.2.9")
-    implementation(group = "ch.qos.logback", name = "logback-core", version = "1.2.9")
+    implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.9")
+    implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.4.11")
+    implementation(group = "ch.qos.logback", name = "logback-core", version = "1.4.11")
 }
 
 tasks.withType(ShadowJar::class.java).configureEach {
