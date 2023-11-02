@@ -28,6 +28,7 @@ open class IdeaMapper(
 
     inner class ActorConfig(
         val prompt: String,
+        val action: String? = null,
         val model: OpenAIClient.Models = OpenAIClient.Models.GPT4,
     ) {
         fun answer(vararg questions: String): String = answer(*chatMessages(*questions))
@@ -54,10 +55,10 @@ open class IdeaMapper(
         ).choices.first().message?.content ?: throw RuntimeException("No response")
     }
 
-
     open val actors = listOf(
         ActorConfig(
             prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
+            action="Expand"
         ),
     )
     open val questionSeeder = ActorConfig(
@@ -239,15 +240,18 @@ open class IdeaMapper(
 
             val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), spinner)
             newSessionDiv.append("<div>Final Outline</div>", true)
+            sessionDataStorage.getSessionDir(session.sessionId).resolve("nodes.json").writeText(JsonUtil.toJson(nodes))
             val finalOutline = buildFinalOutline()
+            sessionDataStorage.getSessionDir(session.sessionId).resolve("relationships.json").writeText(JsonUtil.toJson(relationships))
+            sessionDataStorage.getSessionDir(session.sessionId).resolve("finalOutline.json").writeText(JsonUtil.toJson(finalOutline))
+
             newSessionDiv.append("<pre>${JsonUtil.toJson(finalOutline)}</pre>", true)
             val textOutline = finalOutline.getTextOutline()
             newSessionDiv.append("<pre>$textOutline</pre>", true)
-
+            sessionDataStorage.getSessionDir(session.sessionId).resolve("textOutline.txt").writeText(textOutline)
 
             val finalEssay = getFinalEssay(textOutline, finalOutline)
-
-
+            sessionDataStorage.getSessionDir(session.sessionId).resolve("finalEssay.md").writeText(finalEssay)
 
             newSessionDiv.append("<div>${renderMarkdown(finalEssay)}</div>", false)
 
@@ -281,7 +285,15 @@ open class IdeaMapper(
                         activeThreadCounter.incrementAndGet()
                         try {
                             val newNode = process(node, actor, item, session)
-                            expandedOutlineNodeMap[childNode] = newNode
+                            if(actor.action == "Expand") {
+                                if (!expandedOutlineNodeMap.containsKey(childNode)) {
+                                    expandedOutlineNodeMap[childNode] = newNode
+                                } else {
+                                    val existingNode = expandedOutlineNodeMap[childNode]!!
+                                    log.warn("Conflict: ${existingNode.data} vs ${newNode.data}")
+                                    relationships.add(NodeRelationship(existingNode, newNode, "Conflict"))
+                                }
+                            }
                             if (depth > 0) process(session, newNode, depth - 1)
                         } finally {
                             activeThreadCounter.decrementAndGet()
@@ -294,20 +306,21 @@ open class IdeaMapper(
         private fun process(
             parent: KnowledgeNode,
             actor: ActorConfig,
-            item: String,
+            section_name: String,
             session: SessionBase
         ): KnowledgeNode {
             val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), spinner)
-            newSessionDiv.append("<div>Expand $item</div>", true)
+            val action = actor.action!!
+            newSessionDiv.append("<div>$action $section_name</div>", true)
 
-            val answer = actor.answer(*actor.chatMessages(parent.data, item))
+            val answer = actor.answer(*actor.chatMessages(parent.data, section_name))
             newSessionDiv.append("<div>${renderMarkdown(answer)}</div>", true)
             val outline = virtualAPI.toOutline(answer).setAllParents()
             newSessionDiv.append("<pre>${JsonUtil.toJson(outline)}</pre>", false)
 
             val newNode = KnowledgeNode(answer, outline)
             nodes.add(newNode)
-            relationships.add(NodeRelationship(parent, newNode, "Expand " + item))
+            relationships.add(NodeRelationship(parent, newNode, "$action " + section_name))
 
             return newNode
         }
