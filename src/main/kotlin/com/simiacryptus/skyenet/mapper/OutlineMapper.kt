@@ -11,6 +11,7 @@ open class OutlineMapper(
     applicationName: String = "IdeaMapper",
     temperature: Double = 0.3,
     oauthConfig: String? = null,
+    val domainName: String,
 ) : SkyenetMacroChat(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
@@ -31,7 +32,7 @@ open class OutlineMapper(
         sessionDiv: SessionDiv
     ) {
         try {
-            knowledgeManager.buildMap(userMessage, session, sessionDiv)
+            knowledgeManager.buildMap(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {
             logger.warn("Error", e)
         }

@@ -11,6 +11,7 @@ open class DebateMapper(
     applicationName: String = "DebateMapper",
     temperature: Double = 0.3,
     oauthConfig: String? = null,
+    val domainName: String,
 ) : SkyenetMacroChat(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
@@ -31,7 +32,7 @@ open class DebateMapper(
         sessionDiv: SessionDiv
     ) {
         try {
-            knowledgeManager.debate(userMessage, session, sessionDiv)
+            knowledgeManager.debate(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {
             logger.warn("Error", e)
         }

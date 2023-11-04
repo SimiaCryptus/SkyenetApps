@@ -127,7 +127,8 @@ class OutlineManager(
     fun buildMap(
         userMessage: String,
         session: SessionBase,
-        sessionDiv: SessionDiv
+        sessionDiv: SessionDiv,
+        domainName: String
     ) {
         sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(userMessage)}</div>""", true)
         val answer = questionSeeder.answer(userMessage)
@@ -154,6 +155,18 @@ class OutlineManager(
             JsonUtil.toJson(finalOutline)
         )
 
+        val list = getAllItems(finalOutline)
+        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+        projectorDiv.append("""<div>Embedding Projector</div>""", true)
+        val response = EmbeddingVisualizer(
+            api = api,
+            sessionDataStorage = sessionDataStorage,
+            sessionID = sessionDiv.sessionID(),
+            appPath = "idea_mapper",
+            host = domainName
+        ).writeTensorflowEmbeddingProjectorHtml(*list.toTypedArray())
+        projectorDiv.append("""<div>$response</div>""", false)
+
         if(verbose) finalOutlineDiv.append("<pre>${JsonUtil.toJson(finalOutline)}</pre>", true)
         val textOutline = finalOutline.getTextOutline()
         finalOutlineDiv.append("<pre>$textOutline</pre>", false)
@@ -166,6 +179,10 @@ class OutlineManager(
 
         finalRenderDiv.append("<div>${ChatSessionFlexmark.renderMarkdown(finalEssay)}</div>", false)
     }
+
+    private fun getAllItems(outline: Outline): List<String>  = outline.items?.flatMap { getAllItems(it) } ?: listOf()
+
+    private fun getAllItems(outline: Item): List<String> = listOf(outline.text ?: "") + (outline.children?.items?.flatMap { getAllItems(it) } ?: listOf())
 
     private fun getFinalEssay(
         finalOutline: Outline

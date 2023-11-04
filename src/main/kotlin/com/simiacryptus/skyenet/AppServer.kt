@@ -9,18 +9,21 @@ import com.simiacryptus.skyenet.mapper.OutlineMapper
 import com.simiacryptus.skyenet.roblox.AdminCommandCoder
 import com.simiacryptus.skyenet.roblox.BehaviorScriptCoder
 import com.simiacryptus.skyenet.util.AwsUtil.decryptResource
-import jakarta.servlet.Servlet
+import jakarta.servlet.*
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
+import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
 import java.awt.Desktop
 import java.net.URI
+import java.util.*
+
 
 object AppServer {
 
@@ -34,26 +37,6 @@ object AppServer {
     val port = 8081
     fun domainName(isServer: Boolean) = if (isServer) "https://apps.simiacrypt.us" else "http://$localName:$port"
     var domainName: String = ""
-
-    val childWebApps = listOf(
-        ChildWebApp(
-            "/awsagent",
-            AwsSkyenetCodingSessionServer(oauthConfig = null),
-            isAuthenticated = true
-        ),
-        ChildWebApp("/storygen", StoryGenerator()),
-//        ChildWebApp("/news", NewsStoryGenerator()),
-        ChildWebApp("/cookbook", CookbookGenerator()),
-        ChildWebApp("/science", SkyenetScienceBook()),
-        ChildWebApp("/software", SoftwareProjectGenerator()),
-        ChildWebApp("/roblox_cmd", AdminCommandCoder()),
-        ChildWebApp("/roblox_script", BehaviorScriptCoder()),
-//        ChildWebApp("/storyiterator", StoryIterator()),
-//        ChildWebApp("/socratic_analysis", SocraticAnalysis()),
-        ChildWebApp("/socratic_markdown", SocraticMarkdown()),
-        ChildWebApp("/idea_mapper", OutlineMapper()),
-        ChildWebApp("/debate_mapper", DebateMapper()),
-    )
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -118,12 +101,36 @@ object AppServer {
         server.join()
     }
 
+    val childWebApps by lazy {
+        listOf(
+            ChildWebApp(
+                "/awsagent",
+                AwsSkyenetCodingSessionServer(oauthConfig = null),
+                isAuthenticated = true
+            ),
+            ChildWebApp("/storygen", StoryGenerator()),
+//        ChildWebApp("/news", NewsStoryGenerator()),
+            ChildWebApp("/cookbook", CookbookGenerator()),
+            ChildWebApp("/science", SkyenetScienceBook()),
+            ChildWebApp("/software", SoftwareProjectGenerator()),
+            ChildWebApp("/roblox_cmd", AdminCommandCoder()),
+            ChildWebApp("/roblox_script", BehaviorScriptCoder()),
+//        ChildWebApp("/storyiterator", StoryIterator()),
+//        ChildWebApp("/socratic_analysis", SocraticAnalysis()),
+            ChildWebApp("/socratic_markdown", SocraticMarkdown()),
+            ChildWebApp("/idea_mapper", OutlineMapper(domainName = domainName)),
+            ChildWebApp("/debate_mapper", DebateMapper(domainName = domainName)),
+        )}
+
     fun start(
         port: Int,
         vararg webAppContexts: WebAppContext
     ): Server {
         val contexts = ContextHandlerCollection()
-        contexts.handlers = webAppContexts
+        contexts.handlers = webAppContexts.map {
+            it.addFilter(FilterHolder(CorsFilter()), "/*", EnumSet.of(DispatcherType.REQUEST))
+            it
+        }.toTypedArray()
         val server = Server(port)
         server.handler = contexts
         server.start()
@@ -159,3 +166,4 @@ object AppServer {
     }
 
 }
+
