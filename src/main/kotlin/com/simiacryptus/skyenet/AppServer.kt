@@ -4,6 +4,8 @@ import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.AwsAgent.AwsSkyenetCodingSessionServer
 import com.simiacryptus.skyenet.body.AuthenticatedWebsite
 import com.simiacryptus.skyenet.body.WebSocketServer
+import com.simiacryptus.skyenet.mapper.DebateMapper
+import com.simiacryptus.skyenet.mapper.OutlineMapper
 import com.simiacryptus.skyenet.roblox.AdminCommandCoder
 import com.simiacryptus.skyenet.roblox.BehaviorScriptCoder
 import com.simiacryptus.skyenet.util.AwsUtil.decryptResource
@@ -49,7 +51,8 @@ object AppServer {
 //        ChildWebApp("/storyiterator", StoryIterator()),
 //        ChildWebApp("/socratic_analysis", SocraticAnalysis()),
         ChildWebApp("/socratic_markdown", SocraticMarkdown()),
-        ChildWebApp("/idea_mapper", IdeaMapper())
+        ChildWebApp("/idea_mapper", OutlineMapper()),
+        ChildWebApp("/debate_mapper", DebateMapper()),
     )
 
     @JvmStatic

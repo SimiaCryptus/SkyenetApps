@@ -96,7 +96,7 @@ class SoftwareProjectGenerator(
         sessionDiv: SessionDiv,
         sessionId: String
     ) {
-        val sessionDiv = session.newSessionDiv(ChatSession.randomID(), spinner)
+        val sessionDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
         sessionDiv.append("", true)
         val fileSpecs = projectAPI.expandProject(projectParameters)
         //language=HTML
@@ -105,7 +105,7 @@ class SoftwareProjectGenerator(
             //language=HTML
             sessionDiv.append("""<div>${
                 sessionUI.hrefLink {
-                    val sessionDiv = session.newSessionDiv(ChatSession.randomID(), spinner)
+                    val sessionDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
                     onFileSelect(sessionId, projectParameters, fileSpec, sessionDiv)
                 }
             }${fileSpec.filepath}</a></div>""", false)

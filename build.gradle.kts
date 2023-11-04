@@ -25,8 +25,8 @@ repositories {
 }
 
 kotlin {
-    jvmToolchain(11)
-//    jvmToolchain(17)
+//    jvmToolchain(11)
+    jvmToolchain(17)
 }
 
 val kotlin_version = "1.7.21"

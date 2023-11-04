@@ -2,11 +2,8 @@ package com.simiacryptus.skyenet
 
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.proxy.ChatProxy
-import com.simiacryptus.skyenet.body.ChatSession
+import com.simiacryptus.skyenet.body.*
 import com.simiacryptus.skyenet.body.ChatSessionFlexmark.Companion.renderMarkdown
-import com.simiacryptus.skyenet.body.PersistentSessionBase
-import com.simiacryptus.skyenet.body.SessionDiv
-import com.simiacryptus.skyenet.body.SkyenetMacroChat
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.describe.Description
 
@@ -125,7 +122,7 @@ open class SocraticMarkdown(
 
     open fun actions(session: PersistentSessionBase) = mapOf(
         "Summarize" to { summary: String ->
-            val sessionDiv = session.newSessionDiv(ChatSession.randomID(), spinner)
+            val sessionDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
             sessionDiv.append("", true)
             sessionDiv.append(
                 //language=HTML

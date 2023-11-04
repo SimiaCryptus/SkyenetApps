@@ -106,7 +106,7 @@ class StoryIterator(
             sessionDiv.append("""<div>$feedback</div>""", true)
             review(session, sessionUI, virtualAPI.update(summary, questions, feedback), sessionDiv, sessionId)
         }, mapOf("End of questions" to { summary: API.Summary ->
-            val sessionDiv = session.newSessionDiv(ChatSession.randomID(), spinner)
+            val sessionDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
             sessionDiv.append("", true)
             //language=HTML
             sessionDiv.append("""<div><pre>${JsonUtil.toJson(virtualAPI.expandProject(summary))}</pre></div>""", false)
