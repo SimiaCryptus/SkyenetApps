@@ -7,7 +7,7 @@ import com.simiacryptus.skyenet.body.SkyenetMacroChat
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
-open class DebateMapper(
+open class DebateApp(
     applicationName: String = "DebateMapper",
     temperature: Double = 0.3,
     oauthConfig: String? = null,
@@ -18,12 +18,6 @@ open class DebateMapper(
     temperature = temperature,
 ) {
 
-    private val knowledgeManager = DebateManager(
-        api = OpenAIClient(logLevel = Level.DEBUG),
-        verbose = true,
-        sessionDataStorage = sessionDataStorage
-    )
-
     override fun processMessage(
         sessionId: String,
         userMessage: String,
@@ -32,15 +26,23 @@ open class DebateMapper(
         sessionDiv: SessionDiv
     ) {
         try {
-            knowledgeManager.debate(userMessage, session, sessionDiv, domainName)
+            DebateManager(
+                api = OpenAIClient(
+                    logLevel = Level.DEBUG,
+                    auxillaryLogOutputStream = mutableListOf(
+                        sessionDataStorage.getSessionDir(sessionId).resolve("openai.log").outputStream().buffered()
+                    )
+                ),
+                verbose = true,
+                sessionDataStorage = sessionDataStorage
+            ).debate(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {
             logger.warn("Error", e)
         }
     }
 
     companion object {
-        val log = LoggerFactory.getLogger(DebateMapper::class.java)
+        val log = LoggerFactory.getLogger(DebateApp::class.java)
     }
-
 
 }

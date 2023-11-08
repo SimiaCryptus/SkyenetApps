@@ -4,8 +4,9 @@ import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.AwsAgent.AwsSkyenetCodingSessionServer
 import com.simiacryptus.skyenet.body.AuthenticatedWebsite
 import com.simiacryptus.skyenet.body.WebSocketServer
-import com.simiacryptus.skyenet.mapper.DebateMapper
-import com.simiacryptus.skyenet.mapper.OutlineMapper
+import com.simiacryptus.skyenet.mapper.DebateApp
+import com.simiacryptus.skyenet.mapper.OutlineApp
+import com.simiacryptus.skyenet.mapper.ReadOnlyApp
 import com.simiacryptus.skyenet.roblox.AdminCommandCoder
 import com.simiacryptus.skyenet.roblox.BehaviorScriptCoder
 import com.simiacryptus.skyenet.util.AwsUtil.decryptResource
@@ -118,8 +119,10 @@ object AppServer {
 //        ChildWebApp("/storyiterator", StoryIterator()),
 //        ChildWebApp("/socratic_analysis", SocraticAnalysis()),
             ChildWebApp("/socratic_markdown", SocraticMarkdown()),
-            ChildWebApp("/idea_mapper", OutlineMapper(domainName = domainName)),
-            ChildWebApp("/debate_mapper", DebateMapper(domainName = domainName)),
+            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName), isAuthenticated = true),
+            ChildWebApp("/debate_mapper", DebateApp(domainName = domainName), isAuthenticated = true),
+            ChildWebApp("/idea_mapper_ro", ReadOnlyApp("IdeaMapper")),
+            ChildWebApp("/debate_mapper_ro", ReadOnlyApp("DebateMapper")),
         )}
 
     fun start(

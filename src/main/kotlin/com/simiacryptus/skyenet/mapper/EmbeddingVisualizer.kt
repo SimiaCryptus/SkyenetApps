@@ -1,7 +1,6 @@
 package com.simiacryptus.skyenet.mapper
 
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.openai.proxy.ChatProxy
 import com.simiacryptus.skyenet.body.*
 import com.simiacryptus.util.JsonUtil
 
@@ -26,9 +25,11 @@ class EmbeddingVisualizer(
     }
 
     fun writeTensorflowEmbeddingProjectorHtml(vararg words: String): String {
-        val vectorMap = toVectorMap(*words)
+        val vectorMap = toVectorMap(*words.filter { it.isNotBlank() }.toList().toTypedArray<String>())
         val vectorTsv = vectorMap.map { (_, vector) ->
-            vector.joinToString(separator = "\t")
+            vector.joinToString(separator = "\t") {
+                "%.2E".format(it)
+            }
         }.joinToString(separator = "\n")
 
         val metadataTsv = vectorMap.keys.joinToString(separator = "\n") {

@@ -1,31 +1,22 @@
 package com.simiacryptus.skyenet.mapper
 
+import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.proxy.ValidatedObject
 import com.simiacryptus.util.describe.Description
+import java.util.function.Function
 
-interface OutlineAPI {
+interface OutlineActors {
 
-    @Description("Break down the text into a recursive outline of the main ideas and supporting details.")
-    fun toOutline(text: String): Outline
+    interface OutlineParser : Function<String, Outline> {
+        @Description("Break down the text into a recursive outline of the main ideas and supporting details.")
+        override fun apply(text: String): Outline
+    }
 
     data class Outline(
         val items: List<Item>? = null,
     ) : ValidatedObject {
         override fun validate() = items?.all { it.validate() } ?: false
 
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Outline
-
-            return items == other.items
-        }
-
-        override fun hashCode(): Int {
-            return items?.hashCode() ?: 0
-        }
     }
 
     data class Item(
@@ -39,25 +30,6 @@ interface OutlineAPI {
             else -> true
         }
 
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Item
-
-            if (section_name != other.section_name) return false
-            if (children != other.children) return false
-            if (text != other.text) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = section_name?.hashCode() ?: 0
-            result = 31 * result + (children?.hashCode() ?: 0)
-            result = 31 * result + (text?.hashCode() ?: 0)
-            return result
-        }
     }
     companion object {
         fun Outline.deepClone(): Outline =
@@ -92,5 +64,28 @@ interface OutlineAPI {
             if(children?.items?.isEmpty() != false) listOf(item.section_name!! to item)
             else children.getTerminalNodeMap().map { (key, value) -> item.section_name + " / " + key to value }
         }?.toMap() ?: emptyMap()
+
+        fun questionSeeder(api: OpenAIClient) = ParsedActorConfig(
+            OutlineParser::class.java,
+            api = api,
+            prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
+            model = OpenAIClient.Models.GPT4Turbo,
+        )
+        fun finalWriter(api: OpenAIClient) = ActorConfig(
+            api,
+            prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
+            model = OpenAIClient.Models.GPT4Turbo,
+        )
+        fun actors(api: OpenAIClient): List<ParsedActorConfig<Outline>> = listOf(
+            object : ParsedActorConfig<Outline>(
+                parserClass = OutlineParser::class.java,
+                api = api,
+                action = "Expand",
+                prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
+                model = OpenAIClient.Models.GPT35Turbo
+            ) {
+                override val minTokens = 70 // Do not expand if the data is too short
+            },
+        )
     }
 }

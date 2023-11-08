@@ -2,78 +2,26 @@ package com.simiacryptus.skyenet.mapper
 
 import com.simiacryptus.openai.GPT4Tokenizer
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.openai.proxy.ChatProxy
 import com.simiacryptus.skyenet.body.*
-import com.simiacryptus.skyenet.mapper.OutlineAPI.*
-import com.simiacryptus.skyenet.mapper.OutlineAPI.Companion.deepClone
-import com.simiacryptus.skyenet.mapper.OutlineAPI.Companion.getTerminalNodeMap
-import com.simiacryptus.skyenet.mapper.OutlineAPI.Companion.getTextOutline
+import com.simiacryptus.skyenet.mapper.OutlineActors.*
+import com.simiacryptus.skyenet.mapper.OutlineActors.Companion.actors
+import com.simiacryptus.skyenet.mapper.OutlineActors.Companion.deepClone
+import com.simiacryptus.skyenet.mapper.OutlineActors.Companion.finalWriter
+import com.simiacryptus.skyenet.mapper.OutlineActors.Companion.getTerminalNodeMap
+import com.simiacryptus.skyenet.mapper.OutlineActors.Companion.getTextOutline
+import com.simiacryptus.skyenet.mapper.OutlineActors.Companion.questionSeeder
 import com.simiacryptus.util.JsonUtil
 import java.util.concurrent.atomic.AtomicInteger
 
-class OutlineManager(
+open class OutlineManager(
     val api: OpenAIClient,
-    val virtualAPI: OutlineAPI = ChatProxy(
-        clazz = OutlineAPI::class.java,
-        api = api,
-        model = OpenAIClient.Models.GPT35Turbo,
-        temperature = 0.1,
-    ).create(),
     val verbose: Boolean,
     val sessionDataStorage: SessionDataStorage,
-    val questionSeeder: ActorConfig = ActorConfig(
-        api = api,
-        prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
-        model = OpenAIClient.Models.GPT4,
-    ),
-    val finalWriter: ActorConfig = ActorConfig(
-        api,
-        prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
-        model = OpenAIClient.Models.GPT4,
-    ),
-    val actors: List<ActorConfig> = listOf(
-        ActorConfig(
-            api,
-            action = "Expand",
-            prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
-            minTokens = 70, // Do not expand if the data is too short
-            model = OpenAIClient.Models.GPT35Turbo
-        ),
-    ),
+    val questionSeeder: ParsedActorConfig<Outline> = questionSeeder(api),
+    val finalWriter: ActorConfig = finalWriter(api),
+    val actors: List<ParsedActorConfig<Outline>> = actors(api),
 ) {
 
-    class ActorConfig(
-        val api : OpenAIClient = OpenAIClient(),
-        val prompt: String,
-        val action: String? = null,
-        val model: OpenAIClient.Models = OpenAIClient.Models.GPT35Turbo,
-        val minTokens: Int = 0,
-        val temperature: Double = 0.3,
-    ) {
-
-        fun answer(vararg questions: String): String = answer(*chatMessages(*questions))
-
-        fun chatMessages(vararg questions: String) = arrayOf(
-            OpenAIClient.ChatMessage(
-                role = OpenAIClient.ChatMessage.Role.system,
-                content = prompt
-            ),
-        ) + questions.map {
-            OpenAIClient.ChatMessage(
-                role = OpenAIClient.ChatMessage.Role.user,
-                content = it
-            )
-        }
-
-        fun answer(vararg messages: OpenAIClient.ChatMessage): String = api.chat(
-            OpenAIClient.ChatRequest(
-                messages = messages.toList().toTypedArray(),
-                temperature = temperature,
-                model = model.modelName,
-            ),
-            model = model
-        ).choices.first().message?.content ?: throw RuntimeException("No response")
-    }
     data class Node(
         val data: String,
         val outline: Outline,
@@ -131,13 +79,13 @@ class OutlineManager(
         domainName: String
     ) {
         sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(userMessage)}</div>""", true)
-        val answer = questionSeeder.answer(userMessage)
-        sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(answer)}</div>""", verbose)
-        val outline = virtualAPI.toOutline(answer)
+        val answer = questionSeeder.parse(userMessage)
+        sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(answer.text)}</div>""", verbose)
+        val outline = answer.obj
         if(verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(outline)}</pre>""", false)
 
         this.userQuestion = userQuestion
-        root = Node(answer, outline.setAllParents())
+        root = Node(answer.text, outline.setAllParents())
         process(session, root!!)
         while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
         while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
@@ -162,7 +110,7 @@ class OutlineManager(
             api = api,
             sessionDataStorage = sessionDataStorage,
             sessionID = sessionDiv.sessionID(),
-            appPath = "idea_mapper",
+            appPath = "idea_mapper_ro",
             host = domainName
         ).writeTensorflowEmbeddingProjectorHtml(*list.toTypedArray())
         projectorDiv.append("""<div>$response</div>""", false)
@@ -190,13 +138,13 @@ class OutlineManager(
         if (GPT4Tokenizer(false).estimateTokenCount(finalOutline.getTextOutline()) > (finalWriter.model.maxTokens * 0.6).toInt()) {
             explode(finalOutline)?.joinToString("\n") { getFinalEssay(it) } ?: ""
         } else {
-            OutlineMapper.log.debug("Outline: \n\t${finalOutline.getTextOutline().replace("\n", "\n\t")}")
+            OutlineApp.log.debug("Outline: \n\t${finalOutline.getTextOutline().replace("\n", "\n\t")}")
             val answer = finalWriter.answer(finalOutline.getTextOutline())
-            OutlineMapper.log.debug("Rendering: \n\t${answer.replace("\n", "\n\t")}")
+            OutlineApp.log.debug("Rendering: \n\t${answer.replace("\n", "\n\t")}")
             answer
         }
     } catch (e: Throwable) {
-        OutlineMapper.log.warn("Error", e)
+        OutlineApp.log.warn("Error", e)
         ""
     }
 
@@ -258,7 +206,7 @@ class OutlineManager(
                                 expandedOutlineNodeMap[childNode] = newNode
                             } else {
                                 val existingNode = expandedOutlineNodeMap[childNode]!!
-                                OutlineMapper.log.warn("Conflict: ${existingNode.data} vs ${newNode.data}")
+                                OutlineApp.log.warn("Conflict: ${existingNode.data} vs ${newNode.data}")
                                 relationships.add(Relationship(existingNode, newNode, "Conflict"))
                             }
                         }
@@ -273,32 +221,30 @@ class OutlineManager(
 
     private fun process(
         parent: Node,
-        actor: ActorConfig,
+        actor: ParsedActorConfig<Outline>,
         section_name: String,
         session: SessionBase
     ): Node? {
-        // if token count of parent.data is below 128, skip
         if (GPT4Tokenizer(false).estimateTokenCount(parent.data) <= actor.minTokens) {
-            OutlineMapper.log.debug("Skipping: ${parent.data}")
+            OutlineApp.log.debug("Skipping: ${parent.data}")
             return null
         }
         val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
         val action = actor.action!!
         newSessionDiv.append("<div>$action $section_name</div>", true)
 
-        val answer = actor.answer(*actor.chatMessages(userQuestion ?: "", parent.data, section_name))
-        newSessionDiv.append("<div>${ChatSessionFlexmark.renderMarkdown(answer)}</div>",
+        val answer = actor.parse(*actor.chatMessages(userQuestion ?: "", parent.data, section_name))
+        newSessionDiv.append("<div>${ChatSessionFlexmark.renderMarkdown(answer.text)}</div>",
             verbose
         )
-        val outline = virtualAPI.toOutline(answer).setAllParents()
+        val outline = answer.obj.setAllParents()
         if(verbose) newSessionDiv.append("<pre>${JsonUtil.toJson(outline)}</pre>", false)
 
-        val newNode = Node(answer, outline)
+        val newNode = Node(answer.text, outline)
         nodes.add(newNode)
         relationships.add(Relationship(parent, newNode, "$action " + section_name))
 
         return newNode
     }
-
 
 }

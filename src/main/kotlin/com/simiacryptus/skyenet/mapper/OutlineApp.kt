@@ -7,7 +7,7 @@ import com.simiacryptus.skyenet.body.SkyenetMacroChat
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
-open class OutlineMapper(
+open class OutlineApp(
     applicationName: String = "IdeaMapper",
     temperature: Double = 0.3,
     oauthConfig: String? = null,
@@ -18,12 +18,6 @@ open class OutlineMapper(
     temperature = temperature,
 ) {
 
-    private val knowledgeManager = OutlineManager(
-        api = OpenAIClient(logLevel = Level.DEBUG),
-        verbose = false,
-        sessionDataStorage = sessionDataStorage
-    )
-
     override fun processMessage(
         sessionId: String,
         userMessage: String,
@@ -32,14 +26,23 @@ open class OutlineMapper(
         sessionDiv: SessionDiv
     ) {
         try {
-            knowledgeManager.buildMap(userMessage, session, sessionDiv, domainName)
+            OutlineManager(
+                api = OpenAIClient(
+                    logLevel = Level.DEBUG,
+                    auxillaryLogOutputStream = mutableListOf(
+                        sessionDataStorage.getSessionDir(sessionId).resolve("openai.log").outputStream().buffered()
+                    )
+                ),
+                verbose = false,
+                sessionDataStorage = sessionDataStorage
+            ).buildMap(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {
             logger.warn("Error", e)
         }
     }
 
     companion object {
-        val log = LoggerFactory.getLogger(OutlineMapper::class.java)
+        val log = LoggerFactory.getLogger(OutlineApp::class.java)
     }
 
 
