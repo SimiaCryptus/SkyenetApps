@@ -1,5 +1,7 @@
 package com.simiacryptus.skyenet
 
+import com.simiacryptus.skyenet.actors.CodingActor
+import com.simiacryptus.skyenet.actors.CodingActorTestApp
 import com.simiacryptus.skyenet.apps.AwsAgent.AwsSkyenetCodingSessionServer
 import com.simiacryptus.skyenet.actors.SimpleActorTestApp
 import com.simiacryptus.skyenet.actors.SimpleActor
@@ -36,6 +38,7 @@ object AppServer : AppServerBase() {
             ChildWebApp("/idea_mapper_ro", ReadOnlyApp("IdeaMapper")),
             ChildWebApp("/debate_mapper_ro", ReadOnlyApp("DebateMapper")),
             ChildWebApp("/test_simple", SimpleActorTestApp(SimpleActor("Translate the user's request into pig latin."))),
+            ChildWebApp("/test_coding", CodingActorTestApp(CodingActor())),
         )}
 
     @JvmStatic

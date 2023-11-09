@@ -3,7 +3,7 @@ package com.simiacryptus.skyenet.actors
 import com.simiacryptus.openai.OpenAIClient
 
 abstract class BaseActor<T>(
-    val prompt: String,
+    open val prompt: String,
     val name: String? = null,
     val api: OpenAIClient = OpenAIClient(),
     val model: OpenAIClient.Models = OpenAIClient.Models.GPT35Turbo,
