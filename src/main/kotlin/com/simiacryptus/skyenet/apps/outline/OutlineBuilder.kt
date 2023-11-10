@@ -15,14 +15,15 @@ import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.questionSee
 import com.simiacryptus.util.JsonUtil
 import java.util.concurrent.atomic.AtomicInteger
 
-open class OutlineBuilder(
+internal open class OutlineBuilder(
     val api: OpenAIClient,
     val verbose: Boolean,
     val sessionDataStorage: SessionDataStorage,
     private val questionSeeder: ParsedActor<Outline> = questionSeeder(api),
     private val finalWriter: SimpleActor = finalWriter(api),
     private val actors: List<ParsedActor<Outline>> = actors(api),
-    private val iterations: Int = 1
+    private val iterations: Int = 1,
+    val minSize: Int = 128
 ) : OutlineManager() {
     init {
         require(iterations > 0)
@@ -141,7 +142,7 @@ open class OutlineBuilder(
         sectionName: String,
         session: SessionBase
     ): Node? {
-        if (GPT4Tokenizer(false).estimateTokenCount(parent.data) <= actor.minTokens) {
+        if (GPT4Tokenizer(false).estimateTokenCount(parent.data) <= minSize) {
             OutlineApp.log.debug("Skipping: ${parent.data}")
             return null
         }

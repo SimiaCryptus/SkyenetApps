@@ -60,13 +60,7 @@ interface DebateActors {
     }
 
     companion object {
-        fun Outline.deepClone(): Outline =
-            Outline(this.arguments?.map { it.deepClone() })
 
-        fun Argument.deepClone(): Argument = Argument(
-            point_name = this.point_name,
-            text = this.text,
-        )
         fun getActorConfig(api: OpenAIClient, actor: Debator) = ParsedActor(
             parserClass = OutlineParser::class.java,
             api = api,

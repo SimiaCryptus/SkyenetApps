@@ -30,7 +30,6 @@ interface OutlineActors {
             section_name.isEmpty() -> false
             else -> true
         }
-
     }
     companion object {
         fun Outline.deepClone(): Outline =
@@ -78,15 +77,13 @@ interface OutlineActors {
             model = OpenAIClient.Models.GPT4Turbo,
         )
         fun actors(api: OpenAIClient): List<ParsedActor<Outline>> = listOf(
-            object : ParsedActor<Outline>(
+            ParsedActor<Outline>(
                 parserClass = OutlineParser::class.java,
                 api = api,
                 action = "Expand",
                 prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
                 model = OpenAIClient.Models.GPT35Turbo
-            ) {
-                override val minTokens = 70 // Do not expand if the data is too short
-            },
+            ),
         )
     }
 }

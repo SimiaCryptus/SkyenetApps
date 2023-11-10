@@ -2,7 +2,7 @@ package com.simiacryptus.skyenet.apps.outline
 
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.deepClone
 
-open class OutlineManager() {
+open class OutlineManager {
 
     data class Node(
         val data: String,

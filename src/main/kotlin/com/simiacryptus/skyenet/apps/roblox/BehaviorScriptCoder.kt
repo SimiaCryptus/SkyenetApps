@@ -71,8 +71,8 @@ class BehaviorScriptCoder(
 
     companion object {
 
-        const val port = 8771
-        const val baseURL = "http://localhost:$port"
+        private const val port = 8771
+        private const val baseURL = "http://localhost:$port"
 
         @JvmStatic
         fun main(args: Array<String>) {
