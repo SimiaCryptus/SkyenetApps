@@ -31,16 +31,16 @@ interface MetaActors {
     }
 
     data class ActorDesign(
-        val name: String? = null,
+        @Description("Java class name of the actor")
+        val javaIdentifier: String? = null,
         val description: String? = null,
         @Description("simple, parsed, or coding")
         val type: String? = null,
     ) : ValidatedObject {
         override fun validate() = when {
-            null == name -> false
-            name.isEmpty() -> false
-            null == description -> false
-            description.isEmpty() -> false
+            null == javaIdentifier -> false
+            javaIdentifier.isEmpty() -> false
+            javaIdentifier.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> false
             null == type -> false
             type.isEmpty() -> false
             type.notIn("simple", "parsed", "coding") -> false
@@ -60,10 +60,15 @@ interface MetaActors {
         val name: String? = null,
         val description: String? = null,
         val actorsUsed: List<String>? = null,
+        @Description("symbol names of variables/values used as input to this step")
+        val variablesIn: List<String>? = null,
+        @Description("symbol names of variables/values used as output from this step")
+        val variablesOut: List<String>? = null,
     ) : ValidatedObject {
         override fun validate() = when {
             null == name -> false
             name.isEmpty() -> false
+            variablesIn?.isEmpty() != false && variablesOut?.isEmpty() != false -> false
             else -> true
         }
 
@@ -137,7 +142,6 @@ interface MetaActors {
             |Respond to the request with an instantiation function of the requested actor.
             |
             """.trimMargin().trim(),
-            model = OpenAIClient.Models.GPT35Turbo,
             api = api,
         )
 
@@ -201,7 +205,6 @@ interface MetaActors {
             |
             |Respond to the request with an instantiation function of the requested actor.
             """.trimMargin().trim(),
-            model = OpenAIClient.Models.GPT35Turbo,
             api = api,
         )
 
@@ -246,9 +249,20 @@ interface MetaActors {
             |Respond to the request with an instantiation function of the requested actor.
             |
             """.trimMargin().trim(),
-            model = OpenAIClient.Models.GPT35Turbo,
             api = api,
         )
+
+        @Language("Markdown")fun flowStepDesigner(api: OpenAIClient) = CodingActor(
+            interpreterClass = KotlinInterpreter::class,
+            details = """
+            |You are a software implementation assistant.
+            |Your task is to implement a step in the logic flow of a ChatGPT-based actor system.
+            |Respond to the user request with an implementation of the requested logic flow step.
+            |Preceding "assistant" messages define the existing code of the system, which you will append to.
+            """.trimMargin().trim(),
+            api = api,
+        )
+
     }
 }
 
