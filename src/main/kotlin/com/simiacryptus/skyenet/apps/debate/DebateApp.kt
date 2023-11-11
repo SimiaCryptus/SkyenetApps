@@ -1,9 +1,9 @@
 package com.simiacryptus.skyenet.apps.debate
 
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.body.PersistentSessionBase
-import com.simiacryptus.skyenet.body.SessionDiv
-import com.simiacryptus.skyenet.body.SkyenetMacroChat
+import com.simiacryptus.skyenet.webui.PersistentSessionBase
+import com.simiacryptus.skyenet.webui.SessionDiv
+import com.simiacryptus.skyenet.webui.SkyenetMacroChat
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
@@ -37,7 +37,7 @@ open class DebateApp(
                 sessionDataStorage = sessionDataStorage
             ).debate(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {
-            logger.warn("Error", e)
+            log.warn("Error", e)
         }
     }
 

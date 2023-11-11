@@ -1,12 +1,7 @@
 package com.simiacryptus.skyenet.apps.roblox
 
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.body.ChatSessionFlexmark
-import com.simiacryptus.skyenet.body.PersistentSessionBase
-import com.simiacryptus.skyenet.body.SessionDiv
-import com.simiacryptus.skyenet.body.SkyenetMacroChat
-import java.awt.Desktop
-import java.net.URI
+import com.simiacryptus.skyenet.webui.*
 
 class BehaviorScriptCoder(
     applicationName: String = "BehaviorScriptCoder",
@@ -66,20 +61,7 @@ class BehaviorScriptCoder(
             ), model
         )
 
-        sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(response.choices.get(0).message?.content ?: "")}</div>""", true)
-    }
-
-    companion object {
-
-        private const val port = 8771
-        private const val baseURL = "http://localhost:$port"
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val httpServer = BehaviorScriptCoder("RobloxLuaCoder").start(port)
-            Desktop.getDesktop().browse(URI(baseURL))
-            httpServer.join()
-        }
+        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(response.choices.get(0).message?.content ?: "")}</div>""", true)
     }
 
 }

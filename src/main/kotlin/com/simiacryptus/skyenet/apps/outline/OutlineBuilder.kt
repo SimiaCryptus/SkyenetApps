@@ -2,7 +2,7 @@ package com.simiacryptus.skyenet.apps.outline
 
 import com.simiacryptus.openai.GPT4Tokenizer
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.body.*
+import com.simiacryptus.skyenet.webui.*
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.servers.EmbeddingVisualizer
 import com.simiacryptus.skyenet.actors.ParsedActor
@@ -23,7 +23,7 @@ internal open class OutlineBuilder(
     private val finalWriter: SimpleActor = finalWriter(api),
     private val actors: List<ParsedActor<Outline>> = actors(api),
     private val iterations: Int = 1,
-    val minSize: Int = 128
+    private val minSize: Int = 128
 ) : OutlineManager() {
     init {
         require(iterations > 0)
@@ -39,9 +39,9 @@ internal open class OutlineBuilder(
         sessionDiv: SessionDiv,
         domainName: String
     ) {
-        sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(userMessage)}</div>""", true)
+        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
         val answer = questionSeeder.answer(*questionSeeder.chatMessages(userMessage))
-        sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(answer.getText())}</div>""", verbose)
+        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>""", verbose)
         val outline = answer.getObj()
         if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(outline)}</pre>""", false)
 
@@ -86,7 +86,7 @@ internal open class OutlineBuilder(
         val finalEssay = getFinalEssay(finalOutline)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("finalEssay.md").writeText(finalEssay)
 
-        finalRenderDiv.append("<div>${ChatSessionFlexmark.renderMarkdown(finalEssay)}</div>", false)
+        finalRenderDiv.append("<div>${MarkdownUtil.renderMarkdown(finalEssay)}</div>", false)
     }
 
     private fun getFinalEssay(
@@ -152,7 +152,7 @@ internal open class OutlineBuilder(
 
         val answer = actor.answer(*actor.chatMessages(userQuestion ?: "", parent.data, sectionName))
         newSessionDiv.append(
-            "<div>${ChatSessionFlexmark.renderMarkdown(answer.getText())}</div>",
+            "<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>",
             verbose
         )
         val outline = answer.getObj().setAllParents()

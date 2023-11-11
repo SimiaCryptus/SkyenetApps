@@ -4,16 +4,13 @@ import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.initialDesigner
-import com.simiacryptus.skyenet.body.*
-import com.simiacryptus.skyenet.heart.KotlinInterpreter
+import com.simiacryptus.skyenet.webui.*
 import com.simiacryptus.util.JsonUtil
-import java.lang.ref.WeakReference
-import java.util.*
 
 open class AgentBuilder(
     val api: OpenAIClient,
     val verbose: Boolean = true,
-    val sessionDataStorage: SessionDataStorage,
+    @Suppress("unused") val sessionDataStorage: SessionDataStorage,
     private val initialDesigner: ParsedActor<AgentDesign> = initialDesigner(api),
 ) {
 
@@ -27,9 +24,9 @@ open class AgentBuilder(
         domainName: String
     ) {
         this.userPrompt = userMessage
-        sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(userMessage)}</div>""", true)
+        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
         val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage))
-        sessionDiv.append("""<div>${ChatSessionFlexmark.renderMarkdown(design.getText())}</div>""", verbose)
+        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(design.getText())}</div>""", verbose)
         if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(design.getObj())}</pre>""", false)
 
         val actorImpls = design.getObj().actors?.map { actorDesign ->
@@ -50,7 +47,7 @@ open class AgentBuilder(
                 else -> throw IllegalArgumentException("Unknown actor type: ${actorDesign.type}")
             }
             val code = response.getCode()
-            actorDiv.append("""<pre>${ChatSessionFlexmark.renderMarkdown(code)}</pre>""", false)
+            actorDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
             actorDesign.javaIdentifier to code
         }?.toMap() ?: mapOf()
 
@@ -72,7 +69,7 @@ open class AgentBuilder(
             val response = logicFlowDesigner.answerWithPrefix(codePrefix = codePrefix, *messages)
             val code = response.getCode()
             flowCodeBuffer.append(code)
-            logicFlowDiv.append("""<pre>${ChatSessionFlexmark.renderMarkdown(code)}</pre>""", false)
+            logicFlowDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
         }
 
         val finalCodeDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
@@ -85,7 +82,7 @@ open class AgentBuilder(
         val (imports, otherCode) = code.split("\n").partition { it.trim().startsWith("import ") }
         code = imports.joinToString("\n") + "\n" + otherCode.joinToString("\n")
 
-        finalCodeDiv.append("""<pre>${ChatSessionFlexmark.renderMarkdown(code)}</pre>""", false)
+        finalCodeDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
 
 
 //        val initialDesignDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
