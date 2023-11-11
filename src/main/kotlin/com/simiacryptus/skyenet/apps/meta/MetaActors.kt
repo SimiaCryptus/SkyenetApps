@@ -24,8 +24,8 @@ interface MetaActors {
             null == logicFlow -> false
             null == actors -> false
             actors.isEmpty() -> false
-            logicFlow?.validate() == false -> false
-            actors?.all { it.validate() } == false -> false
+            !logicFlow.validate() -> false
+            !actors.all { it.validate() } -> false
             else -> true
         }
     }
@@ -76,9 +76,8 @@ interface MetaActors {
 
     companion object {
 
-        fun initialDesigner(api: OpenAIClient) = ParsedActor(
+        fun initialDesigner() = ParsedActor(
             DesignParser::class.java,
-            api = api,
             model = OpenAIClient.Models.GPT4Turbo,
             prompt = """
                 |You are a software design assistant.
@@ -110,7 +109,7 @@ interface MetaActors {
                 |""".trimMargin().trim(),
         )
 
-        @Language("Markdown")fun simpleActorDesigner(api: OpenAIClient) = CodingActor(
+        @Language("Markdown")fun simpleActorDesigner() = CodingActor(
             interpreterClass = KotlinInterpreter::class,
             details = """
             |You are a software implementation assistant.
@@ -142,11 +141,10 @@ interface MetaActors {
             |Respond to the request with an instantiation function of the requested actor.
             |
             """.trimMargin().trim(),
-            api = api,
         )
 
         @Language("Markdown")
-        fun parsedActorDesigner(api: OpenAIClient) = CodingActor(
+        fun parsedActorDesigner() = CodingActor(
             interpreterClass = KotlinInterpreter::class,
             details = """
             |
@@ -205,10 +203,9 @@ interface MetaActors {
             |
             |Respond to the request with an instantiation function of the requested actor.
             """.trimMargin().trim(),
-            api = api,
         )
 
-        @Language("Markdown")fun codingActorDesigner(api: OpenAIClient) = CodingActor(
+        @Language("Markdown")fun codingActorDesigner() = CodingActor(
             interpreterClass = KotlinInterpreter::class,
             details = """
             |
@@ -249,10 +246,9 @@ interface MetaActors {
             |Respond to the request with an instantiation function of the requested actor.
             |
             """.trimMargin().trim(),
-            api = api,
         )
 
-        @Language("Markdown")fun flowStepDesigner(api: OpenAIClient) = CodingActor(
+        @Language("Markdown")fun flowStepDesigner() = CodingActor(
             interpreterClass = KotlinInterpreter::class,
             details = """
             |You are a software implementation assistant.
@@ -260,7 +256,6 @@ interface MetaActors {
             |Respond to the user request with an implementation of the requested logic flow step.
             |Preceding "assistant" messages define the existing code of the system, which you will append to.
             """.trimMargin().trim(),
-            api = api,
         )
 
     }

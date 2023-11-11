@@ -7,7 +7,7 @@ class BehaviorScriptCoder(
     applicationName: String = "BehaviorScriptCoder",
     oauthConfig: String? = null,
     temperature: Double = 0.1
-) : SkyenetMacroChat(
+) : MacroChat(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
     temperature = temperature

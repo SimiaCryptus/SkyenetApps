@@ -61,9 +61,8 @@ interface DebateActors {
 
     companion object {
 
-        fun getActorConfig(api: OpenAIClient, actor: Debator) = ParsedActor(
+        fun getActorConfig(actor: Debator) = ParsedActor(
             parserClass = OutlineParser::class.java,
-            api = api,
             prompt = """You are a debater: ${actor.name}.
                                 |You will provide a well-reasoned and supported argument for your position.
                                 |Details about you: ${actor.description}
@@ -71,15 +70,13 @@ interface DebateActors {
             model = OpenAIClient.Models.GPT4,
         )
 
-        fun moderator(api: OpenAIClient) = ParsedActor(
+        fun moderator() = ParsedActor(
             DebateParser::class.java,
-            api = api,
             prompt = """You will take a user request, and plan a debate. You will introduce the debaters, and then provide a list of questions to ask.""",
             model = OpenAIClient.Models.GPT4,
         )
-        fun summarizor(api: OpenAIClient) = SimpleActor(
+        fun summarizor() = SimpleActor(
             prompt = """You are a helpful writing assistant, tasked with writing a markdown document combining the user massages given in an impartial manner""",
-            api = api,
             model = OpenAIClient.Models.GPT4,
         )
 

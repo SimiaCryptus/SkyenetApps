@@ -11,7 +11,7 @@ open class AgentBuilder(
     val api: OpenAIClient,
     val verbose: Boolean = true,
     @Suppress("unused") val sessionDataStorage: SessionDataStorage,
-    private val initialDesigner: ParsedActor<AgentDesign> = initialDesigner(api),
+    private val initialDesigner: ParsedActor<AgentDesign> = initialDesigner(),
 ) {
 
     private var userPrompt: String? = null
@@ -25,25 +25,25 @@ open class AgentBuilder(
     ) {
         this.userPrompt = userMessage
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
-        val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage))
+        val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage), api = api)
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(design.getText())}</div>""", verbose)
         if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(design.getObj())}</pre>""", false)
 
         val actorImpls = design.getObj().actors?.map { actorDesign ->
-            val actorDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+            val actorDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
             actorDiv.append("""<div>Actor: ${actorDesign.javaIdentifier}</div>""", true)
-            val simpleActorDesigner = MetaActors.simpleActorDesigner(api)
-            val parsedActorDesigner = MetaActors.parsedActorDesigner(api)
-            val codingActorDesigner = MetaActors.codingActorDesigner(api)
+            val simpleActorDesigner = MetaActors.simpleActorDesigner()
+            val parsedActorDesigner = MetaActors.parsedActorDesigner()
+            val codingActorDesigner = MetaActors.codingActorDesigner()
             val messages = simpleActorDesigner.chatMessages(
                 userMessage,
                 design.getText(),
                 "Implement ${actorDesign.javaIdentifier!!}"
             )
             val response = when {
-                actorDesign.type == "simple" -> simpleActorDesigner.answer(*messages)
-                actorDesign.type == "parsed" -> parsedActorDesigner.answer(*messages)
-                actorDesign.type == "coding" -> codingActorDesigner.answer(*messages)
+                actorDesign.type == "simple" -> simpleActorDesigner.answer(*messages, api = api)
+                actorDesign.type == "parsed" -> parsedActorDesigner.answer(*messages, api = api)
+                actorDesign.type == "coding" -> codingActorDesigner.answer(*messages, api = api)
                 else -> throw IllegalArgumentException("Unknown actor type: ${actorDesign.type}")
             }
             val code = response.getCode()
@@ -53,9 +53,9 @@ open class AgentBuilder(
 
         var flowCodeBuffer = StringBuilder()
         design.getObj().logicFlow?.items?.forEach { logicFlowItem ->
-            val logicFlowDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+            val logicFlowDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
             logicFlowDiv.append("""<div>Logic Flow: ${logicFlowItem.name}</div>""", true)
-            val logicFlowDesigner = MetaActors.flowStepDesigner(api)
+            val logicFlowDesigner = MetaActors.flowStepDesigner()
             val messages = logicFlowDesigner.chatMessages(
                 userMessage,
                 design.getText(),
@@ -66,16 +66,16 @@ open class AgentBuilder(
                 |
                 |${flowCodeBuffer}
                 |""".trimMargin()
-            val response = logicFlowDesigner.answerWithPrefix(codePrefix = codePrefix, *messages)
+            val response = logicFlowDesigner.answerWithPrefix(codePrefix = codePrefix, *messages, api = api)
             val code = response.getCode()
             flowCodeBuffer.append(code)
             logicFlowDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
         }
 
-        val finalCodeDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+        val finalCodeDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
         finalCodeDiv.append("""<div>Final Code</div>""", true)
         var code = """
-            |${actorImpls.values.joinToString("\n\n") ?: ""}
+            |${actorImpls.values.joinToString("\n\n")}
             |
             |${flowCodeBuffer}
             |""".trimMargin()

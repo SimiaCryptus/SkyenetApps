@@ -3,7 +3,7 @@ package com.simiacryptus.skyenet.apps.debate
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.webui.PersistentSessionBase
 import com.simiacryptus.skyenet.webui.SessionDiv
-import com.simiacryptus.skyenet.webui.SkyenetMacroChat
+import com.simiacryptus.skyenet.webui.MacroChat
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
@@ -12,7 +12,7 @@ open class DebateApp(
     temperature: Double = 0.3,
     oauthConfig: String? = null,
     val domainName: String,
-) : SkyenetMacroChat(
+) : MacroChat(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
     temperature = temperature,

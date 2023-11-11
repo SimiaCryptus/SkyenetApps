@@ -12,21 +12,21 @@ open class DebateManager(
     val api: OpenAIClient,
     val verbose: Boolean,
     val sessionDataStorage: SessionDataStorage,
-    private val moderator: ParsedActor<DebateSetup> = Companion.moderator(api),
-    private val summarizor: SimpleActor = Companion.summarizor(api),
+    private val moderator: ParsedActor<DebateSetup> = Companion.moderator(),
+    private val summarizor: SimpleActor = Companion.summarizor(),
 ) {
 
     private val outlines = mutableMapOf<String, Outline>()
 
     fun debate(userMessage: String, session: PersistentSessionBase, sessionDiv: SessionDiv, domainName: String) {
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
-        val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage))
+        val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage), api = api)
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(moderatorResponse.getText())}</div>""", verbose)
         if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(moderatorResponse.getObj())}</pre>""", false)
 
         val totalSummary =
             (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().map { question ->
-                val summarizorDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+                val summarizorDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
                 val answers = (moderatorResponse.getObj().debators?.list ?: emptyList()).parallelStream()
                     .map { actor -> answer(session, actor, question) }.toList()
                 summarizorDiv.append(
@@ -35,7 +35,7 @@ open class DebateManager(
                     }</div>""", true
                 )
                 val summarizorResponse =
-                    summarizor.answer(*(listOf((question.text ?: "").trim()) + answers).toTypedArray())
+                    summarizor.answer(*(listOf((question.text ?: "").trim()) + answers).toTypedArray(), api = api)
                 summarizorDiv.append("""<div>${MarkdownUtil.renderMarkdown(summarizorResponse)}</div>""", false)
                 summarizorResponse
             }.toList()
@@ -45,7 +45,7 @@ open class DebateManager(
         } +
                 (moderatorResponse.getObj().questions?.list?.map { it.text ?: "" }?.filter { it.isNotBlank() }?.toSet()
                     ?: emptySet())
-        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
         projectorDiv.append("""<div>Embedding Projector</div>""", true)
         val response = EmbeddingVisualizer(
             api = api,
@@ -56,9 +56,9 @@ open class DebateManager(
         ).writeTensorflowEmbeddingProjectorHtml(*argumentList.toTypedArray())
         projectorDiv.append("""<div>$response</div>""", false)
 
-        val conclusionDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+        val conclusionDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
         if (verbose) conclusionDiv.append("""<pre>${JsonUtil.toJson(totalSummary)}</pre>""", true)
-        val summarizorResponse = summarizor.answer(*totalSummary.toTypedArray())
+        val summarizorResponse = summarizor.answer(*totalSummary.toTypedArray(), api = api)
         if (verbose) conclusionDiv.append("""<pre>${JsonUtil.toJson(summarizorResponse)}</pre>""", false)
         conclusionDiv.append("""<div>${MarkdownUtil.renderMarkdown(summarizorResponse)}</div>""", false)
     }
@@ -68,7 +68,7 @@ open class DebateManager(
         actor: Debator,
         question: Question
     ): String {
-        val resonseDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+        val resonseDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
         resonseDiv.append(
             """<div>${actor.name?.trim() ?: ""} - ${
                 MarkdownUtil.renderMarkdown(question.text ?: "").trim()
@@ -76,7 +76,7 @@ open class DebateManager(
             true
         )
         val debator = getActorConfig(actor)
-        val debatorResponse = debator.answer(*debator.chatMessages(question.text ?: ""))
+        val debatorResponse = debator.answer(*debator.chatMessages(question.text ?: ""), api = api)
         resonseDiv.append("""<div>${MarkdownUtil.renderMarkdown(debatorResponse.getText())}</div>""", false)
         outlines[actor.name!! + ": " + question.text!!] = debatorResponse.getObj()
         if (verbose) {
@@ -90,6 +90,6 @@ open class DebateManager(
     }
 
     open fun getActorConfig(actor: Debator) =
-        DebateActors.getActorConfig(api, actor)
+        DebateActors.getActorConfig(actor)
 
 }

@@ -65,21 +65,18 @@ interface OutlineActors {
             else children.getTerminalNodeMap().map { (key, value) -> item.section_name + " / " + key to value }
         }?.toMap() ?: emptyMap()
 
-        fun questionSeeder(api: OpenAIClient) = ParsedActor(
+        fun questionSeeder() = ParsedActor(
             OutlineParser::class.java,
-            api = api,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
             model = OpenAIClient.Models.GPT4Turbo,
         )
-        fun finalWriter(api: OpenAIClient) = SimpleActor(
+        fun finalWriter() = SimpleActor(
             prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
-            api = api,
             model = OpenAIClient.Models.GPT4Turbo,
         )
-        fun actors(api: OpenAIClient): List<ParsedActor<Outline>> = listOf(
+        fun actors(): List<ParsedActor<Outline>> = listOf(
             ParsedActor<Outline>(
                 parserClass = OutlineParser::class.java,
-                api = api,
                 action = "Expand",
                 prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
                 model = OpenAIClient.Models.GPT35Turbo

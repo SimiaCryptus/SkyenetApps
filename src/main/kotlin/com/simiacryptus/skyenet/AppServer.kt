@@ -45,7 +45,7 @@ object AppServer : AppServerBase() {
         val type: String? = null,
     )
 
-    interface JokeParser : Function<String, TestJokeDataStructure> {}
+    interface JokeParser : Function<String, TestJokeDataStructure>
 
 }
 

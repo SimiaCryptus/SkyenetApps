@@ -19,10 +19,10 @@ internal open class OutlineBuilder(
     val api: OpenAIClient,
     val verbose: Boolean,
     val sessionDataStorage: SessionDataStorage,
-    private val questionSeeder: ParsedActor<Outline> = questionSeeder(api),
-    private val finalWriter: SimpleActor = finalWriter(api),
-    private val actors: List<ParsedActor<Outline>> = actors(api),
-    private val iterations: Int = 1,
+    private val iterations: Int,
+    private val questionSeeder: ParsedActor<Outline> = questionSeeder(),
+    private val finalWriter: SimpleActor = finalWriter(),
+    private val actors: List<ParsedActor<Outline>> = actors(),
     private val minSize: Int = 128
 ) : OutlineManager() {
     init {
@@ -40,18 +40,18 @@ internal open class OutlineBuilder(
         domainName: String
     ) {
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
-        val answer = questionSeeder.answer(*questionSeeder.chatMessages(userMessage))
+        val answer = questionSeeder.answer(*questionSeeder.chatMessages(userMessage), api = api)
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>""", verbose)
         val outline = answer.getObj()
         if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(outline)}</pre>""", false)
 
         this.userQuestion = userMessage
         root = Node(answer.getText(), outline.setAllParents())
-        process(session, root!!)
+        process(session, root!!, (iterations-1))
         while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
         while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
 
-        val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+        val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
         finalOutlineDiv.append("<div>Final Outline</div>", true)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("nodes.json").writeText(
             JsonUtil.toJson(nodes)
@@ -65,7 +65,7 @@ internal open class OutlineBuilder(
         )
 
         val list = getAllItems(finalOutline)
-        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
         projectorDiv.append("""<div>Embedding Projector</div>""", true)
         val response = EmbeddingVisualizer(
             api = api,
@@ -81,7 +81,7 @@ internal open class OutlineBuilder(
         finalOutlineDiv.append("<pre>$textOutline</pre>", false)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("textOutline.txt").writeText(textOutline)
 
-        val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+        val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
         finalRenderDiv.append("<div>Final Render</div>", true)
         val finalEssay = getFinalEssay(finalOutline)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("finalEssay.md").writeText(finalEssay)
@@ -96,7 +96,7 @@ internal open class OutlineBuilder(
             explode(finalOutline)?.joinToString("\n") { getFinalEssay(it) } ?: ""
         } else {
             OutlineApp.log.debug("Outline: \n\t${finalOutline.getTextOutline().replace("\n", "\n\t")}")
-            val answer = finalWriter.answer(finalOutline.getTextOutline())
+            val answer = finalWriter.answer(finalOutline.getTextOutline(), api = api)
             OutlineApp.log.debug("Rendering: \n\t${answer.replace("\n", "\n\t")}")
             answer
         }
@@ -109,7 +109,7 @@ internal open class OutlineBuilder(
     private fun process(
         session: SessionBase,
         node: Node,
-        depth: Int = (iterations-1)
+        depth: Int
     ) {
         for ((item, childNode) in node.outline.getTerminalNodeMap()) {
             for (actor in actors) {
@@ -146,11 +146,11 @@ internal open class OutlineBuilder(
             OutlineApp.log.debug("Skipping: ${parent.data}")
             return null
         }
-        val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
+        val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
         val action = actor.name!!
         newSessionDiv.append("<div>$action $sectionName</div>", true)
 
-        val answer = actor.answer(*actor.chatMessages(userQuestion ?: "", parent.data, sectionName))
+        val answer = actor.answer(*actor.chatMessages(userQuestion ?: "", parent.data, sectionName), api = api)
         newSessionDiv.append(
             "<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>",
             verbose
