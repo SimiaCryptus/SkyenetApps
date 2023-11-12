@@ -4,6 +4,7 @@ import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.webui.PersistentSessionBase
 import com.simiacryptus.skyenet.webui.SessionDiv
 import com.simiacryptus.skyenet.webui.MacroChat
+import com.simiacryptus.skyenet.webui.MessageWebSocket
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
@@ -29,16 +30,12 @@ open class OutlineApp(
         userMessage: String,
         session: PersistentSessionBase,
         sessionUI: SessionUI,
-        sessionDiv: SessionDiv
+        sessionDiv: SessionDiv,
+        socket: MessageWebSocket
     ) {
         try {
             OutlineBuilder(
-                api = OpenAIClient(
-                    logLevel = Level.DEBUG,
-                    logStreams = mutableListOf(
-                        sessionDataStorage.getSessionDir(sessionId).resolve("openai.log").outputStream().buffered()
-                    )
-                ),
+                api = socket.api,
                 verbose = false,
                 sessionDataStorage = sessionDataStorage,
                 iterations = getSettings<Settings>(sessionId)?.depth ?: 1,

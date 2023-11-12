@@ -1,5 +1,6 @@
 package com.simiacryptus.skyenet
 
+import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
@@ -18,9 +19,10 @@ import java.util.function.Function
 object AppServer : AppServerBase() {
 
     override val childWebApps by lazy {
+        val api = OpenAIClient()
         listOf(
-            ChildWebApp("/idea_mapper_ro", ReadOnlyApp("IdeaMapper")),
-            ChildWebApp("/debate_mapper_ro", ReadOnlyApp("DebateMapper")),
+            ChildWebApp("/idea_mapper_ro", ReadOnlyApp("IdeaMapper", api = api)),
+            ChildWebApp("/debate_mapper_ro", ReadOnlyApp("DebateMapper", api = api)),
             ChildWebApp("/test_coding_scala", CodingActorTestApp(CodingActor(ScalaLocalInterpreter::class)), isAuthenticated = true),
             ChildWebApp("/test_coding_kotlin", CodingActorTestApp(CodingActor(KotlinInterpreter::class)), isAuthenticated = true),
             ChildWebApp("/test_coding_groovy", CodingActorTestApp(CodingActor(GroovyInterpreter::class)), isAuthenticated = true),

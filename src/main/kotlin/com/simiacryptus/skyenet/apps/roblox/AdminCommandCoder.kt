@@ -6,8 +6,8 @@ import com.simiacryptus.skyenet.webui.*
 class AdminCommandCoder(
     applicationName: String = "AdminCommandCoder",
     oauthConfig: String? = null,
-    temperature: Double = 0.1
-) : MacroChat(
+    temperature: Double = 0.1,
+    ) : MacroChat(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
     temperature = temperature
@@ -18,12 +18,13 @@ class AdminCommandCoder(
         userMessage: String,
         session: PersistentSessionBase,
         sessionUI: SessionUI,
-        sessionDiv: SessionDiv
+        sessionDiv: SessionDiv,
+        socket: MessageWebSocket
     ) {
         sessionDiv.append("""<div>$userMessage</div>""", true)
 
         val model = OpenAIClient.Models.GPT4
-        val response = api.chat(
+        val response = socket.api.chat(
             OpenAIClient.ChatRequest(
                 messages = arrayOf(
                     OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.system, content = """

@@ -4,6 +4,7 @@ import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.webui.PersistentSessionBase
 import com.simiacryptus.skyenet.webui.SessionDiv
 import com.simiacryptus.skyenet.webui.MacroChat
+import com.simiacryptus.skyenet.webui.MessageWebSocket
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
@@ -23,16 +24,12 @@ open class MetaAgentApp(
         userMessage: String,
         session: PersistentSessionBase,
         sessionUI: SessionUI,
-        sessionDiv: SessionDiv
+        sessionDiv: SessionDiv,
+        socket: MessageWebSocket
     ) {
         try {
             AgentBuilder(
-                api = OpenAIClient(
-                    logLevel = Level.DEBUG,
-                    logStreams = mutableListOf(
-                        sessionDataStorage.getSessionDir(sessionId).resolve("openai.log").outputStream().buffered()
-                    )
-                ),
+                api = socket.api,
                 verbose = true,
                 sessionDataStorage = sessionDataStorage
             ).buildAgent(userMessage, session, sessionDiv, domainName)

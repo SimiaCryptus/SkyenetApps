@@ -30,7 +30,7 @@ open class AgentBuilder(
         if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(design.getObj())}</pre>""", false)
 
         val actorImpls = design.getObj().actors?.map { actorDesign ->
-            val actorDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
+            val actorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
             actorDiv.append("""<div>Actor: ${actorDesign.javaIdentifier}</div>""", true)
             val simpleActorDesigner = MetaActors.simpleActorDesigner()
             val parsedActorDesigner = MetaActors.parsedActorDesigner()
@@ -53,7 +53,7 @@ open class AgentBuilder(
 
         var flowCodeBuffer = StringBuilder()
         design.getObj().logicFlow?.items?.forEach { logicFlowItem ->
-            val logicFlowDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
+            val logicFlowDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
             logicFlowDiv.append("""<div>Logic Flow: ${logicFlowItem.name}</div>""", true)
             val logicFlowDesigner = MetaActors.flowStepDesigner()
             val messages = logicFlowDesigner.chatMessages(
@@ -72,7 +72,7 @@ open class AgentBuilder(
             logicFlowDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
         }
 
-        val finalCodeDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
+        val finalCodeDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
         finalCodeDiv.append("""<div>Final Code</div>""", true)
         var code = """
             |${actorImpls.values.joinToString("\n\n")}

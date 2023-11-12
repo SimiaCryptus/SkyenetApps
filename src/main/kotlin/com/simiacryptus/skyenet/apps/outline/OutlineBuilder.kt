@@ -51,7 +51,7 @@ internal open class OutlineBuilder(
         while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
         while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
 
-        val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
+        val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
         finalOutlineDiv.append("<div>Final Outline</div>", true)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("nodes.json").writeText(
             JsonUtil.toJson(nodes)
@@ -65,7 +65,7 @@ internal open class OutlineBuilder(
         )
 
         val list = getAllItems(finalOutline)
-        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
+        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
         projectorDiv.append("""<div>Embedding Projector</div>""", true)
         val response = EmbeddingVisualizer(
             api = api,
@@ -81,7 +81,7 @@ internal open class OutlineBuilder(
         finalOutlineDiv.append("<pre>$textOutline</pre>", false)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("textOutline.txt").writeText(textOutline)
 
-        val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
+        val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
         finalRenderDiv.append("<div>Final Render</div>", true)
         val finalEssay = getFinalEssay(finalOutline)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("finalEssay.md").writeText(finalEssay)
@@ -146,7 +146,7 @@ internal open class OutlineBuilder(
             OutlineApp.log.debug("Skipping: ${parent.data}")
             return null
         }
-        val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), SessionServerBase.spinner)
+        val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
         val action = actor.name!!
         newSessionDiv.append("<div>$action $sectionName</div>", true)
 
