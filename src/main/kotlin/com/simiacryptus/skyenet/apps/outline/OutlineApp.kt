@@ -39,6 +39,7 @@ open class OutlineApp(
                 verbose = settings?.verbose ?: false,
                 sessionDataStorage = sessionDataStorage,
                 iterations = settings?.depth ?: 1,
+                writeFinalEssay = settings?.writeFinalEssay ?: false,
             ).buildMap(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {
             log.warn("Error", e)

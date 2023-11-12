@@ -2,16 +2,16 @@ package com.simiacryptus.skyenet.apps.outline
 
 import com.simiacryptus.openai.GPT4Tokenizer
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.sessions.*
-import com.simiacryptus.skyenet.actors.SimpleActor
-import com.simiacryptus.skyenet.servers.EmbeddingVisualizer
 import com.simiacryptus.skyenet.actors.ParsedActor
-import com.simiacryptus.skyenet.apps.outline.OutlineActors.*
+import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.actors
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.finalWriter
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminalNodeMap
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.questionSeeder
+import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
+import com.simiacryptus.skyenet.servers.EmbeddingVisualizer
+import com.simiacryptus.skyenet.sessions.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil
 import java.util.concurrent.atomic.AtomicInteger
@@ -24,10 +24,11 @@ internal open class OutlineBuilder(
     private val questionSeeder: ParsedActor<Outline> = questionSeeder(),
     private val finalWriter: SimpleActor = finalWriter(),
     private val actors: List<ParsedActor<Outline>> = actors(),
-    private val minSize: Int = 128
+    private val minSize: Int = 128,
+    val writeFinalEssay: Boolean
 ) : OutlineManager() {
     init {
-        require(iterations > 0)
+        require(iterations > -1)
     }
 
     private var userQuestion: String? = null
@@ -48,9 +49,11 @@ internal open class OutlineBuilder(
 
         this.userQuestion = userMessage
         root = Node(answer.getText(), outline.setAllParents())
-        process(session, root!!, (iterations-1))
-        while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
-        while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
+        if (iterations > 0) {
+            process(session, root!!, (iterations - 1))
+            while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
+            while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
+        }
 
         val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         finalOutlineDiv.append("<div>Final Outline</div>", true)
@@ -82,12 +85,13 @@ internal open class OutlineBuilder(
         finalOutlineDiv.append("<pre>$textOutline</pre>", false)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("textOutline.txt").writeText(textOutline)
 
-        val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
-        finalRenderDiv.append("<div>Final Render</div>", true)
-        val finalEssay = getFinalEssay(finalOutline)
-        sessionDataStorage.getSessionDir(session.sessionId).resolve("finalEssay.md").writeText(finalEssay)
-
-        finalRenderDiv.append("<div>${MarkdownUtil.renderMarkdown(finalEssay)}</div>", false)
+        if (writeFinalEssay) {
+            val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+            finalRenderDiv.append("<div>Final Render</div>", true)
+            val finalEssay = getFinalEssay(finalOutline)
+            sessionDataStorage.getSessionDir(session.sessionId).resolve("finalEssay.md").writeText(finalEssay)
+            finalRenderDiv.append("<div>${MarkdownUtil.renderMarkdown(finalEssay)}</div>", false)
+        }
     }
 
     private fun getFinalEssay(
@@ -118,8 +122,8 @@ internal open class OutlineBuilder(
                     activeThreadCounter.incrementAndGet()
                     try {
                         val newNode = process(node, actor, item, session)
-                        if(newNode == null) return@Thread
-                        if(actor.name == "Expand") {
+                        if (newNode == null) return@Thread
+                        if (actor.name == "Expand") {
                             if (!expandedOutlineNodeMap.containsKey(childNode)) {
                                 expandedOutlineNodeMap[childNode] = newNode
                             } else {
