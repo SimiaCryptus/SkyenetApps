@@ -35,7 +35,7 @@ open class OutlineApp(
             OutlineBuilder(
                 api = OpenAIClient(
                     logLevel = Level.DEBUG,
-                    auxillaryLogOutputStream = mutableListOf(
+                    logStreams = mutableListOf(
                         sessionDataStorage.getSessionDir(sessionId).resolve("openai.log").outputStream().buffered()
                     )
                 ),
