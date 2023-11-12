@@ -32,7 +32,7 @@ kotlin {
 val kotlin_version = "1.9.20"
 val jetty_version = "11.0.17"
 val scala_version = "2.13.8"
-val skyenet_version = "1.0.25"
+val skyenet_version = "1.0.26"
 dependencies {
     implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.27")
 
