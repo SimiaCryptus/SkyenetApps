@@ -3,7 +3,10 @@ package com.simiacryptus.skyenet.apps.meta
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
+import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.codingActorDesigner
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.initialDesigner
+import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.parsedActorDesigner
+import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.simpleActorDesigner
 import com.simiacryptus.skyenet.sessions.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil
@@ -33,19 +36,17 @@ open class AgentBuilder(
         val actorImpls = design.getObj().actors?.map { actorDesign ->
             val actorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
             actorDiv.append("""<div>Actor: ${actorDesign.javaIdentifier}</div>""", true)
-            val simpleActorDesigner = MetaActors.simpleActorDesigner()
-            val parsedActorDesigner = MetaActors.parsedActorDesigner()
-            val codingActorDesigner = MetaActors.codingActorDesigner()
-            val messages = simpleActorDesigner.chatMessages(
+            val messages = simpleActorDesigner().chatMessages(
                 userMessage,
                 design.getText(),
                 "Implement ${actorDesign.javaIdentifier!!}"
             )
+            val type = actorDesign.type ?: ""
             val response = when {
-                actorDesign.type == "simple" -> simpleActorDesigner.answer(*messages, api = api)
-                actorDesign.type == "parsed" -> parsedActorDesigner.answer(*messages, api = api)
-                actorDesign.type == "coding" -> codingActorDesigner.answer(*messages, api = api)
-                else -> throw IllegalArgumentException("Unknown actor type: ${actorDesign.type}")
+                type == "simple" -> simpleActorDesigner().answer(*messages, api = api)
+                type == "parsed" -> parsedActorDesigner().answer(*messages, api = api)
+                type == "coding" -> codingActorDesigner().answer(*messages, api = api)
+                else -> throw IllegalArgumentException("Unknown actor type: $type")
             }
             val code = response.getCode()
             actorDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
