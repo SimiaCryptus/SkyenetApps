@@ -2,7 +2,7 @@ package com.simiacryptus.skyenet.apps.outline
 
 import com.simiacryptus.openai.GPT4Tokenizer
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.webui.*
+import com.simiacryptus.skyenet.sessions.*
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.servers.EmbeddingVisualizer
 import com.simiacryptus.skyenet.actors.ParsedActor
@@ -12,6 +12,7 @@ import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.finalWriter
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminalNodeMap
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.questionSeeder
+import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -51,7 +52,7 @@ internal open class OutlineBuilder(
         while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
         while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
 
-        val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+        val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         finalOutlineDiv.append("<div>Final Outline</div>", true)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("nodes.json").writeText(
             JsonUtil.toJson(nodes)
@@ -65,7 +66,7 @@ internal open class OutlineBuilder(
         )
 
         val list = getAllItems(finalOutline)
-        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         projectorDiv.append("""<div>Embedding Projector</div>""", true)
         val response = EmbeddingVisualizer(
             api = api,
@@ -81,7 +82,7 @@ internal open class OutlineBuilder(
         finalOutlineDiv.append("<pre>$textOutline</pre>", false)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("textOutline.txt").writeText(textOutline)
 
-        val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+        val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         finalRenderDiv.append("<div>Final Render</div>", true)
         val finalEssay = getFinalEssay(finalOutline)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("finalEssay.md").writeText(finalEssay)
@@ -146,7 +147,7 @@ internal open class OutlineBuilder(
             OutlineApp.log.debug("Skipping: ${parent.data}")
             return null
         }
-        val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+        val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         val action = actor.name!!
         newSessionDiv.append("<div>$action $sectionName</div>", true)
 

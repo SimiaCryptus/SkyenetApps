@@ -1,11 +1,12 @@
 package com.simiacryptus.skyenet.apps.debate
 
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.webui.*
+import com.simiacryptus.skyenet.sessions.*
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.servers.EmbeddingVisualizer
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.debate.DebateActors.*
+import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil
 
 open class DebateManager(
@@ -26,7 +27,7 @@ open class DebateManager(
 
         val totalSummary =
             (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().map { question ->
-                val summarizorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+                val summarizorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
                 val answers = (moderatorResponse.getObj().debators?.list ?: emptyList()).parallelStream()
                     .map { actor -> answer(session, actor, question) }.toList()
                 summarizorDiv.append(
@@ -45,7 +46,7 @@ open class DebateManager(
         } +
                 (moderatorResponse.getObj().questions?.list?.map { it.text ?: "" }?.filter { it.isNotBlank() }?.toSet()
                     ?: emptySet())
-        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         projectorDiv.append("""<div>Embedding Projector</div>""", true)
         val response = EmbeddingVisualizer(
             api = api,
@@ -56,7 +57,7 @@ open class DebateManager(
         ).writeTensorflowEmbeddingProjectorHtml(*argumentList.toTypedArray())
         projectorDiv.append("""<div>$response</div>""", false)
 
-        val conclusionDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+        val conclusionDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         if (verbose) conclusionDiv.append("""<pre>${JsonUtil.toJson(totalSummary)}</pre>""", true)
         val summarizorResponse = summarizor.answer(*totalSummary.toTypedArray(), api = api)
         if (verbose) conclusionDiv.append("""<pre>${JsonUtil.toJson(summarizorResponse)}</pre>""", false)
@@ -68,7 +69,7 @@ open class DebateManager(
         actor: Debator,
         question: Question
     ): String {
-        val resonseDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+        val resonseDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         resonseDiv.append(
             """<div>${actor.name?.trim() ?: ""} - ${
                 MarkdownUtil.renderMarkdown(question.text ?: "").trim()

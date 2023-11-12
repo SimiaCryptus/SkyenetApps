@@ -1,13 +1,14 @@
 package com.simiacryptus.skyenet.apps.roblox
 
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.webui.*
+import com.simiacryptus.skyenet.sessions.*
+import com.simiacryptus.skyenet.util.MarkdownUtil
 
 class BehaviorScriptCoder(
     applicationName: String = "BehaviorScriptCoder",
     oauthConfig: String? = null,
     temperature: Double = 0.1,
-) : MacroChat(
+) : ChatApplicationBase(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
     temperature = temperature
@@ -17,7 +18,6 @@ class BehaviorScriptCoder(
         sessionId: String,
         userMessage: String,
         session: PersistentSessionBase,
-        sessionUI: SessionUI,
         sessionDiv: SessionDiv,
         socket: MessageWebSocket,
     ) {

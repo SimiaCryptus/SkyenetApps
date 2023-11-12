@@ -1,19 +1,17 @@
 package com.simiacryptus.skyenet.apps.outline
 
-import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.webui.PersistentSessionBase
-import com.simiacryptus.skyenet.webui.SessionDiv
-import com.simiacryptus.skyenet.webui.MacroChat
-import com.simiacryptus.skyenet.webui.MessageWebSocket
+import com.simiacryptus.skyenet.sessions.PersistentSessionBase
+import com.simiacryptus.skyenet.sessions.SessionDiv
+import com.simiacryptus.skyenet.sessions.ChatApplicationBase
+import com.simiacryptus.skyenet.sessions.MessageWebSocket
 import org.slf4j.LoggerFactory
-import org.slf4j.event.Level
 
 open class OutlineApp(
     applicationName: String = "IdeaMapper",
     temperature: Double = 0.3,
     oauthConfig: String? = null,
     val domainName: String,
-) : MacroChat(
+) : ChatApplicationBase(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
     temperature = temperature,
@@ -21,6 +19,8 @@ open class OutlineApp(
 
     data class Settings(
         val depth: Int = 0,
+        val writeFinalEssay: Boolean = false,
+        val verbose: Boolean = false,
     )
     override val settingsClass: Class<*> get() = Settings::class.java
     @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(sessionId: String): T? = Settings() as T
@@ -29,16 +29,16 @@ open class OutlineApp(
         sessionId: String,
         userMessage: String,
         session: PersistentSessionBase,
-        sessionUI: SessionUI,
         sessionDiv: SessionDiv,
         socket: MessageWebSocket
     ) {
         try {
+            val settings = getSettings<Settings>(sessionId)
             OutlineBuilder(
                 api = socket.api,
-                verbose = false,
+                verbose = settings?.verbose ?: false,
                 sessionDataStorage = sessionDataStorage,
-                iterations = getSettings<Settings>(sessionId)?.depth ?: 1,
+                iterations = settings?.depth ?: 1,
             ).buildMap(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {
             log.warn("Error", e)

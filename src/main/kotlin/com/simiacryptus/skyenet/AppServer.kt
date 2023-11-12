@@ -16,20 +16,19 @@ import com.simiacryptus.skyenet.servers.*
 import java.util.function.Function
 
 
-object AppServer : AppServerBase() {
+object AppServer : AppServerBase(publicName = "apps.simiacrypt.us") {
 
     override val childWebApps by lazy {
-        val api = OpenAIClient()
         listOf(
-            ChildWebApp("/idea_mapper_ro", ReadOnlyApp("IdeaMapper", api = api)),
-            ChildWebApp("/debate_mapper_ro", ReadOnlyApp("DebateMapper", api = api)),
+            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName), isAuthenticated = true),
+            ChildWebApp("/idea_mapper_ro", ReadOnlyApp("IdeaMapper"), isPublicOnly = true),
+            ChildWebApp("/debate_mapper", DebateApp(domainName = domainName), isAuthenticated = true),
+            ChildWebApp("/debate_mapper_ro", ReadOnlyApp("DebateMapper"), isPublicOnly = true),
             ChildWebApp("/test_coding_scala", CodingActorTestApp(CodingActor(ScalaLocalInterpreter::class)), isAuthenticated = true),
             ChildWebApp("/test_coding_kotlin", CodingActorTestApp(CodingActor(KotlinInterpreter::class)), isAuthenticated = true),
             ChildWebApp("/test_coding_groovy", CodingActorTestApp(CodingActor(GroovyInterpreter::class)), isAuthenticated = true),
             ChildWebApp("/test_simple", SimpleActorTestApp(SimpleActor("Translate the user's request into pig latin.", "PigLatin"))),
             ChildWebApp("/test_parsed_joke", ParsedActorTestApp(ParsedActor(JokeParser::class.java, "Tell me a joke"))),
-            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName), isAuthenticated = true),
-            ChildWebApp("/debate_mapper", DebateApp(domainName = domainName), isAuthenticated = true),
             ChildWebApp("/meta_agent", MetaAgentApp(domainName = domainName), isAuthenticated = true),
             ChildWebApp("/roblox_cmd", AdminCommandCoder()),
             ChildWebApp("/roblox_script", BehaviorScriptCoder()),

@@ -1,19 +1,17 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.webui.PersistentSessionBase
-import com.simiacryptus.skyenet.webui.SessionDiv
-import com.simiacryptus.skyenet.webui.MacroChat
-import com.simiacryptus.skyenet.webui.MessageWebSocket
+import com.simiacryptus.skyenet.sessions.PersistentSessionBase
+import com.simiacryptus.skyenet.sessions.SessionDiv
+import com.simiacryptus.skyenet.sessions.ChatApplicationBase
+import com.simiacryptus.skyenet.sessions.MessageWebSocket
 import org.slf4j.LoggerFactory
-import org.slf4j.event.Level
 
 open class MetaAgentApp(
     applicationName: String = "MetaAgent",
     temperature: Double = 0.3,
     oauthConfig: String? = null,
     val domainName: String,
-) : MacroChat(
+) : ChatApplicationBase(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
     temperature = temperature,
@@ -23,7 +21,6 @@ open class MetaAgentApp(
         sessionId: String,
         userMessage: String,
         session: PersistentSessionBase,
-        sessionUI: SessionUI,
         sessionDiv: SessionDiv,
         socket: MessageWebSocket
     ) {

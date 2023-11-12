@@ -4,7 +4,8 @@ import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.initialDesigner
-import com.simiacryptus.skyenet.webui.*
+import com.simiacryptus.skyenet.sessions.*
+import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil
 
 open class AgentBuilder(
@@ -30,7 +31,7 @@ open class AgentBuilder(
         if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(design.getObj())}</pre>""", false)
 
         val actorImpls = design.getObj().actors?.map { actorDesign ->
-            val actorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+            val actorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
             actorDiv.append("""<div>Actor: ${actorDesign.javaIdentifier}</div>""", true)
             val simpleActorDesigner = MetaActors.simpleActorDesigner()
             val parsedActorDesigner = MetaActors.parsedActorDesigner()
@@ -53,7 +54,7 @@ open class AgentBuilder(
 
         var flowCodeBuffer = StringBuilder()
         design.getObj().logicFlow?.items?.forEach { logicFlowItem ->
-            val logicFlowDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+            val logicFlowDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
             logicFlowDiv.append("""<div>Logic Flow: ${logicFlowItem.name}</div>""", true)
             val logicFlowDesigner = MetaActors.flowStepDesigner()
             val messages = logicFlowDesigner.chatMessages(
@@ -72,7 +73,7 @@ open class AgentBuilder(
             logicFlowDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
         }
 
-        val finalCodeDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationServerBase.spinner)
+        val finalCodeDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         finalCodeDiv.append("""<div>Final Code</div>""", true)
         var code = """
             |${actorImpls.values.joinToString("\n\n")}
