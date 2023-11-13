@@ -15,19 +15,10 @@ open class OutlineManager {
         val name: String
     )
 
-    fun OutlineActors.Outline.setAllParents(parent: OutlineActors.Item? = null): OutlineActors.Outline {
-        this.items?.forEach { item ->
-            if(parent != null) parentMap[item] = parent
-            item.children?.setAllParents(item)
-        }
-        return this
-    }
-
     var root: Node? = null
     val relationships = mutableListOf<Relationship>()
     val nodes = mutableListOf<Node>()
     val expandedOutlineNodeMap = mutableMapOf<OutlineActors.Item, Node>()
-    private val parentMap: MutableMap<OutlineActors.Item, OutlineActors.Item> = mutableMapOf()
 
     private fun explode(item: OutlineActors.Item): List<OutlineActors.Item> {
         val size = item.children?.items?.size ?: 0
@@ -55,17 +46,12 @@ open class OutlineManager {
 
     fun explode(outline: OutlineActors.Outline): List<OutlineActors.Outline>? {
         val size = outline.items?.size ?: 0
-        if(size > 1) return outline.items?.map { item ->
-            OutlineActors.Outline(listOf(item.deepClone()))
-        }
-        else if (size == 0) {
-            return listOf(outline)
-        } else {
-            // size == 1
-            val child = outline.items?.first() ?: return listOf(outline)
-            val explodedChild = explode(child)
-            return explodedChild.map { item ->
-                OutlineActors.Outline(listOf(item.deepClone()))
+        return when {
+            size == 0 -> listOf(outline)
+            size > 1 -> outline.items?.map {OutlineActors.Outline(listOf(it.deepClone())) }
+            else -> {
+                val child = outline.items?.first() ?: return listOf(outline)
+                explode(child).map { OutlineActors.Outline(listOf(it.deepClone())) }
             }
         }
     }
@@ -82,15 +68,16 @@ open class OutlineManager {
 
     private fun replaceWithExpandedNodes(node: OutlineActors.Outline?): OutlineActors.Outline? {
         return OutlineActors.Outline(items = node?.items?.map { item: OutlineActors.Item ->
-            val expandedNode = expandedOutlineNodeMap[item]
-            val expandedOutline = expandedNode?.outline?.deepClone()
-            if (expandedOutline == node) item.deepClone()
-            else if (node == item.children) item.deepClone()
-            else if (expandedOutline == null) item.deepClone()
-            else {
-                var children = getOutlineForSubstitution(item.children, expandedOutline)
-                if (null != children) children = replaceWithExpandedNodes(children)
-                item.deepClone().copy(children = children)
+            val expandedOutline = expandedOutlineNodeMap[item]?.outline?.deepClone()
+            when {
+                expandedOutline == node -> item.deepClone()
+                node == item.children -> item.deepClone()
+                expandedOutline == null -> item.deepClone()
+                else -> {
+                    var children = getOutlineForSubstitution(item.children, expandedOutline)
+                    if (null != children) children = replaceWithExpandedNodes(children)
+                    item.deepClone().copy(children = children)
+                }
             }
         } ?: return null)
     }

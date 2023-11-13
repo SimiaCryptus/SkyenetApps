@@ -4,16 +4,16 @@ import com.simiacryptus.openai.GPT4Tokenizer
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
-import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.actors
+import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.expansionAuthor
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.finalWriter
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminalNodeMap
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
-import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.questionSeeder
+import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.initialAuthor
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
 import com.simiacryptus.skyenet.servers.EmbeddingVisualizer
 import com.simiacryptus.skyenet.sessions.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.util.JsonUtil.toJson
 import java.util.concurrent.atomic.AtomicInteger
 
 internal open class OutlineBuilder(
@@ -21,12 +21,13 @@ internal open class OutlineBuilder(
     val verbose: Boolean,
     val sessionDataStorage: SessionDataStorage,
     private val iterations: Int,
-    private val questionSeeder: ParsedActor<Outline> = questionSeeder(),
-    private val finalWriter: SimpleActor = finalWriter(),
-    private val actors: List<ParsedActor<Outline>> = actors(),
-    private val minSize: Int = 128,
+    private val temperature: Double,
+    private val questionSeeder: ParsedActor<Outline> = initialAuthor(temperature),
+    private val finalWriter: SimpleActor = finalWriter(temperature),
+    private val expandWriter: ParsedActor<Outline> = expansionAuthor(temperature),
+    private val minSize: Int,
     val writeFinalEssay: Boolean,
-    val showProjector: Boolean = true,
+    val showProjector: Boolean,
 ) : OutlineManager() {
     init {
         require(iterations > -1)
@@ -46,33 +47,28 @@ internal open class OutlineBuilder(
         val answer = questionSeeder.answer(*questionSeeder.chatMessages(userMessage), api = api)
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>""", verbose)
         val outline = answer.getObj()
-        if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(outline)}</pre>""", false)
+        if (verbose) sessionDiv.append("""<pre>${toJson(outline)}</pre>""", false)
 
         this.userQuestion = userMessage
-        root = Node(answer.getText(), outline.setAllParents())
+        root = Node(answer.getText(), outline)
         if (iterations > 0) {
             process(session, root!!, (iterations - 1))
             while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
             while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
         }
 
-        sessionDataStorage.getSessionDir(session.sessionId).resolve("nodes.json").writeText(
-            JsonUtil.toJson(nodes)
-        )
-        sessionDataStorage.getSessionDir(session.sessionId).resolve("relationships.json").writeText(
-            JsonUtil.toJson(relationships)
-        )
+        val sessionDir = sessionDataStorage.getSessionDir(session.sessionId)
+        sessionDir.resolve("nodes.json").writeText(toJson(nodes))
+        sessionDir.resolve("relationships.json").writeText(toJson(relationships))
 
         val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
         finalOutlineDiv.append("<div>Final Outline</div>", true)
         val finalOutline = buildFinalOutline()
-        if (verbose) finalOutlineDiv.append("<pre>${JsonUtil.toJson(finalOutline)}</pre>", true)
+        if (verbose) finalOutlineDiv.append("<pre>${toJson(finalOutline)}</pre>", true)
         val textOutline = finalOutline.getTextOutline()
         finalOutlineDiv.append("<pre>$textOutline</pre>", false)
-        sessionDataStorage.getSessionDir(session.sessionId).resolve("finalOutline.json").writeText(
-            JsonUtil.toJson(finalOutline)
-        )
-        sessionDataStorage.getSessionDir(session.sessionId).resolve("textOutline.txt").writeText(textOutline)
+        sessionDir.resolve("finalOutline.json").writeText(toJson(finalOutline))
+        sessionDir.resolve("textOutline.txt").writeText(textOutline)
 
         if(showProjector) {
             val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
@@ -91,7 +87,7 @@ internal open class OutlineBuilder(
             val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
             finalRenderDiv.append("<div>Final Render</div>", true)
             val finalEssay = getFinalEssay(finalOutline)
-            sessionDataStorage.getSessionDir(session.sessionId).resolve("finalEssay.md").writeText(finalEssay)
+            sessionDir.resolve("finalEssay.md").writeText(finalEssay)
             finalRenderDiv.append("<div>${MarkdownUtil.renderMarkdown(finalEssay)}</div>", false)
         }
     }
@@ -119,27 +115,24 @@ internal open class OutlineBuilder(
         depth: Int
     ) {
         for ((item, childNode) in node.outline.getTerminalNodeMap()) {
-            for (actor in actors) {
-                Thread {
-                    activeThreadCounter.incrementAndGet()
-                    try {
-                        val newNode = process(node, actor, item, session)
-                        if (newNode == null) return@Thread
-                        if (actor.name == "Expand") {
-                            if (!expandedOutlineNodeMap.containsKey(childNode)) {
-                                expandedOutlineNodeMap[childNode] = newNode
-                            } else {
-                                val existingNode = expandedOutlineNodeMap[childNode]!!
-                                OutlineApp.log.warn("Conflict: ${existingNode.data} vs ${newNode.data}")
-                                relationships.add(Relationship(existingNode, newNode, "Conflict"))
-                            }
+            Thread {
+                activeThreadCounter.incrementAndGet()
+                try {
+                    val newNode = process(node, expandWriter, item, session) ?: return@Thread
+                    synchronized(expandedOutlineNodeMap) {
+                        if (!expandedOutlineNodeMap.containsKey(childNode)) {
+                            expandedOutlineNodeMap[childNode] = newNode
+                        } else {
+                            val existingNode = expandedOutlineNodeMap[childNode]!!
+                            OutlineApp.log.warn("Conflict: ${existingNode.data} vs ${newNode.data}")
+                            relationships.add(Relationship(existingNode, newNode, "Conflict"))
                         }
-                        if (depth > 0) process(session, newNode, depth - 1)
-                    } finally {
-                        activeThreadCounter.decrementAndGet()
                     }
-                }.start()
-            }
+                    if (depth > 0) process(session, newNode, depth - 1)
+                } finally {
+                    activeThreadCounter.decrementAndGet()
+                }
+            }.start()
         }
     }
 
@@ -154,21 +147,15 @@ internal open class OutlineBuilder(
             return null
         }
         val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
-        val action = actor.name!!
-        newSessionDiv.append("<div>$action $sectionName</div>", true)
+        newSessionDiv.append("<div>Expand $sectionName</div>", true)
 
         val answer = actor.answer(*actor.chatMessages(userQuestion ?: "", parent.data, sectionName), api = api)
-        newSessionDiv.append(
-            "<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>",
-            verbose
-        )
-        val outline = answer.getObj().setAllParents()
-        if (verbose) newSessionDiv.append("<pre>${JsonUtil.toJson(outline)}</pre>", false)
+        newSessionDiv.append("<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>", verbose)
+        if (verbose) newSessionDiv.append("<pre>${toJson(answer.getObj())}</pre>", false)
 
-        val newNode = Node(answer.getText(), outline)
+        val newNode = Node(answer.getText(), answer.getObj())
         nodes.add(newNode)
-        relationships.add(Relationship(parent, newNode, "$action " + sectionName))
-
+        relationships.add(Relationship(parent, newNode, "Expanded $sectionName"))
         return newNode
     }
 

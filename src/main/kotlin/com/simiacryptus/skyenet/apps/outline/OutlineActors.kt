@@ -2,8 +2,8 @@ package com.simiacryptus.skyenet.apps.outline
 
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.proxy.ValidatedObject
-import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.actors.ParsedActor
+import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.util.describe.Description
 import java.util.function.Function
 
@@ -31,9 +31,10 @@ interface OutlineActors {
             else -> true
         }
     }
+
     companion object {
         fun Outline.deepClone(): Outline =
-             Outline(this.items?.map { it.deepClone() })
+            Outline(this.items?.map { it.deepClone() })
 
         fun Item.deepClone(): Item = Item(
             section_name = this.section_name,
@@ -55,32 +56,37 @@ interface OutlineActors {
             sb.append("* " + ((text?.replace("\n", "\\n") ?: section_name)?.trim() ?: ""))
             sb.append("\n")
             val childrenTxt = children?.getTextOutline()?.replace("\n", "\n\t")?.trim() ?: ""
-            if(childrenTxt.isNotEmpty()) sb.append("\t" + childrenTxt)
+            if (childrenTxt.isNotEmpty()) sb.append("\t" + childrenTxt)
             return sb.toString()
         }
 
-        fun Outline.getTerminalNodeMap(): Map<String, Item> = items?.flatMap { item ->
-            val children = item.children
-            if(children?.items?.isEmpty() != false) listOf(item.section_name!! to item)
-            else children.getTerminalNodeMap().map { (key, value) -> item.section_name + " / " + key to value }
-        }?.toMap() ?: emptyMap()
+        fun Outline.getTerminalNodeMap(): Map<String, Item> {
+            return items?.map { item ->
+                if (item.children?.items?.isEmpty() ?: true) mapOf(item.section_name!! to item)
+                else item.children?.getTerminalNodeMap()?.mapKeys { key -> item.section_name + " / " + key } ?: mapOf()
+            }?.flatMap { it.entries.map { it.key to it.value } }?.toList()?.toMap() ?: emptyMap()
+        }
 
-        fun questionSeeder() = ParsedActor(
+        fun initialAuthor(temperature: Double) = ParsedActor(
             OutlineParser::class.java,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
             model = OpenAIClient.Models.GPT4Turbo,
+            temperature = temperature,
         )
-        fun finalWriter() = SimpleActor(
+
+        fun expansionAuthor(temperature: Double): ParsedActor<Outline> = ParsedActor(
+            parserClass = OutlineParser::class.java,
+            action = "Expand",
+            prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
+            model = OpenAIClient.Models.GPT35Turbo,
+            temperature = temperature,
+        )
+
+        fun finalWriter(temperature: Double) = SimpleActor(
             prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
             model = OpenAIClient.Models.GPT4Turbo,
+            temperature = temperature,
         )
-        fun actors(): List<ParsedActor<Outline>> = listOf(
-            ParsedActor<Outline>(
-                parserClass = OutlineParser::class.java,
-                action = "Expand",
-                prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
-                model = OpenAIClient.Models.GPT35Turbo
-            ),
-        )
+
     }
 }
