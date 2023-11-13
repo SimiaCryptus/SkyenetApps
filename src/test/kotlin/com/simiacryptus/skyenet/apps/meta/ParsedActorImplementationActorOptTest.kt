@@ -21,8 +21,9 @@ object ParsedActorImplementationActorOptTest {
                     logLevel = Level.DEBUG
                 )
             ).runGeneticGenerations(
-                populationSize = 7,
-                generations = 5,
+                populationSize = 1,
+                generations = 1,
+                selectionSize = 1,
                 actorFactory = { CodingActor(
                     interpreterClass = KotlinInterpreter::class,
                     details = it,

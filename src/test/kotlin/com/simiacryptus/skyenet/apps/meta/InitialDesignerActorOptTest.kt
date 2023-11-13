@@ -25,6 +25,7 @@ object InitialDesignerActorOptTest {
             ).runGeneticGenerations(
                 populationSize = 1,
                 generations = 1,
+                selectionSize = 1,
                 actorFactory = { ParsedActor(
                     MetaActors.DesignParser::class.java,
                     prompt = it,

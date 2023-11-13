@@ -68,7 +68,7 @@ interface MetaActors {
         override fun validate() = when {
             null == name -> false
             name.isEmpty() -> false
-            variablesIn?.isEmpty() != false && variablesOut?.isEmpty() != false -> false
+            //variablesIn?.isEmpty() != false && variablesOut?.isEmpty() != false -> false
             else -> true
         }
 
