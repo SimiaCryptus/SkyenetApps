@@ -30,11 +30,11 @@ kotlin {
 }
 
 val kotlin_version = "1.9.20"
-val jetty_version = "11.0.17"
+val jetty_version = "11.0.18"
 val scala_version = "2.13.8"
-val skyenet_version = "1.0.26"
+val skyenet_version = "1.0.27"
 dependencies {
-    implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.27")
+    implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.28")
 
     implementation(group = "com.simiacryptus.skyenet", name = "core", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "groovy", version = skyenet_version)
@@ -46,8 +46,8 @@ dependencies {
     implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
     implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
-    implementation(group = "commons-io", name = "commons-io", version = "2.11.0")
-    implementation(group = "com.amazonaws", name = "aws-java-sdk", version = "1.12.454")
+    implementation(group = "commons-io", name = "commons-io", version = "2.15.0")
+    implementation(group = "com.amazonaws", name = "aws-java-sdk", version = "1.12.587")
 
     implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.9")
     implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.4.11")

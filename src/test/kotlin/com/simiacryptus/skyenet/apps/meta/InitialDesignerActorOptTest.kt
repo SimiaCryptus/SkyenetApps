@@ -23,8 +23,8 @@ object InitialDesignerActorOptTest {
                     logLevel = Level.DEBUG
                 )
             ).runGeneticGenerations(
-                populationSize = 7,
-                generations = 5,
+                populationSize = 1,
+                generations = 1,
                 actorFactory = { ParsedActor(
                     MetaActors.DesignParser::class.java,
                     prompt = it,

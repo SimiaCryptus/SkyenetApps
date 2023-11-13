@@ -80,26 +80,31 @@ open class OutlineManager {
         return clonedRoot ?: OutlineActors.Outline()
     }
 
-    private fun replaceWithExpandedNodes(node: OutlineActors.Outline): OutlineActors.Outline {
-        val items = node.items?.map { item: OutlineActors.Item ->
+    private fun replaceWithExpandedNodes(node: OutlineActors.Outline?): OutlineActors.Outline? {
+        return OutlineActors.Outline(items = node?.items?.map { item: OutlineActors.Item ->
             val expandedNode = expandedOutlineNodeMap[item]
             val expandedOutline = expandedNode?.outline?.deepClone()
             if (expandedOutline == node) item.deepClone()
             else if (node == item.children) item.deepClone()
             else if (expandedOutline == null) item.deepClone()
             else {
-                var children = item.children
-                if (1 == expandedOutline.items?.size) {
-                    children = expandedOutline.items.first().children
-                } else if ((expandedOutline.items?.size ?: 0) > 1) {
-                    children = expandedOutline
-                } else {
-                    // No expansion
-                }
+                var children = getOutlineForSubstitution(item.children, expandedOutline)
                 if (null != children) children = replaceWithExpandedNodes(children)
                 item.deepClone().copy(children = children)
             }
+        } ?: return null)
+    }
+
+    private fun getOutlineForSubstitution(
+        prior: OutlineActors.Outline?,
+        expanded: OutlineActors.Outline
+    ): OutlineActors.Outline? {
+        return if (1 == (expanded.items?.size ?: 0)) {
+            expanded.items?.first()?.children ?: prior
+        } else if ((expanded.items?.size ?: 0) > 1) {
+            expanded
+        } else {
+            prior
         }
-        return OutlineActors.Outline(items = items)
     }
 }

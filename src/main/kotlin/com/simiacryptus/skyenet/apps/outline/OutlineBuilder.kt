@@ -25,7 +25,8 @@ internal open class OutlineBuilder(
     private val finalWriter: SimpleActor = finalWriter(),
     private val actors: List<ParsedActor<Outline>> = actors(),
     private val minSize: Int = 128,
-    val writeFinalEssay: Boolean
+    val writeFinalEssay: Boolean,
+    val showProjector: Boolean = true,
 ) : OutlineManager() {
     init {
         require(iterations > -1)
@@ -55,35 +56,36 @@ internal open class OutlineBuilder(
             while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
         }
 
-        val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
-        finalOutlineDiv.append("<div>Final Outline</div>", true)
         sessionDataStorage.getSessionDir(session.sessionId).resolve("nodes.json").writeText(
             JsonUtil.toJson(nodes)
         )
         sessionDataStorage.getSessionDir(session.sessionId).resolve("relationships.json").writeText(
             JsonUtil.toJson(relationships)
         )
+
+        val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+        finalOutlineDiv.append("<div>Final Outline</div>", true)
         val finalOutline = buildFinalOutline()
-        sessionDataStorage.getSessionDir(session.sessionId).resolve("finalOutline.json").writeText(
-            JsonUtil.toJson(finalOutline)
-        )
-
-        val list = getAllItems(finalOutline)
-        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
-        projectorDiv.append("""<div>Embedding Projector</div>""", true)
-        val response = EmbeddingVisualizer(
-            api = api,
-            sessionDataStorage = sessionDataStorage,
-            sessionID = sessionDiv.sessionID(),
-            appPath = "idea_mapper_ro",
-            host = domainName
-        ).writeTensorflowEmbeddingProjectorHtml(*list.toTypedArray())
-        projectorDiv.append("""<div>$response</div>""", false)
-
         if (verbose) finalOutlineDiv.append("<pre>${JsonUtil.toJson(finalOutline)}</pre>", true)
         val textOutline = finalOutline.getTextOutline()
         finalOutlineDiv.append("<pre>$textOutline</pre>", false)
+        sessionDataStorage.getSessionDir(session.sessionId).resolve("finalOutline.json").writeText(
+            JsonUtil.toJson(finalOutline)
+        )
         sessionDataStorage.getSessionDir(session.sessionId).resolve("textOutline.txt").writeText(textOutline)
+
+        if(showProjector) {
+            val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+            projectorDiv.append("""<div>Embedding Projector</div>""", true)
+            val response = EmbeddingVisualizer(
+                api = api,
+                sessionDataStorage = sessionDataStorage,
+                sessionID = sessionDiv.sessionID(),
+                appPath = "idea_mapper_ro",
+                host = domainName
+            ).writeTensorflowEmbeddingProjectorHtml(*getAllItems(finalOutline).toTypedArray())
+            projectorDiv.append("""<div>$response</div>""", false)
+        }
 
         if (writeFinalEssay) {
             val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
