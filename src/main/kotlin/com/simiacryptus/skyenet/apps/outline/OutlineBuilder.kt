@@ -1,7 +1,9 @@
 package com.simiacryptus.skyenet.apps.outline
 
+import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.openai.GPT4Tokenizer
 import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.skyenet.ApplicationBase
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.expansionAuthor
@@ -10,8 +12,8 @@ import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminal
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.initialAuthor
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
-import com.simiacryptus.skyenet.servers.EmbeddingVisualizer
-import com.simiacryptus.skyenet.sessions.*
+import com.simiacryptus.skyenet.util.EmbeddingVisualizer
+import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil.toJson
 import java.util.concurrent.atomic.AtomicInteger
@@ -61,7 +63,7 @@ internal open class OutlineBuilder(
         sessionDir.resolve("nodes.json").writeText(toJson(nodes))
         sessionDir.resolve("relationships.json").writeText(toJson(relationships))
 
-        val finalOutlineDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+        val finalOutlineDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
         finalOutlineDiv.append("<div>Final Outline</div>", true)
         val finalOutline = buildFinalOutline()
         if (verbose) finalOutlineDiv.append("<pre>${toJson(finalOutline)}</pre>", true)
@@ -71,7 +73,7 @@ internal open class OutlineBuilder(
         sessionDir.resolve("textOutline.txt").writeText(textOutline)
 
         if(showProjector) {
-            val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+            val projectorDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
             projectorDiv.append("""<div>Embedding Projector</div>""", true)
             val response = EmbeddingVisualizer(
                 api = api,
@@ -84,7 +86,7 @@ internal open class OutlineBuilder(
         }
 
         if (writeFinalEssay) {
-            val finalRenderDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+            val finalRenderDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
             finalRenderDiv.append("<div>Final Render</div>", true)
             val finalEssay = getFinalEssay(finalOutline)
             sessionDir.resolve("finalEssay.md").writeText(finalEssay)
@@ -108,6 +110,7 @@ internal open class OutlineBuilder(
         ""
     }
 
+    val pool = MoreExecutors.listeningDecorator(java.util.concurrent.Executors.newCachedThreadPool())
 
     private fun process(
         session: SessionBase,
@@ -115,10 +118,10 @@ internal open class OutlineBuilder(
         depth: Int
     ) {
         for ((item, childNode) in node.outline.getTerminalNodeMap()) {
-            Thread {
+            pool.submit {
                 activeThreadCounter.incrementAndGet()
                 try {
-                    val newNode = process(node, expandWriter, item, session) ?: return@Thread
+                    val newNode = process(node, expandWriter, item, session) ?: return@submit
                     synchronized(expandedOutlineNodeMap) {
                         if (!expandedOutlineNodeMap.containsKey(childNode)) {
                             expandedOutlineNodeMap[childNode] = newNode
@@ -132,7 +135,7 @@ internal open class OutlineBuilder(
                 } finally {
                     activeThreadCounter.decrementAndGet()
                 }
-            }.start()
+            }
         }
     }
 
@@ -146,7 +149,7 @@ internal open class OutlineBuilder(
             OutlineApp.log.debug("Skipping: ${parent.data}")
             return null
         }
-        val newSessionDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+        val newSessionDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
         newSessionDiv.append("<div>Expand $sectionName</div>", true)
 
         val answer = actor.answer(*actor.chatMessages(userQuestion ?: "", parent.data, sectionName), api = api)

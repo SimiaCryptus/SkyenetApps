@@ -1,14 +1,16 @@
 package com.simiacryptus.skyenet.apps.roblox
 
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.sessions.*
+import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.chat.ChatSocket
+import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 
 class BehaviorScriptCoder(
     applicationName: String = "BehaviorScriptCoder",
     oauthConfig: String? = null,
     temperature: Double = 0.1,
-) : ChatApplicationBase(
+) : ApplicationBase(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
     temperature = temperature
@@ -17,9 +19,9 @@ class BehaviorScriptCoder(
     override fun processMessage(
         sessionId: String,
         userMessage: String,
-        session: PersistentSessionBase,
+        session: ApplicationSession,
         sessionDiv: SessionDiv,
-        socket: MessageWebSocket,
+        socket: ChatSocket,
     ) {
         sessionDiv.append("""<div>$userMessage</div>""", true)
 

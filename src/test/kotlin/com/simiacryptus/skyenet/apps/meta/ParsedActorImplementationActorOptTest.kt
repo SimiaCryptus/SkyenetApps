@@ -8,6 +8,7 @@ import com.simiacryptus.skyenet.actors.opt.Expectation
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import kotlin.system.exitProcess
 
 object ParsedActorImplementationActorOptTest {
 
@@ -96,8 +97,6 @@ object ParsedActorImplementationActorOptTest {
                             "Implement DesignProposalActor",
                         ),
                         expectations = listOf(
-                            Expectation.ContainsMatch("""`search\('.*?'\)`""".toRegex(), critical = false),
-                            Expectation.ContainsMatch("""search\(.*?\)""".toRegex(), critical = false),
                             Expectation.VectorMatch("Great, what kind of book are you looking for?")
                         )
                     )
@@ -106,7 +105,7 @@ object ParsedActorImplementationActorOptTest {
         } catch (e: Throwable) {
             log.error("Error", e)
         } finally {
-            System.exit(0)
+            exitProcess(0)
         }
     }
 

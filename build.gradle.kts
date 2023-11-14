@@ -29,10 +29,8 @@ kotlin {
     jvmToolchain(17)
 }
 
-val kotlin_version = "1.9.20"
 val jetty_version = "11.0.18"
-val scala_version = "2.13.8"
-val skyenet_version = "1.0.27"
+val skyenet_version = "1.0.28"
 dependencies {
     implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.28")
 

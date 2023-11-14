@@ -8,6 +8,7 @@ import com.simiacryptus.skyenet.actors.opt.Expectation
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import kotlin.system.exitProcess
 
 object SimpleActorImplementationActorOptTest {
 
@@ -78,7 +79,7 @@ object SimpleActorImplementationActorOptTest {
         } catch (e: Throwable) {
             log.error("Error", e)
         } finally {
-            System.exit(0)
+            exitProcess(0)
         }
     }
 

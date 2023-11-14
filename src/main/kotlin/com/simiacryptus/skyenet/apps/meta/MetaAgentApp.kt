@@ -1,9 +1,8 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.skyenet.sessions.PersistentSessionBase
-import com.simiacryptus.skyenet.sessions.SessionDiv
-import com.simiacryptus.skyenet.sessions.ChatApplicationBase
-import com.simiacryptus.skyenet.sessions.MessageWebSocket
+import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.chat.ChatSocket
+import com.simiacryptus.skyenet.session.*
 import org.slf4j.LoggerFactory
 
 open class MetaAgentApp(
@@ -11,7 +10,7 @@ open class MetaAgentApp(
     temperature: Double = 0.3,
     oauthConfig: String? = null,
     val domainName: String,
-) : ChatApplicationBase(
+) : ApplicationBase(
     applicationName = applicationName,
     oauthConfig = oauthConfig,
     temperature = temperature,
@@ -20,9 +19,9 @@ open class MetaAgentApp(
     override fun processMessage(
         sessionId: String,
         userMessage: String,
-        session: PersistentSessionBase,
+        session: ApplicationSession,
         sessionDiv: SessionDiv,
-        socket: MessageWebSocket
+        socket: ChatSocket
     ) {
         try {
             AgentBuilder(

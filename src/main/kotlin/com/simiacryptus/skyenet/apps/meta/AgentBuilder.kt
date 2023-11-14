@@ -1,13 +1,14 @@
 package com.simiacryptus.skyenet.apps.meta
 
 import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.skyenet.ApplicationBase
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.codingActorDesigner
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.initialDesigner
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.parsedActorDesigner
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.simpleActorDesigner
-import com.simiacryptus.skyenet.sessions.*
+import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil
 
@@ -34,7 +35,7 @@ open class AgentBuilder(
         if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(design.getObj())}</pre>""", false)
 
         val actorImpls = design.getObj().actors?.map { actorDesign ->
-            val actorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+            val actorDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
             actorDiv.append("""<div>Actor: ${actorDesign.javaIdentifier}</div>""", true)
             val messages = simpleActorDesigner().chatMessages(
                 userMessage,
@@ -55,7 +56,7 @@ open class AgentBuilder(
 
         var flowCodeBuffer = StringBuilder()
         design.getObj().logicFlow?.items?.forEach { logicFlowItem ->
-            val logicFlowDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+            val logicFlowDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
             logicFlowDiv.append("""<div>Logic Flow: ${logicFlowItem.name}</div>""", true)
             val logicFlowDesigner = MetaActors.flowStepDesigner()
             val messages = logicFlowDesigner.chatMessages(
@@ -74,7 +75,7 @@ open class AgentBuilder(
             logicFlowDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
         }
 
-        val finalCodeDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+        val finalCodeDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
         finalCodeDiv.append("""<div>Final Code</div>""", true)
         var code = """
             |${actorImpls.values.joinToString("\n\n")}

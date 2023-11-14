@@ -1,9 +1,10 @@
 package com.simiacryptus.skyenet.apps.debate
 
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.sessions.*
+import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.actors.SimpleActor
-import com.simiacryptus.skyenet.servers.EmbeddingVisualizer
+import com.simiacryptus.skyenet.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.debate.DebateActors.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
@@ -19,7 +20,7 @@ open class DebateManager(
 
     private val outlines = mutableMapOf<String, Outline>()
 
-    fun debate(userMessage: String, session: PersistentSessionBase, sessionDiv: SessionDiv, domainName: String) {
+    fun debate(userMessage: String, session: SessionBase, sessionDiv: SessionDiv, domainName: String) {
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
         val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage), api = api)
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(moderatorResponse.getText())}</div>""", verbose)
@@ -27,7 +28,7 @@ open class DebateManager(
 
         val totalSummary =
             (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().map { question ->
-                val summarizorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+                val summarizorDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
                 val answers = (moderatorResponse.getObj().debators?.list ?: emptyList()).parallelStream()
                     .map { actor -> answer(session, actor, question) }.toList()
                 summarizorDiv.append(
@@ -46,7 +47,7 @@ open class DebateManager(
         } +
                 (moderatorResponse.getObj().questions?.list?.map { it.text ?: "" }?.filter { it.isNotBlank() }?.toSet()
                     ?: emptySet())
-        val projectorDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+        val projectorDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
         projectorDiv.append("""<div>Embedding Projector</div>""", true)
         val response = EmbeddingVisualizer(
             api = api,
@@ -57,7 +58,7 @@ open class DebateManager(
         ).writeTensorflowEmbeddingProjectorHtml(*argumentList.toTypedArray())
         projectorDiv.append("""<div>$response</div>""", false)
 
-        val conclusionDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+        val conclusionDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
         if (verbose) conclusionDiv.append("""<pre>${JsonUtil.toJson(totalSummary)}</pre>""", true)
         val summarizorResponse = summarizor.answer(*totalSummary.toTypedArray(), api = api)
         if (verbose) conclusionDiv.append("""<pre>${JsonUtil.toJson(summarizorResponse)}</pre>""", false)
@@ -65,11 +66,11 @@ open class DebateManager(
     }
 
     private fun answer(
-        session: PersistentSessionBase,
+        session: SessionBase,
         actor: Debator,
         question: Question
     ): String {
-        val resonseDiv = session.newSessionDiv(ChatSession.randomID(), ApplicationBase.spinner)
+        val resonseDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
         resonseDiv.append(
             """<div>${actor.name?.trim() ?: ""} - ${
                 MarkdownUtil.renderMarkdown(question.text ?: "").trim()

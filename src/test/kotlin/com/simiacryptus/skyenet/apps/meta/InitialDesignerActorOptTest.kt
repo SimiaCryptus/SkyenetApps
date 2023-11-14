@@ -10,6 +10,7 @@ import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+import kotlin.system.exitProcess
 
 object InitialDesignerActorOptTest {
 
@@ -76,7 +77,7 @@ object InitialDesignerActorOptTest {
         } catch (e: Throwable) {
             log.error("Error", e)
         } finally {
-            System.exit(0)
+            exitProcess(0)
         }
     }
 
