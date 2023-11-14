@@ -79,7 +79,7 @@ internal open class OutlineBuilder(
                 api = api,
                 sessionDataStorage = sessionDataStorage,
                 sessionID = sessionDiv.sessionID(),
-                appPath = "idea_mapper_ro",
+                appPath = "idea_mapper",
                 host = domainName
             ).writeTensorflowEmbeddingProjectorHtml(*getAllItems(finalOutline).toTypedArray())
             projectorDiv.append("""<div>$response</div>""", false)
