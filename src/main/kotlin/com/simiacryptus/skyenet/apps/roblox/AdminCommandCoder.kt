@@ -8,11 +8,9 @@ import com.simiacryptus.skyenet.util.MarkdownUtil
 
 class AdminCommandCoder(
     applicationName: String = "AdminCommandCoder",
-    oauthConfig: String? = null,
     temperature: Double = 0.1,
     ) : ApplicationBase(
     applicationName = applicationName,
-    oauthConfig = oauthConfig,
     temperature = temperature
 ) {
 

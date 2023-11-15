@@ -26,7 +26,7 @@ object AppServer : ApplicationDirectory(publicName = "apps.simiacrypt.us") {
             ChildWebApp("/test_coding_groovy", CodingActorTestApp(CodingActor(GroovyInterpreter::class))),
             ChildWebApp("/test_simple", SimpleActorTestApp(SimpleActor("Translate the user's request into pig latin.", "PigLatin"))),
             ChildWebApp("/test_parsed_joke", ParsedActorTestApp(ParsedActor(JokeParser::class.java, "Tell me a joke"))),
-            ChildWebApp("/meta_agent", MetaAgentApp(domainName = domainName)),
+            ChildWebApp("/meta_agent", MetaAgentApp()),
             ChildWebApp("/roblox_cmd", AdminCommandCoder()),
             ChildWebApp("/roblox_script", BehaviorScriptCoder()),
         )}

@@ -12,6 +12,7 @@ import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminal
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.initialAuthor
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
+import com.simiacryptus.skyenet.config.DataStorage
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
@@ -20,8 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 internal open class OutlineBuilder(
     val api: OpenAIClient,
-    val verbose: Boolean,
-    val sessionDataStorage: SessionDataStorage,
+    val dataStorage: DataStorage,
     private val iterations: Int,
     private val temperature: Double,
     private val questionSeeder: ParsedActor<Outline> = initialAuthor(temperature),
@@ -47,9 +47,9 @@ internal open class OutlineBuilder(
     ) {
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
         val answer = questionSeeder.answer(*questionSeeder.chatMessages(userMessage), api = api)
-        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>""", verbose)
+        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>""", true)
         val outline = answer.getObj()
-        if (verbose) sessionDiv.append("""<pre>${toJson(outline)}</pre>""", false)
+        sessionDiv.append("""<pre class='verbose'>${toJson(outline)}</pre>""", false)
 
         this.userQuestion = userMessage
         root = Node(answer.getText(), outline)
@@ -59,28 +59,29 @@ internal open class OutlineBuilder(
             while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
         }
 
-        val sessionDir = sessionDataStorage.getSessionDir(session.sessionId)
+        val sessionDir = dataStorage.getSessionDir(session.userId, session.sessionId)
         sessionDir.resolve("nodes.json").writeText(toJson(nodes))
         sessionDir.resolve("relationships.json").writeText(toJson(relationships))
 
         val finalOutlineDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
         finalOutlineDiv.append("<div>Final Outline</div>", true)
         val finalOutline = buildFinalOutline()
-        if (verbose) finalOutlineDiv.append("<pre>${toJson(finalOutline)}</pre>", true)
+        finalOutlineDiv.append("<pre class='verbose'>${toJson(finalOutline)}</pre>", true)
         val textOutline = finalOutline.getTextOutline()
-        finalOutlineDiv.append("<pre>$textOutline</pre>", false)
+        finalOutlineDiv.append("<pre class='verbose'>$textOutline</pre>", false)
         sessionDir.resolve("finalOutline.json").writeText(toJson(finalOutline))
         sessionDir.resolve("textOutline.txt").writeText(textOutline)
 
-        if(showProjector) {
+        if (showProjector) {
             val projectorDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
             projectorDiv.append("""<div>Embedding Projector</div>""", true)
             val response = EmbeddingVisualizer(
                 api = api,
-                sessionDataStorage = sessionDataStorage,
+                dataStorage = dataStorage,
                 sessionID = sessionDiv.sessionID(),
                 appPath = "idea_mapper",
-                host = domainName
+                host = domainName,
+                session = session
             ).writeTensorflowEmbeddingProjectorHtml(*getAllItems(finalOutline).toTypedArray())
             projectorDiv.append("""<div>$response</div>""", false)
         }
@@ -153,8 +154,8 @@ internal open class OutlineBuilder(
         newSessionDiv.append("<div>Expand $sectionName</div>", true)
 
         val answer = actor.answer(*actor.chatMessages(userQuestion ?: "", parent.data, sectionName), api = api)
-        newSessionDiv.append("<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>", verbose)
-        if (verbose) newSessionDiv.append("<pre>${toJson(answer.getObj())}</pre>", false)
+        newSessionDiv.append("<div>${MarkdownUtil.renderMarkdown(answer.getText())}</div>", true)
+        newSessionDiv.append("<pre class='verbose'>${toJson(answer.getObj())}</pre>", false)
 
         val newNode = Node(answer.getText(), answer.getObj())
         nodes.add(newNode)

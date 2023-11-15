@@ -8,11 +8,9 @@ import org.slf4j.LoggerFactory
 open class DebateApp(
     applicationName: String = "DebateMapper",
     temperature: Double = 0.3,
-    oauthConfig: String? = null,
     val domainName: String,
 ) : ApplicationBase(
     applicationName = applicationName,
-    oauthConfig = oauthConfig,
     temperature = temperature,
 ) {
 
@@ -26,8 +24,7 @@ open class DebateApp(
         try {
             DebateManager(
                 api = socket.api,
-                verbose = true,
-                sessionDataStorage = sessionDataStorage
+                dataStorage = dataStorage
             ).debate(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {
             log.warn("Error", e)

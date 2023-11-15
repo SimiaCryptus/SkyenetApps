@@ -8,6 +8,7 @@ import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.codingActorDesign
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.initialDesigner
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.parsedActorDesigner
 import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.simpleActorDesigner
+import com.simiacryptus.skyenet.config.DataStorage
 import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil
@@ -15,7 +16,7 @@ import com.simiacryptus.util.JsonUtil
 open class AgentBuilder(
     val api: OpenAIClient,
     val verbose: Boolean = true,
-    @Suppress("unused") val sessionDataStorage: SessionDataStorage,
+    @Suppress("unused") val dataStorage: DataStorage,
     private val initialDesigner: ParsedActor<AgentDesign> = initialDesigner(),
 ) {
 
@@ -25,8 +26,7 @@ open class AgentBuilder(
     fun buildAgent(
         userMessage: String,
         session: SessionBase,
-        sessionDiv: SessionDiv,
-        domainName: String
+        sessionDiv: SessionDiv
     ) {
         this.userPrompt = userMessage
         sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)

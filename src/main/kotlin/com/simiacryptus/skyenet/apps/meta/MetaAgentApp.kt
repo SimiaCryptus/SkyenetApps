@@ -8,11 +8,8 @@ import org.slf4j.LoggerFactory
 open class MetaAgentApp(
     applicationName: String = "MetaAgent",
     temperature: Double = 0.3,
-    oauthConfig: String? = null,
-    val domainName: String,
 ) : ApplicationBase(
     applicationName = applicationName,
-    oauthConfig = oauthConfig,
     temperature = temperature,
 ) {
 
@@ -27,8 +24,8 @@ open class MetaAgentApp(
             AgentBuilder(
                 api = socket.api,
                 verbose = true,
-                sessionDataStorage = sessionDataStorage
-            ).buildAgent(userMessage, session, sessionDiv, domainName)
+                dataStorage = dataStorage
+            ).buildAgent(userMessage, session, sessionDiv)
         } catch (e: Throwable) {
             log.warn("Error", e)
         }

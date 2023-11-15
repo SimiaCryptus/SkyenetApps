@@ -30,7 +30,7 @@ kotlin {
 }
 
 val jetty_version = "11.0.18"
-val skyenet_version = "1.0.29"
+val skyenet_version = "1.0.30"
 dependencies {
     implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.28")
 

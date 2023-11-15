@@ -8,11 +8,9 @@ import org.slf4j.LoggerFactory
 open class OutlineApp(
     applicationName: String = "IdeaMapper",
     temperature: Double = 0.3,
-    oauthConfig: String? = null,
     val domainName: String,
 ) : ApplicationBase(
     applicationName = applicationName,
-    oauthConfig = oauthConfig,
     temperature = temperature,
 ) {
 
@@ -20,7 +18,6 @@ open class OutlineApp(
         val depth: Int = 0,
         val temperature: Double = 0.3,
         val minTokensForExpansion : Int = 16,
-        val verbose: Boolean = false,
         val showProjector: Boolean = true,
         val writeFinalEssay: Boolean = false,
     )
@@ -34,21 +31,16 @@ open class OutlineApp(
         sessionDiv: SessionDiv,
         socket: ChatSocket
     ) {
-        try {
-            val settings = getSettings<Settings>(sessionId)
-            OutlineBuilder(
-                api = socket.api,
-                verbose = settings?.verbose ?: false,
-                sessionDataStorage = sessionDataStorage,
-                iterations = settings?.depth ?: 1,
-                minSize = settings?.minTokensForExpansion ?: 16,
-                writeFinalEssay = settings?.writeFinalEssay ?: false,
-                showProjector = settings?.showProjector ?: true,
-                temperature = settings?.temperature ?: 0.3,
-            ).buildMap(userMessage, session, sessionDiv, domainName)
-        } catch (e: Throwable) {
-            log.warn("Error", e)
-        }
+        val settings = getSettings<Settings>(sessionId, session.userId)
+        OutlineBuilder(
+            api = socket.api,
+            dataStorage = dataStorage,
+            iterations = settings?.depth ?: 1,
+            temperature = settings?.temperature ?: 0.3,
+            minSize = settings?.minTokensForExpansion ?: 16,
+            writeFinalEssay = settings?.writeFinalEssay ?: false,
+            showProjector = settings?.showProjector ?: true,
+        ).buildMap(userMessage, session, sessionDiv, domainName)
     }
 
     companion object {
