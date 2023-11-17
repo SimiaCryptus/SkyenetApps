@@ -19,7 +19,7 @@ import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil.toJson
 import java.util.concurrent.atomic.AtomicInteger
 
-internal open class OutlineBuilder(
+open class OutlineBuilder(
     val api: OpenAIClient,
     val dataStorage: DataStorage,
     private val iterations: Int,
@@ -106,7 +106,7 @@ internal open class OutlineBuilder(
             OutlineApp.log.debug("Rendering: \n\t${answer.replace("\n", "\n\t")}")
             answer
         }
-    } catch (e: Throwable) {
+    } catch (e: Exception) {
         OutlineApp.log.warn("Error", e)
         ""
     }

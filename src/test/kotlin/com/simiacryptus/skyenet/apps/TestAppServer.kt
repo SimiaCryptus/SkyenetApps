@@ -18,9 +18,14 @@ import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import com.simiacryptus.skyenet.heart.ScalaLocalInterpreter
 import com.simiacryptus.skyenet.test.*
 import java.util.function.Function
+import kotlin.math.roundToInt
+import kotlin.random.Random
 
 
-object TestAppServer : ApplicationDirectory(publicName = "localhost") {
+object TestAppServer : ApplicationDirectory(
+    publicName = "localhost",
+    port = Random.nextInt(1024, 65535),
+) {
 
     override val childWebApps by lazy { AppServer.childWebApps }
 
@@ -38,13 +43,13 @@ object TestAppServer : ApplicationDirectory(publicName = "localhost") {
             override fun containsKey(value: String) = true
             override fun setUser(sessionId: String, userInfo: UserInfo) = throw UnsupportedOperationException()
         }
-        ApplicationServices.authorizationManager = object : AuthorizationManager() {
-            override fun isAuthorized(
-                applicationClass: Class<*>?,
-                user: String?,
-                operationType: OperationType
-            ): Boolean = true
-        }
+//        ApplicationServices.authorizationManager = object : AuthorizationManager() {
+//            override fun isAuthorized(
+//                applicationClass: Class<*>?,
+//                user: String?,
+//                operationType: OperationType
+//            ): Boolean = true
+//        }
         super._main(args)
     }
 
