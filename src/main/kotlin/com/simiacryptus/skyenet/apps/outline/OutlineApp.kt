@@ -40,6 +40,8 @@ open class OutlineApp(
             minSize = settings?.minTokensForExpansion ?: 16,
             writeFinalEssay = settings?.writeFinalEssay ?: false,
             showProjector = settings?.showProjector ?: true,
+            userId = socket.user?.id,
+            sessionId = sessionId,
         ).buildMap(userMessage, session, sessionDiv, domainName)
     }
 

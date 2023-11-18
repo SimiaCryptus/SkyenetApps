@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.meta
 
 import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.openai.proxy.ValidatedObject
+import com.simiacryptus.skyenet.actors.BaseActor
 import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
@@ -74,7 +75,22 @@ interface MetaActors {
 
     }
 
+    enum class ActorType {
+        INITIAL,
+        SIMPLE,
+        PARSED,
+        CODING,
+        FLOW_STEP,
+    }
+
     companion object {
+        val actorMap: Map<ActorType, BaseActor<out Any>> = mapOf(
+            ActorType.INITIAL to initialDesigner(),
+            ActorType.SIMPLE to simpleActorDesigner(),
+            ActorType.PARSED to parsedActorDesigner(),
+            ActorType.CODING to codingActorDesigner(),
+            ActorType.FLOW_STEP to flowStepDesigner(),
+        )
 
         fun initialDesigner() = ParsedActor(
             DesignParser::class.java,

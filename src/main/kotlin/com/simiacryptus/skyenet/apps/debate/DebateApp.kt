@@ -22,9 +22,11 @@ open class DebateApp(
         socket: ChatSocket
     ) {
         try {
-            DebateManager(
+            DebateBuilder(
                 api = socket.api,
-                dataStorage = dataStorage
+                dataStorage = dataStorage,
+                userId = socket.user?.id,
+                sessionId = sessionId
             ).debate(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {
             log.warn("Error", e)

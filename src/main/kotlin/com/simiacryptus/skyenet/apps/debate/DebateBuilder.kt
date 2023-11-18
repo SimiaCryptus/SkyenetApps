@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.debate
 
 import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.ApplicationBase
 import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.actors.SimpleActor
@@ -8,17 +9,19 @@ import com.simiacryptus.skyenet.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.debate.DebateActors.*
 import com.simiacryptus.skyenet.config.DataStorage
-import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.util.JsonUtil.toJson
 
-open class DebateManager(
+class DebateBuilder(
     val api: OpenAIClient,
     val dataStorage: DataStorage,
-    private val moderator: ParsedActor<DebateSetup> = Companion.moderator(),
-    private val summarizor: SimpleActor = Companion.summarizor(),
-) {
+    userId: String?,
+    sessionId: String
+) : ActorSystem<ActorType>(DebateActors.actorMap, dataStorage, userId, sessionId) {
     private val outlines = mutableMapOf<String, Outline>()
+    @Suppress("UNCHECKED_CAST")
+    private val moderator get() = getActor(ActorType.MODERATOR) as ParsedActor<DebateSetup>
+    private val summarizor get() = getActor(ActorType.SUMMARIZOR) as SimpleActor
 
     fun debate(userMessage: String, session: SessionBase, sessionDiv: SessionDiv, domainName: String) {
         sessionDiv.append("""<div>${renderMarkdown(userMessage)}</div>""", true)

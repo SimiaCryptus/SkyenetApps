@@ -59,7 +59,17 @@ interface DebateActors {
 
     }
 
+    enum class ActorType {
+        MODERATOR,
+        SUMMARIZOR,
+    }
+
     companion object {
+
+        val actorMap get() = mapOf(
+            ActorType.MODERATOR to moderator(),
+            ActorType.SUMMARIZOR to summarizor(),
+        )
 
         fun getActorConfig(actor: Debator) = ParsedActor(
             parserClass = OutlineParser::class.java,

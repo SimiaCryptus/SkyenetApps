@@ -23,7 +23,9 @@ open class MetaAgentApp(
         try {
             AgentBuilder(
                 api = socket.api,
-                dataStorage = dataStorage
+                dataStorage = dataStorage,
+                userId = socket.user?.id,
+                sessionId = sessionId
             ).buildAgent(userMessage, session, sessionDiv)
         } catch (e: Throwable) {
             log.warn("Error", e)

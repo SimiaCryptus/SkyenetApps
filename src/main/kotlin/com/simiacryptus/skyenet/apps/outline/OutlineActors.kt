@@ -32,7 +32,22 @@ interface OutlineActors {
         }
     }
 
+    enum class ActorType {
+        INITIAL,
+        EXPAND,
+        FINAL,
+    }
+
     companion object {
+
+        val log = org.slf4j.LoggerFactory.getLogger(OutlineActors::class.java)
+
+        fun actorMap(temperature: Double) = mapOf(
+            ActorType.INITIAL to initialAuthor(temperature),
+            ActorType.EXPAND to expansionAuthor(temperature),
+            ActorType.FINAL to finalWriter(temperature),
+        )
+
         fun Outline.deepClone(): Outline =
             Outline(this.items?.map { it.deepClone() })
 
