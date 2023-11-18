@@ -5,6 +5,7 @@ import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.actors.opt.ActorOptimization
 import com.simiacryptus.skyenet.actors.opt.Expectation
+import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.parsedActorDesigner
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -31,63 +32,7 @@ object ParsedActorImplementationActorOptTest {
                 ) },
                 resultMapper = { it.getCode() },
                 prompts = listOf(
-                    """
-                    |
-                    |Your task is to design a system that uses gpt "actors" to form a "community" of actors interacting to solve problems.
-                    |Your task is to implement a "parsed" actor that takes part in a larger system.
-                    |"Parsed" actors use a 2-stage system; first, queries are responded in the same manner as simple actors. A second pass uses GPT3.5_Turbo to parse the text response into a predefined kotlin data class
-                    |
-                    |Code example:
-                    |```kotlin
-                    |import com.simiacryptus.openai.OpenAIClient
-                    |import com.simiacryptus.openai.proxy.ValidatedObject
-                    |import com.simiacryptus.util.describe.Description
-                    |import com.simiacryptus.skyenet.actors.ParsedActor
-                    |
-                    |data class Outline(
-                    |    val items: List<Item>? = null,
-                    |) : ValidatedObject {
-                    |    override fun validate() = items?.all { it.validate() } ?: false
-                    |}
-                    |
-                    |data class Item(
-                    |    val section_name: String? = null,
-                    |    val children: Outline? = null,
-                    |    val text: String? = null,
-                    |) : ValidatedObject {
-                    |    override fun validate() = when {
-                    |        null == section_name -> false
-                    |        section_name.isEmpty() -> false
-                    |        else -> true
-                    |    }
-                    |}
-                    |
-                    |interface OutlineParser : java.util.function.Function<String, Outline> {
-                    |    @Description("Break down the text into a recursive outline of the main ideas and supporting details.")
-                    |    override fun apply(text: String): Outline
-                    |}
-                    |
-                    |fun exampleActor(api: OpenAIClient) = ParsedActor(
-                    |    OutlineParser::class.java,
-                    |    prompt = "You are a helpful writing assistant. Respond in detail to the user's prompt",
-                    |    api = api,
-                    |)
-                    |```
-                    |
-                    |The constructor signature for the (final) ParsedActor class is:
-                    |```kotlin
-                    |class ParsedActor<T>(
-                    |    val parserClass: Class<out Function<String, T>>,
-                    |    prompt: String,
-                    |    val action: String? = null,
-                    |    api: OpenAIClient = OpenAIClient(),
-                    |    model: OpenAIClient.Models = OpenAIClient.Models.GPT35Turbo,
-                    |    temperature: Double = 0.3,
-                    |)
-                    |```
-                    |
-                    |Respond to the request with an instantiation function of the requested actor.
-                    """.trimMargin().trim(),
+                    parsedActorDesigner().details!!,
                 ),
                 testCases = listOf(
                     ActorOptimization.TestCase(

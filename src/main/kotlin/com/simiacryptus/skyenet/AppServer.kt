@@ -15,7 +15,18 @@ import com.simiacryptus.skyenet.test.*
 import java.util.function.Function
 
 
-object AppServer : ApplicationDirectory(publicName = "apps.simiacrypt.us") {
+open class AppServer(
+    localName: String, publicName: String, port: Int
+) : ApplicationDirectory(
+    localName = localName, publicName = publicName, port = port
+) {
+
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            AppServer(localName = "localhost","apps.simiacrypt.us", 8081)._main(args)
+        }
+    }
 
     override val childWebApps by lazy {
         listOf(
@@ -31,10 +42,6 @@ object AppServer : ApplicationDirectory(publicName = "apps.simiacrypt.us") {
             ChildWebApp("/roblox_script", BehaviorScriptCoder()),
         )}
 
-    @JvmStatic
-    fun main(args: Array<String>) {
-        super._main(args)
-    }
 
 
     data class TestJokeDataStructure(

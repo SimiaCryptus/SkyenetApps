@@ -5,6 +5,7 @@ import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.actors.opt.ActorOptimization
 import com.simiacryptus.skyenet.actors.opt.Expectation
+import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.flowStepDesigner
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -31,12 +32,7 @@ object FlowStepDesignerActorOptTest {
                 ) },
                 resultMapper = { it.getCode() },
                 prompts = listOf(
-                    """
-                    |You are a software implementation assistant.
-                    |Your task is to implement a step in the logic flow of a ChatGPT-based actor system.
-                    |Respond to the user request with an implementation of the requested logic flow step.
-                    |Preceding "assistant" messages define the existing code of the system, which you will append to.
-                    """.trimMargin().trim(),
+                    flowStepDesigner().details!!,
                 ),
                 testCases = listOf(
                     ActorOptimization.TestCase(

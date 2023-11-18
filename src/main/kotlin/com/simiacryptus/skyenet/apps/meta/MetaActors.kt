@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.openai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.ParsedActor
@@ -78,7 +78,7 @@ interface MetaActors {
 
         fun initialDesigner() = ParsedActor(
             DesignParser::class.java,
-            model = OpenAIClient.Models.GPT4Turbo,
+            model = ChatModels.GPT4Turbo,
             prompt = """
                 |You are a software design assistant.
                 |
@@ -133,7 +133,7 @@ interface MetaActors {
             |    prompt: String,
             |    name: String? = null,
             |    api: OpenAIClient = OpenAIClient(),
-            |    model: OpenAIClient.Models = OpenAIClient.Models.GPT35Turbo,
+            |    model: Models = Models.GPT35Turbo,
             |    temperature: Double = 0.3,
             |)
             |```
@@ -196,7 +196,7 @@ interface MetaActors {
             |    prompt: String,
             |    val action: String? = null,
             |    api: OpenAIClient = OpenAIClient(),
-            |    model: OpenAIClient.Models = OpenAIClient.Models.GPT35Turbo,
+            |    model: Models = Models.GPT35Turbo,
             |    temperature: Double = 0.3,
             |)
             |```
@@ -238,7 +238,7 @@ interface MetaActors {
             |    name: String? = interpreterClass.simpleName,
             |    val details: String? = null,
             |    api: OpenAIClient = OpenAIClient(),
-            |    model: OpenAIClient.Models = OpenAIClient.Models.GPT35Turbo,
+            |    model: Models = Models.GPT35Turbo,
             |    temperature: Double = 0.3,
             |)
             |```

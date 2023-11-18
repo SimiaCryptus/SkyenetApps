@@ -27,7 +27,7 @@ class InterpreterTests {
             |    KotlinInterpreter::class,
             |    symbols = mapOf(),
             |    api = api,
-            |    model = OpenAIClient.Models.GPT35Turbo,
+            |    model = Models.GPT35Turbo,
             |    temperature = 0.3,
             |    parser = { response ->
             |        val lines = response.split("\n")

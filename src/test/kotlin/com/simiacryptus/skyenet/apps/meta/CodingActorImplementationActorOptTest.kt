@@ -31,45 +31,7 @@ object CodingActorImplementationActorOptTest {
                 ) },
                 resultMapper = { it.getCode() },
                 prompts = listOf(
-                    """
-                    |
-                    |Your task is to design a system that uses gpt "actors" to form a "community" of actors interacting to solve problems.
-                    |Your task is to implement a "script" or "coding" actor that takes part in a larger system.
-                    |"Script" actors use a multi-stage process that combines an environment definition of predefined symbols/functions and a pluggable script compilation system using Scala, Kotlin, or Groovy. The actor will return a valid script with a convenient "execute" method. This can provide both simple function calling responses and complex code generation.
-                    |
-                    |Code example:
-                    |```kotlin
-                    |import com.simiacryptus.openai.OpenAIClient
-                    |import com.simiacryptus.skyenet.actors.CodingActor
-                    |import com.simiacryptus.skyenet.heart.GroovyInterpreter
-                    |import com.simiacryptus.skyenet.heart.KotlinInterpreter
-                    |import com.simiacryptus.skyenet.heart.ScalaLocalInterpreter
-                    |
-                    |fun exampleActor(api: OpenAIClient) = CodingActor(
-                    |    KotlinInterpreter::class,
-                    |    symbols = mapOf(
-                    |        "foo" to SomeObject()
-                    |    ),
-                    |    api = api,
-                    |)
-                    |```
-                    |
-                    |The constructor signature for the (final) CodingActor class is:
-                    |```kotlin
-                    |class CodingActor(
-                    |    private val interpreterClass: KClass<out Heart>,
-                    |    private val symbols: Map<String, Any> = mapOf(),
-                    |    name: String? = interpreterClass.simpleName,
-                    |    val details: String? = null,
-                    |    api: OpenAIClient = OpenAIClient(),
-                    |    model: OpenAIClient.Models = OpenAIClient.Models.GPT35Turbo,
-                    |    temperature: Double = 0.3,
-                    |)
-                    |```
-                    |
-                    |Respond to the request with an instantiation function of the requested actor.
-                    |
-                    """.trimMargin().trim(),
+                    MetaActors.simpleActorDesigner().details!!,
                 ),
                 testCases = listOf(
                     ActorOptimization.TestCase(

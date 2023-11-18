@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps.debate
 
-import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.openai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.actors.ParsedActor
@@ -67,17 +67,17 @@ interface DebateActors {
                                 |You will provide a well-reasoned and supported argument for your position.
                                 |Details about you: ${actor.description}
                                 """.trimMargin(),
-            model = OpenAIClient.Models.GPT4,
+            model = ChatModels.GPT4,
         )
 
         fun moderator() = ParsedActor(
             DebateParser::class.java,
             prompt = """You will take a user request, and plan a debate. You will introduce the debaters, and then provide a list of questions to ask.""",
-            model = OpenAIClient.Models.GPT4,
+            model = ChatModels.GPT4,
         )
         fun summarizor() = SimpleActor(
             prompt = """You are a helpful writing assistant, tasked with writing a markdown document combining the user massages given in an impartial manner""",
-            model = OpenAIClient.Models.GPT4,
+            model = ChatModels.GPT4,
         )
 
     }

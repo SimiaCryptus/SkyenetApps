@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps.outline
 
-import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.openai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
@@ -62,7 +62,7 @@ interface OutlineActors {
 
         fun Outline.getTerminalNodeMap(): Map<String, Item> {
             return items?.map { item ->
-                if (item.children?.items?.isEmpty() ?: true) mapOf(item.section_name!! to item)
+                if (item.children?.items?.isEmpty() != false) mapOf(item.section_name!! to item)
                 else item.children?.getTerminalNodeMap()?.mapKeys { key -> item.section_name + " / " + key } ?: mapOf()
             }?.flatMap { it.entries.map { it.key to it.value } }?.toList()?.toMap() ?: emptyMap()
         }
@@ -70,7 +70,7 @@ interface OutlineActors {
         fun initialAuthor(temperature: Double) = ParsedActor(
             OutlineParser::class.java,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
-            model = OpenAIClient.Models.GPT4Turbo,
+            model = ChatModels.GPT4Turbo,
             temperature = temperature,
         )
 
@@ -78,13 +78,13 @@ interface OutlineActors {
             parserClass = OutlineParser::class.java,
             action = "Expand",
             prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
-            model = OpenAIClient.Models.GPT35Turbo,
+            model = ChatModels.GPT35Turbo,
             temperature = temperature,
         )
 
         fun finalWriter(temperature: Double) = SimpleActor(
             prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
-            model = OpenAIClient.Models.GPT4Turbo,
+            model = ChatModels.GPT4Turbo,
             temperature = temperature,
         )
 

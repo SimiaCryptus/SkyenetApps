@@ -5,6 +5,7 @@ import com.simiacryptus.skyenet.ApplicationDirectory
 import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
+import com.simiacryptus.skyenet.apps.TestAppServer.port
 import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
 import com.simiacryptus.skyenet.apps.outline.OutlineApp
@@ -21,17 +22,14 @@ import java.util.function.Function
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
-
-object TestAppServer : ApplicationDirectory(
+object TestAppServer : AppServer(
     publicName = "localhost",
+    localName = "localhost",
     port = Random.nextInt(1024, 65535),
 ) {
-
-    override val childWebApps by lazy { AppServer.childWebApps }
-
     @JvmStatic
     fun main(args: Array<String>) {
-        AppServer.init(false)
+        AppServer(localName = "localhost","localhost", 8081).init(false)
         val mockUser = AuthenticationManager.UserInfo(
             "1",
             "user@mock.test",
@@ -43,15 +41,13 @@ object TestAppServer : ApplicationDirectory(
             override fun containsKey(value: String) = true
             override fun setUser(sessionId: String, userInfo: UserInfo) = throw UnsupportedOperationException()
         }
-//        ApplicationServices.authorizationManager = object : AuthorizationManager() {
-//            override fun isAuthorized(
-//                applicationClass: Class<*>?,
-//                user: String?,
-//                operationType: OperationType
-//            ): Boolean = true
-//        }
+        ApplicationServices.authorizationManager = object : AuthorizationManager() {
+            override fun isAuthorized(
+                applicationClass: Class<*>?,
+                user: String?,
+                operationType: OperationType
+            ): Boolean = true
+        }
         super._main(args)
     }
-
 }
-

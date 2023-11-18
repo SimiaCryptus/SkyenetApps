@@ -1,6 +1,8 @@
 package com.simiacryptus.skyenet.apps.roblox
 
+import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.openai.OpenAIClientBase.Companion.toContentList
 import com.simiacryptus.skyenet.ApplicationBase
 import com.simiacryptus.skyenet.chat.ChatSocket
 import com.simiacryptus.skyenet.session.*
@@ -23,15 +25,15 @@ class AdminCommandCoder(
     ) {
         sessionDiv.append("""<div>$userMessage</div>""", true)
 
-        val model = OpenAIClient.Models.GPT4
+        val model = ChatModels.GPT4
         val response = socket.api.chat(
             OpenAIClient.ChatRequest(
-                messages = arrayOf(
-                    OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.system, content = """
+                messages = ArrayList(
+                    listOf(OpenAIClient.ChatMessage(role = OpenAIClient.Role.system, content = """
                         You will convert the natural language description of an action for a Roblox game command into a Lua definition
-                    """.trimIndent()),
-                    OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.user, content = "Modify the user's walkspeed"),
-                    OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.assistant, content = """
+                    """.trimIndent().toContentList()),
+                    OpenAIClient.ChatMessage(role = OpenAIClient.Role.user, content = "Modify the user's walkspeed".toContentList()),
+                    OpenAIClient.ChatMessage(role = OpenAIClient.Role.assistant, content = """
                         ```lua
                         {
                             PrimaryAlias = "walkspeed",
@@ -51,8 +53,9 @@ class AdminCommandCoder(
                             end,
                         }
                         ```
-                    """.trimIndent()),
-                    OpenAIClient.ChatMessage(role = OpenAIClient.ChatMessage.Role.user, content = userMessage)
+                    """.trimIndent().toContentList()),
+                    OpenAIClient.ChatMessage(role = OpenAIClient.Role.user, content = userMessage.toContentList())
+                )
                 ),
                 temperature = temperature,
                 model = model.modelName,

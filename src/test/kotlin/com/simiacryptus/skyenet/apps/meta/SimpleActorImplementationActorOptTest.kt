@@ -5,6 +5,7 @@ import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.actors.opt.ActorOptimization
 import com.simiacryptus.skyenet.actors.opt.Expectation
+import com.simiacryptus.skyenet.apps.meta.MetaActors.Companion.initialDesigner
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -30,36 +31,7 @@ object SimpleActorImplementationActorOptTest {
                 ) },
                 resultMapper = { it.getCode() },
                 prompts = listOf(
-                    """
-                    |You are a software implementation assistant.
-                    |Your task is to implement a "simple" actor that takes part in a larger system.
-                    |"Simple" actors contain a system directive and can process a list of user messages into a response.
-                    |
-                    |Code example:
-                    |```kotlin
-                    |import com.simiacryptus.openai.OpenAIClient
-                    |import com.simiacryptus.skyenet.actors.SimpleActor
-                    |
-                    |fun exampleActor(api: OpenAIClient) = SimpleActor(
-                    |    prompt = "You are a helpful writing assistant. Respond in detail to the user's prompt",
-                    |    api = api,
-                    |)
-                    |```
-                    |
-                    |The constructor signature for (final) SimpleActor class is:
-                    |```kotlin
-                    |class SimpleActor(
-                    |    prompt: String,
-                    |    name: String? = null,
-                    |    api: OpenAIClient = OpenAIClient(),
-                    |    model: OpenAIClient.Models = OpenAIClient.Models.GPT35Turbo,
-                    |    temperature: Double = 0.3,
-                    |)
-                    |```
-                    |
-                    |Respond to the request with an instantiation function of the requested actor.
-                    |
-                    """.trimMargin().trim(),
+                    initialDesigner().prompt,
                 ),
                 testCases = listOf(
                     ActorOptimization.TestCase(
