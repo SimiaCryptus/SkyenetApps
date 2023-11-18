@@ -15,7 +15,6 @@ import com.simiacryptus.util.JsonUtil
 
 open class AgentBuilder(
     val api: OpenAIClient,
-    val verbose: Boolean = true,
     @Suppress("unused") val dataStorage: DataStorage,
     private val initialDesigner: ParsedActor<AgentDesign> = initialDesigner(),
 ) {
@@ -29,14 +28,18 @@ open class AgentBuilder(
         sessionDiv: SessionDiv
     ) {
         this.userPrompt = userMessage
-        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
+        //language=HTML
+        sessionDiv.append("""<div class="user-message">${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
         val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage), api = api)
-        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(design.getText())}</div>""", verbose)
-        if (verbose) sessionDiv.append("""<pre>${JsonUtil.toJson(design.getObj())}</pre>""", false)
+        //language=HTML
+        sessionDiv.append("""<div class="response-message">${MarkdownUtil.renderMarkdown(design.getText())}</div>""", true)
+        //language=HTML
+        sessionDiv.append("""<pre class="verbose">${JsonUtil.toJson(design.getObj())}</pre>""", false)
 
         val actorImpls = design.getObj().actors?.map { actorDesign ->
             val actorDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
-            actorDiv.append("""<div>Actor: ${actorDesign.javaIdentifier}</div>""", true)
+            //language=HTML
+            actorDiv.append("""<div class="response-header">Actor: ${actorDesign.javaIdentifier}</div>""", true)
             val messages = simpleActorDesigner().chatMessages(
                 userMessage,
                 design.getText(),
@@ -50,14 +53,16 @@ open class AgentBuilder(
                 else -> throw IllegalArgumentException("Unknown actor type: $type")
             }
             val code = response.getCode()
-            actorDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
+            //language=HTML
+            actorDiv.append("""<pre class="response-message">${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
             actorDesign.javaIdentifier to code
         }?.toMap() ?: mapOf()
 
         var flowCodeBuffer = StringBuilder()
         design.getObj().logicFlow?.items?.forEach { logicFlowItem ->
             val logicFlowDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
-            logicFlowDiv.append("""<div>Logic Flow: ${logicFlowItem.name}</div>""", true)
+            //language=HTML
+            logicFlowDiv.append("""<div class="response-header">Logic Flow: ${logicFlowItem.name}</div>""", true)
             val logicFlowDesigner = MetaActors.flowStepDesigner()
             val messages = logicFlowDesigner.chatMessages(
                 userMessage,
@@ -72,26 +77,31 @@ open class AgentBuilder(
             val response = logicFlowDesigner.answerWithPrefix(codePrefix = codePrefix, *messages, api = api)
             val code = response.getCode()
             flowCodeBuffer.append(code)
-            logicFlowDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
+            //language=HTML
+            logicFlowDiv.append("""<div class="response-message">${
+                MarkdownUtil.renderMarkdown("""
+                ```kotlin
+                $code
+                ```
+                """.trimIndent())
+            }</div>""", false)
         }
 
         val finalCodeDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
-        finalCodeDiv.append("""<div>Final Code</div>""", true)
+        //language=HTML
+        finalCodeDiv.append("""<div class="response-header">Final Code</div>""", true)
         var code = """
+            |```kotlin
             |${actorImpls.values.joinToString("\n\n")}
             |
             |${flowCodeBuffer}
+            |```
             |""".trimMargin()
         val (imports, otherCode) = code.split("\n").partition { it.trim().startsWith("import ") }
         code = imports.joinToString("\n") + "\n" + otherCode.joinToString("\n")
 
-        finalCodeDiv.append("""<pre>${MarkdownUtil.renderMarkdown(code)}</pre>""", false)
-
-
-//        val initialDesignDiv = session.newSessionDiv(ChatSession.randomID(), SkyenetSessionServerBase.spinner)
-//        initialDesignDiv.append("<div>Final Outline</div>", true)
-
-
+        //language=HTML
+        finalCodeDiv.append("""<div class="response-message">${MarkdownUtil.renderMarkdown(code)}</div>""", false)
     }
 }
 

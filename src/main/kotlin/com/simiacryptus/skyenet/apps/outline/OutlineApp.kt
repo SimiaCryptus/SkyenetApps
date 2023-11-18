@@ -44,7 +44,7 @@ open class OutlineApp(
     }
 
     companion object {
-        val log = LoggerFactory.getLogger(OutlineApp::class.java)
+        private val log = LoggerFactory.getLogger(OutlineApp::class.java)
     }
 
 

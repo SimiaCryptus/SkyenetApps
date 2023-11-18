@@ -32,7 +32,7 @@ open class DebateApp(
     }
 
     companion object {
-        val log = LoggerFactory.getLogger(DebateApp::class.java)
+        private val log = LoggerFactory.getLogger(DebateApp::class.java)
     }
 
 }

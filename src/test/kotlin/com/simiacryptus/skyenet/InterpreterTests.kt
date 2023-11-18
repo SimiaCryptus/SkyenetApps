@@ -1,8 +1,7 @@
-package com.simiacryptus.skyenet.apps.meta
+package com.simiacryptus.skyenet
 
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import org.intellij.lang.annotations.Language
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -51,7 +50,7 @@ class InterpreterTests {
     fun test2() {
         val interpreter = KotlinInterpreter()
         val code = """
-            |com.simiacryptus.skyenet.apps.meta.InterpreterTests.Companion.testFn()
+            |com.simiacryptus.skyenet.InterpreterTests.Companion.testFn()
             |""".trimMargin()
         val validate = interpreter.validate(code)
         assertEquals(validate, null) // <- Expect an error since `parser` is not a valid parameter

@@ -23,7 +23,6 @@ open class MetaAgentApp(
         try {
             AgentBuilder(
                 api = socket.api,
-                verbose = true,
                 dataStorage = dataStorage
             ).buildAgent(userMessage, session, sessionDiv)
         } catch (e: Throwable) {
@@ -32,7 +31,7 @@ open class MetaAgentApp(
     }
 
     companion object {
-        val log = LoggerFactory.getLogger(MetaAgentApp::class.java)
+        private val log = LoggerFactory.getLogger(MetaAgentApp::class.java)
     }
 
 

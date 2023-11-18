@@ -118,22 +118,29 @@ interface MetaActors {
             |
             |Code example:
             |```kotlin
-            |import com.simiacryptus.openai.OpenAIClient
             |import com.simiacryptus.skyenet.actors.SimpleActor
+            |import com.simiacryptus.skyenet.heart.KotlinInterpreter
+            |import org.intellij.lang.annotations.Language
             |
-            |fun exampleActor(api: OpenAIClient) = SimpleActor(
-            |    prompt = "You are a helpful writing assistant. Respond in detail to the user's prompt",
-            |    api = api,
+            |@Language("Markdown")fun exampleSimpleActor() = SimpleActor(
+            |    prompt = ""${'"'}
+            |    |You are a writing assistant.
+            |    ""${'"'}.trimMargin().trim(),
             |)
+            |
             |```
             |
             |The constructor signature for (final) SimpleActor class is:
             |```kotlin
+            |import com.simiacryptus.openai.models.ChatModels
+            |import com.simiacryptus.skyenet.actors.SimpleActor
+            |import org.intellij.lang.annotations.Language
+            |import com.simiacryptus.openai.models.OpenAITextModel
+            |
             |class SimpleActor(
             |    prompt: String,
             |    name: String? = null,
-            |    api: OpenAIClient = OpenAIClient(),
-            |    model: Models = Models.GPT35Turbo,
+            |    model: OpenAITextModel = ChatModels.GPT35Turbo,
             |    temperature: Double = 0.3,
             |)
             |```
@@ -141,6 +148,7 @@ interface MetaActors {
             |Respond to the request with an instantiation function of the requested actor.
             |
             """.trimMargin().trim(),
+            autoEvaluate = true,
         )
 
         @Language("Markdown")
@@ -154,49 +162,47 @@ interface MetaActors {
             |
             |Code example:
             |```kotlin
-            |import com.simiacryptus.openai.OpenAIClient
+            |import com.simiacryptus.openai.models.ChatModels
             |import com.simiacryptus.openai.proxy.ValidatedObject
-            |import com.simiacryptus.util.describe.Description
             |import com.simiacryptus.skyenet.actors.ParsedActor
+            |import com.simiacryptus.util.describe.Description
+            |import org.intellij.lang.annotations.Language
+            |import java.util.function.Function
             |
-            |data class Outline(
-            |    val items: List<Item>? = null,
-            |) : ValidatedObject {
-            |    override fun validate() = items?.all { it.validate() } ?: false
+            |interface ExampleParser : Function<String, ExampleResult> {
+            |    @Description("Break down the text into a data structure.")
+            |    override fun apply(text: String): ExampleResult
             |}
             |
-            |data class Item(
-            |    val section_name: String? = null,
-            |    val children: Outline? = null,
-            |    val text: String? = null,
+            |data class ExampleResult(
+            |    val name: String? = null,
             |) : ValidatedObject {
             |    override fun validate() = when {
-            |        null == section_name -> false
-            |        section_name.isEmpty() -> false
+            |        name.isNullOrBlank() -> false
             |        else -> true
             |    }
             |}
             |
-            |interface OutlineParser : java.util.function.Function<String, Outline> {
-            |    @Description("Break down the text into a recursive outline of the main ideas and supporting details.")
-            |    override fun apply(text: String): Outline
-            |}
-            |
-            |fun exampleActor(api: OpenAIClient) = ParsedActor(
-            |    OutlineParser::class.java,
-            |    prompt = "You are a helpful writing assistant. Respond in detail to the user's prompt",
-            |    api = api,
+            |fun exampleParsedActor() = ParsedActor(
+            |    ExampleParser::class.java,
+            |    model = ChatModels.GPT4Turbo,
+            |    prompt = ""${'"'}
+            |            |You are a question answering assistant.
+            |            |""${'"'}.trimMargin().trim(),
             |)
             |```
             |
             |The constructor signature for the (final) ParsedActor class is:
             |```kotlin
-            |class ParsedActor<T>(
+            |import com.simiacryptus.openai.models.ChatModels
+            |import com.simiacryptus.openai.models.OpenAITextModel
+            |import java.util.function.Function
+            |
+            |open class ParsedActor<T:Any>(
             |    val parserClass: Class<out Function<String, T>>,
             |    prompt: String,
             |    val action: String? = null,
-            |    api: OpenAIClient = OpenAIClient(),
-            |    model: Models = Models.GPT35Turbo,
+            |    model: OpenAITextModel = ChatModels.GPT35Turbo,
             |    temperature: Double = 0.3,
             |)
             |```
@@ -215,31 +221,48 @@ interface MetaActors {
             |
             |Code example:
             |```kotlin
-            |import com.simiacryptus.openai.OpenAIClient
             |import com.simiacryptus.skyenet.actors.CodingActor
-            |import com.simiacryptus.skyenet.heart.GroovyInterpreter
             |import com.simiacryptus.skyenet.heart.KotlinInterpreter
-            |import com.simiacryptus.skyenet.heart.ScalaLocalInterpreter
+            |import org.intellij.lang.annotations.Language
             |
-            |fun exampleActor(api: OpenAIClient) = CodingActor(
-            |    KotlinInterpreter::class,
-            |    symbols = mapOf(
-            |        "foo" to SomeObject()
-            |    ),
-            |    api = api,
+            |@Language("Markdown")fun exampleCodingActor() = CodingActor(
+            |    interpreterClass = KotlinInterpreter::class,
+            |    details = ""${'"'}
+            |    |You are a software implementation assistant.
+            |    |
+            |    |Defined functions:
+            |    |* ...
+            |    |
+            |    |Expected code structure:
+            |    |* ...
+            |    ""${'"'}.trimMargin().trim(),
+            |    autoEvaluate = true,
             |)
             |```
             |
             |The constructor signature for the (final) CodingActor class is:
             |```kotlin
-            |class CodingActor(
+            |import com.simiacryptus.openai.models.ChatModels
+            |import com.simiacryptus.openai.models.OpenAITextModel
+            |import com.simiacryptus.skyenet.Heart
+            |import com.simiacryptus.util.describe.AbbrevWhitelistYamlDescriber
+            |import com.simiacryptus.util.describe.TypeDescriber
+            |import kotlin.reflect.KClass
+            |
+            |@Suppress("unused", "MemberVisibilityCanBePrivate")
+            |open class CodingActor(
             |    private val interpreterClass: KClass<out Heart>,
             |    private val symbols: Map<String, Any> = mapOf(),
+            |    private val describer: TypeDescriber = AbbrevWhitelistYamlDescriber(
+            |        "com.simiacryptus",
+            |        "com.github.simiacryptus"
+            |    ),
             |    name: String? = interpreterClass.simpleName,
             |    val details: String? = null,
-            |    api: OpenAIClient = OpenAIClient(),
-            |    model: Models = Models.GPT35Turbo,
-            |    temperature: Double = 0.3,
+            |    model: OpenAITextModel = ChatModels.GPT35Turbo,
+            |    val fallbackModel: OpenAITextModel = ChatModels.GPT4Turbo,
+            |    temperature: Double = 0.1,
+            |    val autoEvaluate: Boolean = false,
             |)
             |```
             |
