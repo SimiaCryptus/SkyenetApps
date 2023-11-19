@@ -1,16 +1,15 @@
 package com.simiacryptus.skyenet.apps.meta
 
 import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.meta.MetaActors.ActorType
 import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
-import com.simiacryptus.skyenet.config.DataStorage
+import com.simiacryptus.skyenet.platform.DataStorage
 import com.simiacryptus.skyenet.session.SessionBase
 import com.simiacryptus.skyenet.session.SessionDiv
-import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.util.JsonUtil
 
@@ -64,7 +63,17 @@ open class AgentBuilder(
                 }
                 val code = response.getCode()
                 //language=HTML
-                actorDiv.append("""<pre class="response-message">${renderMarkdown(code)}</pre>""", false)
+                actorDiv.append(
+                    """<div class="response-message">${
+                        //language=MARKDOWN
+                        renderMarkdown(
+                            """
+                            |```kotlin
+                            |$code
+                            |```
+                            """.trimMargin())
+                    }</div>""", false
+                )
                 actorDesign.javaIdentifier to code
             }?.toMap() ?: mapOf()
 
@@ -88,28 +97,31 @@ open class AgentBuilder(
                 val code = response.getCode()
                 flowCodeBuffer.append(code)
                 //language=HTML
-                logicFlowDiv.append("""<div class="response-message">${
-                    renderMarkdown("""
-                        |```kotlin
-                        |$code
-                        |```
-                        """.trimMargin())
-                }</div>""", false)
+                logicFlowDiv.append(
+                    """<div class="response-message">${
+                        //language=MARKDOWN
+                        renderMarkdown(
+                            """
+                            |```kotlin
+                            |$code
+                            |```
+                            """.trimMargin())
+                    }</div>""", false
+                )
             }
 
             val finalCodeDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
             //language=HTML
             finalCodeDiv.append("""<div class="response-header">Final Code</div>""", true)
+            //language=MARKDOWN
+            val (imports, otherCode) = (actorImpls.values + flowCodeBuffer.split("\n")).partition { it.trim().startsWith("import ") }
             var code = """
             |```kotlin
-            |${actorImpls.values.joinToString("\n\n")}
+            |${imports}
             |
-            |${flowCodeBuffer}
+            |${otherCode}
             |```
             |""".trimMargin()
-            val (imports, otherCode) = code.split("\n").partition { it.trim().startsWith("import ") }
-            code = imports.joinToString("\n") + "\n" + otherCode.joinToString("\n")
-
             //language=HTML
             finalCodeDiv.append("""<div class="response-message">${renderMarkdown(code)}</div>""", false)
         } catch (e: Throwable) {

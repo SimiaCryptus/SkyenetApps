@@ -11,7 +11,7 @@ import com.simiacryptus.skyenet.apps.outline.OutlineActors.ActorType
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminalNodeMap
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
-import com.simiacryptus.skyenet.config.DataStorage
+import com.simiacryptus.skyenet.platform.DataStorage
 import com.simiacryptus.skyenet.session.SessionBase
 import com.simiacryptus.skyenet.session.SessionDiv
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
@@ -62,7 +62,7 @@ class OutlineBuilder(
         )
         val outline = answer.getObj()
         //language=HTML
-        sessionDiv.append("""<pre class='verbose'>${toJson(outline)}</pre>""", false)
+        sessionDiv.append("""<pre class="verbose">${toJson(outline)}</pre>""", false)
 
         this.userQuestion = userMessage
         outlineManager.root = OutlineManager.Node(answer.getText(), outline)
@@ -81,10 +81,10 @@ class OutlineBuilder(
         finalOutlineDiv.append("""<div class="response-header">Final Outline</div>""", true)
         val finalOutline = outlineManager.buildFinalOutline()
         //language=HTML
-        finalOutlineDiv.append("""<pre class='verbose'>${toJson(finalOutline)}</pre>""", true)
+        finalOutlineDiv.append("""<pre class="verbose">${toJson(finalOutline)}</pre>""", true)
         val textOutline = finalOutline.getTextOutline()
         //language=HTML
-        finalOutlineDiv.append("""<pre class='response-message'>$textOutline</pre>""", false)
+        finalOutlineDiv.append("""<pre class="response-message">$textOutline</pre>""", false)
         sessionDir.resolve("finalOutline.json").writeText(toJson(finalOutline))
         sessionDir.resolve("textOutline.txt").writeText(textOutline)
 

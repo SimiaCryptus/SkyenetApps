@@ -1,25 +1,9 @@
 package com.simiacryptus.skyenet.apps
 
 import com.simiacryptus.skyenet.AppServer
-import com.simiacryptus.skyenet.ApplicationDirectory
-import com.simiacryptus.skyenet.actors.CodingActor
-import com.simiacryptus.skyenet.actors.ParsedActor
-import com.simiacryptus.skyenet.actors.SimpleActor
-import com.simiacryptus.skyenet.apps.TestAppServer.port
-import com.simiacryptus.skyenet.apps.debate.DebateApp
-import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
-import com.simiacryptus.skyenet.apps.outline.OutlineApp
-import com.simiacryptus.skyenet.apps.roblox.AdminCommandCoder
-import com.simiacryptus.skyenet.apps.roblox.BehaviorScriptCoder
-import com.simiacryptus.skyenet.config.ApplicationServices
-import com.simiacryptus.skyenet.config.AuthenticationManager
-import com.simiacryptus.skyenet.config.AuthorizationManager
-import com.simiacryptus.skyenet.heart.GroovyInterpreter
-import com.simiacryptus.skyenet.heart.KotlinInterpreter
-import com.simiacryptus.skyenet.heart.ScalaLocalInterpreter
-import com.simiacryptus.skyenet.test.*
-import java.util.function.Function
-import kotlin.math.roundToInt
+import com.simiacryptus.skyenet.platform.ApplicationServices
+import com.simiacryptus.skyenet.platform.AuthenticationManager
+import com.simiacryptus.skyenet.platform.AuthorizationManager
 import kotlin.random.Random
 
 object TestAppServer : AppServer(

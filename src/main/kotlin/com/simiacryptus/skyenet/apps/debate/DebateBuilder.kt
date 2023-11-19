@@ -8,7 +8,7 @@ import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.debate.DebateActors.*
-import com.simiacryptus.skyenet.config.DataStorage
+import com.simiacryptus.skyenet.platform.DataStorage
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.util.JsonUtil.toJson
 
@@ -27,7 +27,7 @@ class DebateBuilder(
         sessionDiv.append("""<div>${renderMarkdown(userMessage)}</div>""", true)
         val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage), api = api)
         sessionDiv.append("""<div>${renderMarkdown(moderatorResponse.getText())}</div>""", true)
-        sessionDiv.append("""<pre class='verbose'>${toJson(moderatorResponse.getObj())}</pre>""", false)
+        sessionDiv.append("""<pre class="verbose">${toJson(moderatorResponse.getObj())}</pre>""", false)
 
         val totalSummary =
             (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().map { question ->
@@ -63,9 +63,9 @@ class DebateBuilder(
         projectorDiv.append("""<div>$response</div>""", false)
 
         val conclusionDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
-        conclusionDiv.append("""<pre class='verbose'>${toJson(totalSummary)}</pre>""", true)
+        conclusionDiv.append("""<pre class="verbose">${toJson(totalSummary)}</pre>""", true)
         val summarizorResponse = summarizor.answer(*totalSummary.toTypedArray(), api = api)
-        conclusionDiv.append("""<pre class='verbose'>${toJson(summarizorResponse)}</pre>""", false)
+        conclusionDiv.append("""<pre class="verbose">${toJson(summarizorResponse)}</pre>""", false)
         conclusionDiv.append("""<div>${renderMarkdown(summarizorResponse)}</div>""", false)
     }
 
@@ -85,7 +85,7 @@ class DebateBuilder(
         val response = debator.answer(*debator.chatMessages(question.text ?: ""), api = api)
         resonseDiv.append("""<div>${renderMarkdown(response.getText())}</div>""", false)
         outlines[actor.name!! + ": " + question.text!!] = response.getObj()
-        resonseDiv.append("""<pre class='verbose'>${toJson(response.getObj()).trim()}</pre>""", false)
+        resonseDiv.append("""<pre class="verbose">${toJson(response.getObj()).trim()}</pre>""", false)
         return response.getText()
     }
 
