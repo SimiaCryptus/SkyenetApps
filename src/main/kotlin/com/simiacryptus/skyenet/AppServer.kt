@@ -1,18 +1,19 @@
 package com.simiacryptus.skyenet
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
+import com.amazonaws.regions.DefaultAwsRegionProviderChain
 import com.simiacryptus.skyenet.actors.CodingActor
-import com.simiacryptus.skyenet.actors.ParsedActor
-import com.simiacryptus.skyenet.actors.SimpleActor
+import com.simiacryptus.skyenet.apps.coding.SimpleCodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
 import com.simiacryptus.skyenet.apps.outline.OutlineApp
 import com.simiacryptus.skyenet.apps.roblox.AdminCommandCoder
 import com.simiacryptus.skyenet.apps.roblox.BehaviorScriptCoder
-import com.simiacryptus.skyenet.heart.GroovyInterpreter
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import com.simiacryptus.skyenet.heart.ScalaLocalInterpreter
-import com.simiacryptus.skyenet.test.*
-import java.util.function.Function
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.SparkSession
 
 
 open class AppServer(
@@ -28,29 +29,32 @@ open class AppServer(
         }
     }
 
+    val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
     override val childWebApps by lazy {
+
         listOf(
-            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName)),
-            ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
-            ChildWebApp("/test_coding_scala", CodingActorTestApp(CodingActor(ScalaLocalInterpreter::class))),
-            ChildWebApp("/test_coding_kotlin", CodingActorTestApp(CodingActor(KotlinInterpreter::class))),
-            ChildWebApp("/test_coding_groovy", CodingActorTestApp(CodingActor(GroovyInterpreter::class))),
-            ChildWebApp("/test_simple", SimpleActorTestApp(SimpleActor("Translate the user's request into pig latin.", "PigLatin"))),
-            ChildWebApp("/test_parsed_joke", ParsedActorTestApp(ParsedActor(JokeParser::class.java, "Tell me a joke"))),
             ChildWebApp("/meta_agent", MetaAgentApp()),
+            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName)),
+            ChildWebApp("/spark_coder", SimpleCodingApp("Spark Coding Assistant", CodingActor(
+                ScalaLocalInterpreter::class, symbols = mapOf(
+                    "sc" to SparkContext.getOrCreate(sparkConf),
+                    "spark" to SparkSession.builder().config(sparkConf).getOrCreate(),
+                )
+            ))),
+            ChildWebApp("/aws_coder", SimpleCodingApp("AWS Coding Assistant", CodingActor(
+                KotlinInterpreter::class, symbols = mapOf(
+                    // Region
+                    "region" to DefaultAwsRegionProviderChain().getRegion(),
+                    // AWSCredentialsProvider
+                    "credentials" to DefaultAWSCredentialsProviderChain.getInstance(),
+                )
+            ))),
+            ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
+
+            // Legacy for the kids
             ChildWebApp("/roblox_cmd", AdminCommandCoder()),
             ChildWebApp("/roblox_script", BehaviorScriptCoder()),
         )}
-
-
-
-    data class TestJokeDataStructure(
-        val setup: String? = null,
-        val punchline: String? = null,
-        val type: String? = null,
-    )
-
-    interface JokeParser : Function<String, TestJokeDataStructure>
 
 }
 

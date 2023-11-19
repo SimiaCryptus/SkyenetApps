@@ -9,7 +9,7 @@ import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 
 class BehaviorScriptCoder(
-    applicationName: String = "BehaviorScriptCoder",
+    applicationName: String = "Roblox BehaviorScript Coder",
     temperature: Double = 0.1,
 ) : ApplicationBase(
     applicationName = applicationName,

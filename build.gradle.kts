@@ -1,6 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import java.net.URI
 
 fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
@@ -31,6 +30,8 @@ kotlin {
 
 val jetty_version = "11.0.18"
 val skyenet_version = "1.0.34"
+val scala_version = "2.13.8"
+val spark_version = "3.5.0"
 dependencies {
     implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.32")
 
@@ -41,10 +42,17 @@ dependencies {
     implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
 
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
-    implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
-    implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
+    implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
+
+    implementation(group = "org.apache.spark", name = "spark-core_2.13", version = spark_version)
+    implementation(group = "org.apache.spark", name = "spark-sql_2.13", version = spark_version)
+    implementation(group = "org.scala-lang", name = "scala-library", version = scala_version)
+    implementation(group = "org.scala-lang", name = "scala-compiler", version = scala_version)
+    implementation(group = "org.scala-lang", name = "scala-reflect", version = scala_version)
+
     implementation(group = "commons-io", name = "commons-io", version = "2.15.0")
+    implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
     implementation(group = "com.amazonaws", name = "aws-java-sdk", version = "1.12.587")
 
     implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.9")
@@ -79,7 +87,8 @@ tasks {
         jvmArgs(
             "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
             "--add-opens", "java.base/java.util=ALL-UNNAMED",
-            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+            "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED"
         )
     }
     wrapper {

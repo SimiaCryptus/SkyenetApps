@@ -1,11 +1,25 @@
 package com.simiacryptus.skyenet
 
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
+import com.simiacryptus.util.describe.AbbrevWhitelistYamlDescriber
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class InterpreterTests {
+    @Test
+    fun test3() {
+        val describer = AbbrevWhitelistYamlDescriber(
+            "com.simiacryptus",
+            "com.github.simiacryptus"
+        )
+        val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
+        val sparkContext = SparkContext.getOrCreate(sparkConf)
+        println(describer.describe(sparkContext.javaClass))
+    }
+
     @Test
     fun test() {
         val interpreter = KotlinInterpreter()

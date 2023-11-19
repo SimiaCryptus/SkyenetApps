@@ -89,7 +89,7 @@ class DebateBuilder(
         return response.getText()
     }
 
-    open fun getActorConfig(actor: Debator) =
+    fun getActorConfig(actor: Debator) =
         DebateActors.getActorConfig(actor)
 
 }
