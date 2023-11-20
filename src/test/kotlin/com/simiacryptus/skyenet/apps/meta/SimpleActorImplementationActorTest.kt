@@ -1,98 +1,95 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.skyenet.Heart
 import com.simiacryptus.skyenet.actors.opt.ActorOptimization
 import com.simiacryptus.skyenet.actors.opt.Expectation
 import com.simiacryptus.skyenet.actors.test.CodingActorTestBase
-import com.simiacryptus.skyenet.actors.test.ParsedActorTestBase
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 
 object SimpleActorImplementationActorTest : CodingActorTestBase() {
 
     @Test
     override fun testRun() = super.testRun()
-//    @Test
+
+    //    @Test
     override fun testOptimize() = super.testOptimize()
-    override val actor = MetaActors.simpleActorDesigner()
+    override val actor = MetaActors().simpleActorDesigner()
     override val interpreterClass = KotlinInterpreter::class
+
     @Language("Markdown")
     override val testCases = listOf(
         ActorOptimization.TestCase(
             userMessages = listOf(
-                "Design a software project designer",
+                "Create a software project generator",
                 """
                 # Software Project Generator System Design Document
                 
-                ## Introduction
+                ## Overview
                 
-                The Software Project Generator is a system designed to automate the creation of software project scaffolding, tailored to the user's specifications. This system leverages a community of GPT "actors" to interpret user requirements, generate project structure, and provide code templates. The system aims to streamline the initial setup process of software development, allowing developers to focus on implementing business logic and features.
+                The Software Project Generator is a system designed to assist users in creating the scaffolding for new software projects across various programming languages and frameworks. The system employs GPT-based "actors" to interact with the user, gather requirements, and generate the necessary code and documentation. This document outlines the system design, including the actors used and the logical flow of the system.
                 
-                ## System Actors
+                ## Actors
                 
-                ### 1. Requirement Interpreter Actor (Simple Actor)
+                ### 1. Requirement Collector Actor (Simple Actor)
                 
-                **Purpose**: This actor's primary function is to process a list of user messages detailing project requirements and convert them into a structured format that can be understood by subsequent actors.
+                **Purpose:** This actor's role is to interact with the user to collect the requirements for the new software project. It asks questions about the project's scope, desired programming language, frameworks, and any specific libraries or tools the user wants to include.
                 
-                **Usage**: Users input their project requirements in natural language. The Requirement Interpreter Actor processes these inputs and generates a response that outlines the understood requirements and any clarifications needed.
+                **Usage:** The actor processes user messages and generates a response that guides the user through the requirement collection process. It ensures all necessary information is gathered to create the project scaffold.
                 
-                ### 2. Project Structure Generator Actor (Parsed Actor)
+                ### 2. Project Template Selector Actor (Parsed Actor)
                 
-                **Purpose**: This actor takes the structured requirements from the Requirement Interpreter Actor and generates a high-level outline of the project structure, including directory layout and necessary configuration files.
+                **Purpose:** Based on the requirements collected by the Requirement Collector Actor, the Project Template Selector Actor suggests appropriate project templates and configurations.
                 
-                **Usage**: Once the requirements are confirmed, this actor parses the response into a predefined Kotlin data class representing the project structure. It then uses GPT3.5_Turbo to generate a textual representation of the project structure, which is further parsed into a more detailed and actionable format.
+                **Usage:** The actor first responds to queries like a simple actor, then uses GPT3.5_Turbo to parse the text response into a predefined Kotlin data class representing project templates. This structured data is used for further processing and decision-making.
                 
-                ### 3. Code Template Producer Actor (Script Actor)
+                ### 3. Code Generator Actor (Script Actor)
                 
-                **Purpose**: This actor uses the project structure outline to generate code templates and boilerplate for the project. It can produce scripts in Scala, Kotlin, or Groovy, depending on the user's choice.
+                **Purpose:** This actor takes the selected project template and user requirements to generate the project scaffold, including directory structure, base code files, build scripts, and initial documentation.
                 
-                **Usage**: The actor takes the detailed project structure and utilizes an environment definition with predefined symbols/functions to generate the necessary code templates. The result includes a valid script with an "execute" method that can be used to create the project files and directories.
+                **Usage:** The actor combines an environment definition with a pluggable script compilation system using Scala, Kotlin, or Groovy. It returns a valid script with an "execute" method that, when run, creates the project scaffold.
                 
-                ## Logical Flow of the System
+                ## Logical Flow
                 
-                1. **User Input**: The user interacts with the system, providing a description of the desired software project, including language, frameworks, and any specific patterns or features.
+                ### Step 1: Requirement Collection
+                - The user initiates the process by expressing the desire to create a new software project.
+                - The Requirement Collector Actor engages the user in a conversation to gather all necessary project requirements.
+                - The actor uses a system directive to ensure the conversation stays on track and covers all aspects needed for project generation.
                 
-                2. **Requirement Interpretation**:
-                    - The Requirement Interpreter Actor receives the user's input.
-                    - It processes the input and generates a structured outline of the requirements.
-                    - The actor may request additional information or clarification from the user if necessary.
+                ### Step 2: Template Selection
+                - Once the requirements are collected, the Project Template Selector Actor takes over.
+                - The actor suggests several project templates that match the user's requirements.
+                - The user selects a preferred template, and the actor parses the selection into a data class for further processing.
                 
-                3. **Project Structure Generation**:
-                    - The structured requirements are passed to the Project Structure Generator Actor.
-                    - This actor generates a high-level project structure outline, including directories and configuration files.
-                    - The textual representation of the project structure is parsed into a Kotlin data class for further processing.
+                ### Step 3: Project Generation
+                - The Code Generator Actor receives the selected template and user requirements.
+                - It uses the environment definition and script compilation system to generate the project scaffold.
+                - The actor creates a script that, when executed, will set up the project's directory structure, base code files, build scripts, and initial documentation.
                 
-                4. **Code Template Production**:
-                    - The detailed project structure is provided to the Code Template Producer Actor.
-                    - The actor uses the structure to generate code templates and boilerplate scripts.
-                    - The generated scripts are tailored to the user's specifications and include an "execute" method.
+                ### Step 4: Project Delivery
+                - The generated script is delivered to the user with instructions on how to execute it.
+                - The user runs the script on their local machine or a designated environment to create the new software project.
+                - The system may provide additional support or instructions for the next steps, such as version control setup or integration with development tools.
                 
-                5. **Project Scaffolding Execution**:
-                    - The generated scripts are executed, creating the project's directory structure and populating it with the initial code templates and configuration files.
-                    - The system may provide additional instructions or scripts to run the project or integrate with version control systems.
-                
-                6. **Review and Delivery**:
-                    - The generated project is presented to the user for review.
-                    - The user can request changes or further customization, which are processed by looping back to the appropriate actor.
-                    - Once approved, the project is packaged and delivered to the user, ready for development.
+                ### Step 5: Iteration and Feedback
+                - The user reviews the generated project scaffold and provides feedback.
+                - If adjustments are needed, the user can return to any of the previous steps to refine the requirements or select a different template.
+                - The system iterates through the process until the user is satisfied with the generated project.
                 
                 ## Optional UI Elements
                 
-                - A web-based interface allows users to input requirements and view the generated project structure and code templates.
-                - Interactive elements enable users to tweak the generated output before finalizing the project scaffolding.
+                To enhance user experience, the system may include a web-based UI that allows users to:
+                - Input requirements through forms and selections rather than text-based conversation.
+                - Browse and select project templates visually.
+                - Receive and execute the generated script directly within the UI.
                 
                 ## Conclusion
                 
-                The Software Project Generator system is designed to be a flexible and efficient tool for setting up new software projects. By leveraging the capabilities of GPT actors and existing JVM libraries, the system can cater to a wide range of project requirements and streamline the initial development process.
-                """.trimIndent(),
-                "Implement RequirementInterpreterActor",
+                The Software Project Generator system leverages specialized GPT actors to streamline the process of setting up new software projects. By guiding the user through requirement collection, template selection, and code generation, the system simplifies the project initiation phase and allows for quick and customized project scaffolding.
+                """.trimIndent().trim(),
+                "Implement `fun requirementCollectorActor`",
             ),
             expectations = listOf(
-                Expectation.ContainsMatch("""`search\('.*?'\)`""".toRegex(), critical = false),
-                Expectation.ContainsMatch("""search\(.*?\)""".toRegex(), critical = false),
-                Expectation.VectorMatch("Great, what kind of book are you looking for?")
             )
         )
     )

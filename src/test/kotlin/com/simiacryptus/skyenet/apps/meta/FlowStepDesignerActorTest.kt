@@ -13,7 +13,7 @@ object FlowStepDesignerActorTest : CodingActorTestBase() {
 //    @Test
     override fun testOptimize() = super.testOptimize()
     override val interpreterClass get() = KotlinInterpreter::class
-    override val actor = MetaActors.flowStepDesigner()
+    override val actor = MetaActors().flowStepDesigner()
     override val testCases = listOf(
         ActorOptimization.TestCase(
             userMessages = listOf(

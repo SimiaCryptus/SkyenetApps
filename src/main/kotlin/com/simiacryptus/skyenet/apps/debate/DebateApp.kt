@@ -16,6 +16,7 @@ open class DebateApp(
 
     override fun processMessage(
         sessionId: String,
+        userId: String?,
         userMessage: String,
         session: ApplicationSession,
         sessionDiv: SessionDiv,

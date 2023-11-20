@@ -29,11 +29,11 @@ kotlin {
 }
 
 val jetty_version = "11.0.18"
-val skyenet_version = "1.0.34"
+val skyenet_version = "1.0.36"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 dependencies {
-    implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.32")
+    implementation(group = "com.simiacryptus", name = "joe-penai", version = "1.0.33")
 
     implementation(group = "com.simiacryptus.skyenet", name = "core", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "groovy", version = skyenet_version)

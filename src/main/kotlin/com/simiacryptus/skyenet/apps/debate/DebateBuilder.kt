@@ -58,7 +58,8 @@ class DebateBuilder(
             sessionID = sessionDiv.sessionID(),
             appPath = "debate_mapper",
             host = domainName,
-            session = session
+            session = session,
+            userId = userId ?: "",
         ).writeTensorflowEmbeddingProjectorHtml(*argumentList.toTypedArray())
         projectorDiv.append("""<div>$response</div>""", false)
 

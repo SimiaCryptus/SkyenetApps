@@ -1,5 +1,6 @@
 package com.simiacryptus.skyenet.apps.meta
 
+import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.skyenet.ApplicationBase
 import com.simiacryptus.skyenet.chat.ChatSocket
 import com.simiacryptus.skyenet.session.*
@@ -13,20 +14,36 @@ open class MetaAgentApp(
     temperature = temperature,
 ) {
 
+    data class Settings(
+        val model: ChatModels = ChatModels.GPT4Turbo,
+        val autoEvaluate: Boolean = false,
+        val temperature: Double = 0.3,
+    )
+    override val settingsClass: Class<*> get() = Settings::class.java
+    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(sessionId: String): T? = Settings() as T
+
     override fun processMessage(
         sessionId: String,
+        userId: String?,
         userMessage: String,
         session: ApplicationSession,
         sessionDiv: SessionDiv,
         socket: ChatSocket
     ) {
         try {
+            val settings = getSettings<Settings>(sessionId, userId)
             AgentBuilder(
+                userId = socket.user?.id,
+                sessionId = sessionId,
+                userMessage = userMessage,
                 api = socket.api,
                 dataStorage = dataStorage,
-                userId = socket.user?.id,
-                sessionId = sessionId
-            ).buildAgent(userMessage, session, sessionDiv)
+                session = session,
+                sessionDiv = sessionDiv,
+                model = settings?.model ?: ChatModels.GPT35Turbo,
+                autoEvaluate = settings?.autoEvaluate ?: true,
+                temperature = settings?.temperature ?: 0.3,
+            ).buildAgent()
         } catch (e: Throwable) {
             log.warn("Error", e)
         }

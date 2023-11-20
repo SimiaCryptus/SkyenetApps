@@ -72,7 +72,7 @@ class OutlineBuilder(
             while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
         }
 
-        val sessionDir = dataStorage.getSessionDir(session.userId, session.sessionId)
+        val sessionDir = dataStorage.getSessionDir(userId, sessionId)
         sessionDir.resolve("nodes.json").writeText(toJson(outlineManager.nodes))
         sessionDir.resolve("relationships.json").writeText(toJson(outlineManager.relationships))
 
@@ -98,7 +98,8 @@ class OutlineBuilder(
                 sessionID = sessionDiv.sessionID(),
                 appPath = "idea_mapper",
                 host = domainName,
-                session = session
+                session = session,
+                userId = userId ?: "",
             ).writeTensorflowEmbeddingProjectorHtml(*outlineManager.getAllItems(finalOutline).toTypedArray())
             //language=HTML
             projectorDiv.append("""<div class="response-message">$response</div>""", false)

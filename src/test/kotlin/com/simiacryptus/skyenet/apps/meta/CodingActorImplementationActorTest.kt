@@ -12,7 +12,7 @@ open class CodingActorImplementationActorTest : CodingActorTestBase() {
 
     @Test override fun testRun() = super.testRun()
 //    @Test override fun testOptimize() = super.testOptimize()
-    override val actor = MetaActors.codingActorDesigner()
+    override val actor = MetaActors().codingActorDesigner()
     override val interpreterClass get() = KotlinInterpreter::class
     override val testCases = listOf(
         ActorOptimization.TestCase(

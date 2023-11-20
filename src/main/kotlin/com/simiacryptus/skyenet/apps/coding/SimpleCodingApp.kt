@@ -21,6 +21,7 @@ open class SimpleCodingApp(
 ) {
     override fun processMessage(
         sessionId: String,
+        userId: String?,
         userMessage: String,
         session: ApplicationSession,
         sessionDiv: SessionDiv,
@@ -35,7 +36,7 @@ open class SimpleCodingApp(
                 AuthorizationManager.OperationType.Execute
             )
             val playLink = if(!canPlay) "" else {
-                session.htmlTools(sessionDiv.divID()).hrefLink("▶", "href-link play-button") {
+                session.hrefLink(sessionDiv.divID(), "▶", "href-link play-button") {
                     //language=HTML
                     sessionDiv.append("""<div class="response-header">Running...</div>""", true)
                     val result = response.run()

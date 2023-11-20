@@ -26,12 +26,13 @@ open class OutlineApp(
 
     override fun processMessage(
         sessionId: String,
+        userId: String?,
         userMessage: String,
         session: ApplicationSession,
         sessionDiv: SessionDiv,
         socket: ChatSocket
     ) {
-        val settings = getSettings<Settings>(sessionId, session.userId)
+        val settings = getSettings<Settings>(sessionId, userId)
         OutlineBuilder(
             api = socket.api,
             dataStorage = dataStorage,

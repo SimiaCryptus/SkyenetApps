@@ -12,7 +12,7 @@ object InitialDesignerActorTest :
     override fun testRun() = super.testRun()
 //    @Test
     override fun testOptimize() = super.testOptimize()
-    override val actor = MetaActors.initialDesigner()
+    override val actor = MetaActors().initialDesigner()
     override val testCases = listOf(
         ActorOptimization.TestCase(
             userMessages = listOf(
