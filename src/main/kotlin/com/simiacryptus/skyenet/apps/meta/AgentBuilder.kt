@@ -1,9 +1,8 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.openai.OpenAIAPI
 import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.session.ApplicationSocketManager
 import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.ParsedActor
@@ -13,6 +12,7 @@ import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
 import com.simiacryptus.skyenet.platform.DataStorage
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
+import com.simiacryptus.skyenet.session.ApplicationInterface
 import com.simiacryptus.skyenet.session.SocketManagerBase
 import com.simiacryptus.skyenet.session.SessionMessage
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
@@ -21,27 +21,26 @@ import java.util.*
 
 
 open class AgentBuilder(
-    userId: User?,
-    sessionId: Session,
-    val userMessage: String,
-    val api: OpenAIClient,
-    @Suppress("unused") val dataStorage: DataStorage,
-    val session: ApplicationSocketManager.ApplicationInterface,
-    val sessionMessage: SessionMessage,
+    user: User?,
+    session: Session,
+    dataStorage: DataStorage,
+    val api: OpenAIAPI,
     val model: ChatModels = ChatModels.GPT35Turbo,
+    val ui: ApplicationInterface,
+    val userMessage: String,
     val autoEvaluate: Boolean = true,
     val temperature: Double = 0.3,
 ) : ActorSystem<ActorType>(MetaActors(
     symbols = mapOf(
         "dataStorage" to dataStorage,
+        "ui" to ui,
         "session" to session,
-        "sessionDiv" to sessionMessage,
-        "sessionId" to sessionId,
-    ),
+        "user" to user,
+    ).filterValues { null != it }.mapValues { it.value!! },
     model = model,
     autoEvaluate = autoEvaluate,
     temperature = temperature,
-).actorMap, dataStorage, userId, sessionId) {
+).actorMap, dataStorage, user, session) {
 
     @Suppress("UNCHECKED_CAST")
     private val initialDesigner by lazy { getActor(ActorType.INITIAL) as ParsedActor<AgentDesign> }
@@ -55,20 +54,21 @@ open class AgentBuilder(
     fun buildAgent(
     ) {
         try {
+            val rootMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
             this.userPrompt = userMessage
             //language=HTML
-            sessionMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
+            rootMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
             val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage), api = api)
             //language=HTML
-            sessionMessage.append("""<div class="response-message">${renderMarkdown(design.getText())}</div>""", true)
+            rootMessage.append("""<div class="response-message">${renderMarkdown(design.getText())}</div>""", true)
             //language=HTML
-            sessionMessage.append("""<pre class="verbose">${JsonUtil.toJson(design.getObj())}</pre>""", false)
+            rootMessage.append("""<pre class="verbose">${JsonUtil.toJson(design.getObj())}</pre>""", false)
 
-            val actImpls = implementActors(session, userMessage, design)
-            val flowImpl = getFlowStepCode(session, userMessage, design, actImpls)
-            val mainImpl = getMainFunction(session, userMessage, design, actImpls, flowImpl)
+            val actImpls = implementActors(ui, userMessage, design)
+            val flowImpl = getFlowStepCode(ui, userMessage, design, actImpls)
+            val mainImpl = getMainFunction(ui, userMessage, design, actImpls, flowImpl)
 
-            val finalCodeDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
+            val finalCodeDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
             //language=HTML
             finalCodeDiv.append("""<div class="response-header">Final Code</div>""", true)
             //language=MARKDOWN
@@ -87,13 +87,13 @@ open class AgentBuilder(
             finalCodeDiv.append("""<div class="response-message">${renderMarkdown(code)}</div>""", false)
         } catch (e: Throwable) {
             log.warn("Error", e)
-            session.send("""${SocketManagerBase.randomID()},<div class="error">${renderMarkdown(e.message ?: "")}</div>""")
+            ui.send("""${SocketManagerBase.randomID()},<div class="error">${renderMarkdown(e.message ?: "")}</div>""")
         }
 
     }
 
     private fun getMainFunction(
-        session: ApplicationSocketManager.ApplicationInterface,
+        session: ApplicationInterface,
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
         actorImpls: Map<String, String>,
@@ -128,7 +128,7 @@ open class AgentBuilder(
     }
 
     private fun implementActors(
-        session: ApplicationSocketManager.ApplicationInterface,
+        session: ApplicationInterface,
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
     ) = design.getObj().actors?.map { actorDesign ->
@@ -172,7 +172,7 @@ open class AgentBuilder(
     }?.toMap() ?: mapOf()
 
     private fun getFlowStepCode(
-        session: ApplicationSocketManager.ApplicationInterface,
+        session: ApplicationInterface,
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
         actorImpls: Map<String, String>,

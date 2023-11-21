@@ -1,8 +1,7 @@
 package com.simiacryptus.skyenet.apps.debate
 
+import com.simiacryptus.openai.OpenAIAPI
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.session.ApplicationSocketManager
-import com.simiacryptus.skyenet.chat.ChatSocket
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.session.*
@@ -21,17 +20,16 @@ open class DebateApp(
         session: Session,
         user: User?,
         userMessage: String,
-        socketManager: ApplicationSocketManager.ApplicationInterface,
-        sessionMessage: SessionMessage,
-        socket: ChatSocket
+        ui: ApplicationInterface,
+        api: OpenAIAPI
     ) {
         try {
             DebateBuilder(
-                api = socket.api,
+                api = api,
                 dataStorage = dataStorage,
                 userId = user,
                 session = session
-            ).debate(userMessage, socketManager, sessionMessage, domainName)
+            ).debate(userMessage, ui, sessionMessage, domainName)
         } catch (e: Throwable) {
             log.warn("Error", e)
         }

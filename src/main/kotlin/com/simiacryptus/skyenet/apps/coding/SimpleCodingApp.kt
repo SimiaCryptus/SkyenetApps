@@ -1,9 +1,8 @@
 package com.simiacryptus.skyenet.apps.coding
 
+import com.simiacryptus.openai.OpenAIAPI
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.session.ApplicationSocketManager
 import com.simiacryptus.skyenet.actors.CodingActor
-import com.simiacryptus.skyenet.chat.ChatSocket
 import com.simiacryptus.skyenet.platform.*
 import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
@@ -22,20 +21,19 @@ open class SimpleCodingApp(
         session: Session,
         user: User?,
         userMessage: String,
-        socketManager: ApplicationSocketManager.ApplicationInterface,
-        sessionMessage: SessionMessage,
-        socket: ChatSocket
+        ui: ApplicationInterface,
+        api: OpenAIAPI
     ) {
         try {
             sessionMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
-            val response = actor.answer(userMessage, api = socket.api)
+            val response = actor.answer(userMessage, api = api)
             val canPlay = ApplicationServices.authorizationManager.isAuthorized(
                 this::class.java,
                 user,
                 AuthorizationManager.OperationType.Execute
             )
             val playLink = if(!canPlay) "" else {
-                socketManager.hrefLink("▶", "href-link play-button") {
+                ui.hrefLink("▶", "href-link play-button") {
                     //language=HTML
                     sessionMessage.append("""<div class="response-header">Running...</div>""", true)
                     val result = response.run()
@@ -63,7 +61,7 @@ open class SimpleCodingApp(
         } catch (e: Throwable) {
             log.warn("Error", e)
             //language=HTML
-            socketManager.send("""${SocketManagerBase.randomID()},<div class="error">${renderMarkdown(e.message ?: "")}</div>""")
+            ui.send("""${SocketManagerBase.randomID()},<div class="error">${renderMarkdown(e.message ?: "")}</div>""")
         }
     }
 

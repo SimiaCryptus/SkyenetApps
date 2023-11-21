@@ -2,10 +2,9 @@ package com.simiacryptus.skyenet.apps.outline
 
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.openai.GPT4Tokenizer
-import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.openai.OpenAIAPI
 import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.session.ApplicationSocketManager
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.ActorType
@@ -15,6 +14,7 @@ import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
 import com.simiacryptus.skyenet.platform.DataStorage
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
+import com.simiacryptus.skyenet.session.ApplicationInterface
 import com.simiacryptus.skyenet.session.SocketManagerBase
 import com.simiacryptus.skyenet.session.SessionMessage
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
 class OutlineBuilder(
-    val api: OpenAIClient,
+    val api: OpenAIAPI,
     val dataStorage: DataStorage,
     private val iterations: Int,
     private val temperature: Double,
@@ -51,7 +51,7 @@ class OutlineBuilder(
 
     fun buildMap(
         userMessage: String,
-        session: ApplicationSocketManager.ApplicationInterface,
+        session: ApplicationInterface,
         sessionMessage: SessionMessage,
         domainName: String
     ) {
@@ -139,7 +139,7 @@ class OutlineBuilder(
     }
 
     private fun process(
-        session: ApplicationSocketManager.ApplicationInterface,
+        session: ApplicationInterface,
         node: OutlineManager.Node,
         depth: Int
     ) {
@@ -175,7 +175,7 @@ class OutlineBuilder(
         parent: OutlineManager.Node,
         actor: ParsedActor<Outline>,
         sectionName: String,
-        session: ApplicationSocketManager.ApplicationInterface
+        session: ApplicationInterface
     ): OutlineManager.Node? {
         if (GPT4Tokenizer(false).estimateTokenCount(parent.data) <= minSize) {
             log.debug("Skipping: ${parent.data}")

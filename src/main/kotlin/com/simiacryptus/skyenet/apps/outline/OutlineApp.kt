@@ -1,8 +1,7 @@
 package com.simiacryptus.skyenet.apps.outline
 
+import com.simiacryptus.openai.OpenAIAPI
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.session.ApplicationSocketManager
-import com.simiacryptus.skyenet.chat.ChatSocket
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.session.*
@@ -31,13 +30,12 @@ open class OutlineApp(
         session: Session,
         user: User?,
         userMessage: String,
-        socketManager: ApplicationSocketManager.ApplicationInterface,
-        sessionMessage: SessionMessage,
-        socket: ChatSocket
+        ui: ApplicationInterface,
+        api: OpenAIAPI
     ) {
         val settings = getSettings<Settings>(session, user)
         OutlineBuilder(
-            api = socket.api,
+            api = api,
             dataStorage = dataStorage,
             iterations = settings?.depth ?: 1,
             temperature = settings?.temperature ?: 0.3,
@@ -46,7 +44,7 @@ open class OutlineApp(
             showProjector = settings?.showProjector ?: true,
             userId = user,
             session = session,
-        ).buildMap(userMessage, socketManager, sessionMessage, domainName)
+        ).buildMap(userMessage, ui, sessionMessage, domainName)
     }
 
     companion object {

@@ -1,9 +1,8 @@
 package com.simiacryptus.skyenet.apps.debate
 
-import com.simiacryptus.openai.OpenAIClient
+import com.simiacryptus.openai.OpenAIAPI
 import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.session.ApplicationSocketManager
 import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
@@ -16,7 +15,7 @@ import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.util.JsonUtil.toJson
 
 class DebateBuilder(
-    val api: OpenAIClient,
+    val api: OpenAIAPI,
     val dataStorage: DataStorage,
     userId: User?,
     session: Session
@@ -26,7 +25,7 @@ class DebateBuilder(
     private val moderator get() = getActor(ActorType.MODERATOR) as ParsedActor<DebateSetup>
     private val summarizor get() = getActor(ActorType.SUMMARIZOR) as SimpleActor
 
-    fun debate(userMessage: String, session: ApplicationSocketManager.ApplicationInterface, sessionMessage: SessionMessage, domainName: String) {
+    fun debate(userMessage: String, session: ApplicationInterface, sessionMessage: SessionMessage, domainName: String) {
         sessionMessage.append("""<div>${renderMarkdown(userMessage)}</div>""", true)
         val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage), api = api)
         sessionMessage.append("""<div>${renderMarkdown(moderatorResponse.getText())}</div>""", true)
@@ -74,7 +73,7 @@ class DebateBuilder(
     }
 
     private fun answer(
-        session: ApplicationSocketManager.ApplicationInterface,
+        session: ApplicationInterface,
         actor: Debator,
         question: Question
     ): String {

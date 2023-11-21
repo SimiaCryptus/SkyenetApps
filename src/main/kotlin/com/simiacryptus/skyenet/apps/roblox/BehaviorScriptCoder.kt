@@ -1,11 +1,10 @@
 package com.simiacryptus.skyenet.apps.roblox
 
+import com.simiacryptus.openai.OpenAIAPI
 import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.OpenAIClientBase.Companion.toContentList
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.session.ApplicationSocketManager
-import com.simiacryptus.skyenet.chat.ChatSocket
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.session.*
@@ -23,14 +22,13 @@ class BehaviorScriptCoder(
         session: Session,
         user: User?,
         userMessage: String,
-        socketManager: ApplicationSocketManager.ApplicationInterface,
-        sessionMessage: SessionMessage,
-        socket: ChatSocket,
+        ui: ApplicationInterface,
+        api: OpenAIAPI,
     ) {
         sessionMessage.append("""<div>$userMessage</div>""", true)
 
         val model = ChatModels.GPT4
-        val response = socket.api.chat(
+        val response = (api as OpenAIClient).chat(
             OpenAIClient.ChatRequest(
                 messages = ArrayList(listOf(
                     OpenAIClient.ChatMessage(role = OpenAIClient.Role.system, content = """

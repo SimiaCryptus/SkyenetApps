@@ -1,9 +1,8 @@
 package com.simiacryptus.skyenet.apps.meta
 
+import com.simiacryptus.openai.OpenAIAPI
 import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.session.ApplicationSocketManager
-import com.simiacryptus.skyenet.chat.ChatSocket
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.session.*
@@ -11,7 +10,7 @@ import org.slf4j.LoggerFactory
 
 open class MetaAgentApp(
     applicationName: String = "MetaAgent",
-    temperature: Double = 0.3,
+    temperature: Double = 0.1,
 ) : ApplicationBase(
     applicationName = applicationName,
     temperature = temperature,
@@ -20,7 +19,7 @@ open class MetaAgentApp(
     data class Settings(
         val model: ChatModels = ChatModels.GPT4Turbo,
         val autoEvaluate: Boolean = false,
-        val temperature: Double = 0.3,
+        val temperature: Double = 0.1,
     )
     override val settingsClass: Class<*> get() = Settings::class.java
     @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
@@ -29,20 +28,18 @@ open class MetaAgentApp(
         session: Session,
         user: User?,
         userMessage: String,
-        socketManager: ApplicationSocketManager.ApplicationInterface,
-        sessionMessage: SessionMessage,
-        socket: ChatSocket
+        ui: ApplicationInterface,
+        api: OpenAIAPI
     ) {
         try {
             val settings = getSettings<Settings>(session, user)
             AgentBuilder(
-                userId = user,
-                sessionId = session,
-                userMessage = userMessage,
-                api = socket.api,
+                user = user,
+                session = session,
                 dataStorage = dataStorage,
-                session = socketManager,
-                sessionMessage = sessionMessage,
+                userMessage = userMessage,
+                api = api,
+                ui = ui,
                 model = settings?.model ?: ChatModels.GPT35Turbo,
                 autoEvaluate = settings?.autoEvaluate ?: true,
                 temperature = settings?.temperature ?: 0.3,
