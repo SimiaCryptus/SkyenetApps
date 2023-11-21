@@ -4,6 +4,7 @@ import com.simiacryptus.skyenet.AppServer
 import com.simiacryptus.skyenet.platform.ApplicationServices
 import com.simiacryptus.skyenet.platform.AuthenticationManager
 import com.simiacryptus.skyenet.platform.AuthorizationManager
+import com.simiacryptus.skyenet.platform.UserInfo
 import kotlin.random.Random
 
 object TestAppServer : AppServer(
@@ -14,7 +15,7 @@ object TestAppServer : AppServer(
     @JvmStatic
     fun main(args: Array<String>) {
         AppServer(localName = "localhost","localhost", 8081).init(false)
-        val mockUser = AuthenticationManager.UserInfo(
+        val mockUser = UserInfo(
             "1",
             "user@mock.test",
             "Test User",
@@ -28,7 +29,7 @@ object TestAppServer : AppServer(
         ApplicationServices.authorizationManager = object : AuthorizationManager() {
             override fun isAuthorized(
                 applicationClass: Class<*>?,
-                user: String?,
+                user: UserInfo?,
                 operationType: OperationType
             ): Boolean = true
         }

@@ -2,7 +2,10 @@ package com.simiacryptus.skyenet.apps.meta
 
 import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.ApplicationSession
 import com.simiacryptus.skyenet.chat.ChatSocket
+import com.simiacryptus.skyenet.platform.SessionID
+import com.simiacryptus.skyenet.platform.UserInfo
 import com.simiacryptus.skyenet.session.*
 import org.slf4j.LoggerFactory
 
@@ -20,11 +23,11 @@ open class MetaAgentApp(
         val temperature: Double = 0.3,
     )
     override val settingsClass: Class<*> get() = Settings::class.java
-    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(sessionId: String): T? = Settings() as T
+    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(sessionId: SessionID): T? = Settings() as T
 
     override fun processMessage(
-        sessionId: String,
-        userId: String?,
+        sessionId: SessionID,
+        userId: UserInfo?,
         userMessage: String,
         session: ApplicationSession,
         sessionDiv: SessionDiv,
@@ -33,7 +36,7 @@ open class MetaAgentApp(
         try {
             val settings = getSettings<Settings>(sessionId, userId)
             AgentBuilder(
-                userId = socket.user?.id,
+                userId = userId,
                 sessionId = sessionId,
                 userMessage = userMessage,
                 api = socket.api,

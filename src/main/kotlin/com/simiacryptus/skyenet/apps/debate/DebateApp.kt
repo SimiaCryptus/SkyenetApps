@@ -1,7 +1,10 @@
 package com.simiacryptus.skyenet.apps.debate
 
 import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.ApplicationSession
 import com.simiacryptus.skyenet.chat.ChatSocket
+import com.simiacryptus.skyenet.platform.SessionID
+import com.simiacryptus.skyenet.platform.UserInfo
 import com.simiacryptus.skyenet.session.*
 import org.slf4j.LoggerFactory
 
@@ -15,8 +18,8 @@ open class DebateApp(
 ) {
 
     override fun processMessage(
-        sessionId: String,
-        userId: String?,
+        sessionId: SessionID,
+        userId: UserInfo?,
         userMessage: String,
         session: ApplicationSession,
         sessionDiv: SessionDiv,
@@ -26,7 +29,7 @@ open class DebateApp(
             DebateBuilder(
                 api = socket.api,
                 dataStorage = dataStorage,
-                userId = socket.user?.id,
+                userId = userId,
                 sessionId = sessionId
             ).debate(userMessage, session, sessionDiv, domainName)
         } catch (e: Throwable) {

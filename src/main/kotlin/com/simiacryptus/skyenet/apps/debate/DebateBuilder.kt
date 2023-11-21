@@ -9,14 +9,16 @@ import com.simiacryptus.skyenet.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.apps.debate.DebateActors.*
 import com.simiacryptus.skyenet.platform.DataStorage
+import com.simiacryptus.skyenet.platform.SessionID
+import com.simiacryptus.skyenet.platform.UserInfo
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.util.JsonUtil.toJson
 
 class DebateBuilder(
     val api: OpenAIClient,
     val dataStorage: DataStorage,
-    userId: String?,
-    sessionId: String
+    userId: UserInfo?,
+    sessionId: SessionID
 ) : ActorSystem<ActorType>(DebateActors.actorMap, dataStorage, userId, sessionId) {
     private val outlines = mutableMapOf<String, Outline>()
     @Suppress("UNCHECKED_CAST")
@@ -59,7 +61,7 @@ class DebateBuilder(
             appPath = "debate_mapper",
             host = domainName,
             session = session,
-            userId = userId ?: "",
+            userId = userId,
         ).writeTensorflowEmbeddingProjectorHtml(*argumentList.toTypedArray())
         projectorDiv.append("""<div>$response</div>""", false)
 

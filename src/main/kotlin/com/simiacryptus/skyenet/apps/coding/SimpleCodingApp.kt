@@ -1,12 +1,11 @@
 package com.simiacryptus.skyenet.apps.coding
 
 import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.ApplicationSession
 import com.simiacryptus.skyenet.actors.CodingActor
-import com.simiacryptus.skyenet.apps.meta.AgentBuilder
 import com.simiacryptus.skyenet.chat.ChatSocket
-import com.simiacryptus.skyenet.platform.ApplicationServices
+import com.simiacryptus.skyenet.platform.*
 import com.simiacryptus.skyenet.session.*
-import com.simiacryptus.skyenet.platform.AuthorizationManager
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -20,8 +19,8 @@ open class SimpleCodingApp(
     temperature = temperature,
 ) {
     override fun processMessage(
-        sessionId: String,
-        userId: String?,
+        sessionId: SessionID,
+        userId: UserInfo?,
         userMessage: String,
         session: ApplicationSession,
         sessionDiv: SessionDiv,
@@ -32,11 +31,11 @@ open class SimpleCodingApp(
             val response = actor.answer(userMessage, api = socket.api)
             val canPlay = ApplicationServices.authorizationManager.isAuthorized(
                 this::class.java,
-                socket.user?.email,
+                userId,
                 AuthorizationManager.OperationType.Execute
             )
             val playLink = if(!canPlay) "" else {
-                session.hrefLink(sessionDiv.divID(), "▶", "href-link play-button") {
+                session.hrefLink("▶", "href-link play-button") {
                     //language=HTML
                     sessionDiv.append("""<div class="response-header">Running...</div>""", true)
                     val result = response.run()

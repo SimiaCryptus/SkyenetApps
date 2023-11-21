@@ -4,7 +4,10 @@ import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.OpenAIClientBase.Companion.toContentList
 import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.ApplicationSession
 import com.simiacryptus.skyenet.chat.ChatSocket
+import com.simiacryptus.skyenet.platform.SessionID
+import com.simiacryptus.skyenet.platform.UserInfo
 import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 
@@ -17,8 +20,8 @@ class BehaviorScriptCoder(
 ) {
 
     override fun processMessage(
-        sessionId: String,
-        userId: String?,
+        sessionId: SessionID,
+        userId: UserInfo?,
         userMessage: String,
         session: ApplicationSession,
         sessionDiv: SessionDiv,

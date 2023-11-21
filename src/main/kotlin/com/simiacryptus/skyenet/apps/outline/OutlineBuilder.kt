@@ -12,6 +12,8 @@ import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminal
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
 import com.simiacryptus.skyenet.platform.DataStorage
+import com.simiacryptus.skyenet.platform.SessionID
+import com.simiacryptus.skyenet.platform.UserInfo
 import com.simiacryptus.skyenet.session.SessionBase
 import com.simiacryptus.skyenet.session.SessionDiv
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
@@ -28,8 +30,8 @@ class OutlineBuilder(
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
-    userId: String?,
-    sessionId: String
+    userId: UserInfo?,
+    sessionId: SessionID
 ) : ActorSystem<ActorType>(OutlineActors.actorMap(temperature), dataStorage, userId, sessionId) {
     init {
         require(iterations > -1)
@@ -99,7 +101,7 @@ class OutlineBuilder(
                 appPath = "idea_mapper",
                 host = domainName,
                 session = session,
-                userId = userId ?: "",
+                userId = userId,
             ).writeTensorflowEmbeddingProjectorHtml(*outlineManager.getAllItems(finalOutline).toTypedArray())
             //language=HTML
             projectorDiv.append("""<div class="response-message">$response</div>""", false)

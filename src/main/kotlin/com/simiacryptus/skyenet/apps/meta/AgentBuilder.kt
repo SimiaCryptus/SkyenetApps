@@ -10,6 +10,8 @@ import com.simiacryptus.skyenet.actors.ParsedResponse
 import com.simiacryptus.skyenet.apps.meta.MetaActors.ActorType
 import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
 import com.simiacryptus.skyenet.platform.DataStorage
+import com.simiacryptus.skyenet.platform.SessionID
+import com.simiacryptus.skyenet.platform.UserInfo
 import com.simiacryptus.skyenet.session.SessionBase
 import com.simiacryptus.skyenet.session.SessionDiv
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
@@ -18,8 +20,8 @@ import java.util.*
 
 
 open class AgentBuilder(
-    userId: String?,
-    sessionId: String,
+    userId: UserInfo?,
+    sessionId: SessionID,
     val userMessage: String,
     val api: OpenAIClient,
     @Suppress("unused") val dataStorage: DataStorage,
