@@ -4,7 +4,7 @@ import com.simiacryptus.skyenet.AppServer
 import com.simiacryptus.skyenet.platform.ApplicationServices
 import com.simiacryptus.skyenet.platform.AuthenticationManager
 import com.simiacryptus.skyenet.platform.AuthorizationManager
-import com.simiacryptus.skyenet.platform.UserInfo
+import com.simiacryptus.skyenet.platform.User
 import kotlin.random.Random
 
 object TestAppServer : AppServer(
@@ -15,7 +15,7 @@ object TestAppServer : AppServer(
     @JvmStatic
     fun main(args: Array<String>) {
         AppServer(localName = "localhost","localhost", 8081).init(false)
-        val mockUser = UserInfo(
+        val mockUser = User(
             "1",
             "user@mock.test",
             "Test User",
@@ -23,13 +23,13 @@ object TestAppServer : AppServer(
         )
         ApplicationServices.authenticationManager = object : AuthenticationManager() {
             override fun getUser(sessionId: String?) = mockUser
-            override fun containsKey(value: String) = true
-            override fun setUser(sessionId: String, userInfo: UserInfo) = throw UnsupportedOperationException()
+            override fun containsUser(value: String) = true
+            override fun putUser(sessionId: String, user: User) = throw UnsupportedOperationException()
         }
         ApplicationServices.authorizationManager = object : AuthorizationManager() {
             override fun isAuthorized(
                 applicationClass: Class<*>?,
-                user: UserInfo?,
+                user: User?,
                 operationType: OperationType
             ): Boolean = true
         }

@@ -29,7 +29,7 @@ open class AppServer(
         }
     }
 
-    val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
+    private val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
     override val childWebApps by lazy {
 
         listOf(

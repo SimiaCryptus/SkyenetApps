@@ -4,10 +4,10 @@ import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.OpenAIClientBase.Companion.toContentList
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.ApplicationSession
+import com.simiacryptus.skyenet.session.ApplicationSocketManager
 import com.simiacryptus.skyenet.chat.ChatSocket
-import com.simiacryptus.skyenet.platform.SessionID
-import com.simiacryptus.skyenet.platform.UserInfo
+import com.simiacryptus.skyenet.platform.Session
+import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 
@@ -19,15 +19,15 @@ class BehaviorScriptCoder(
     temperature = temperature
 ) {
 
-    override fun processMessage(
-        sessionId: SessionID,
-        userId: UserInfo?,
+    override fun newSession(
+        session: Session,
+        user: User?,
         userMessage: String,
-        session: ApplicationSession,
-        sessionDiv: SessionDiv,
+        socketManager: ApplicationSocketManager.ApplicationInterface,
+        sessionMessage: SessionMessage,
         socket: ChatSocket,
     ) {
-        sessionDiv.append("""<div>$userMessage</div>""", true)
+        sessionMessage.append("""<div>$userMessage</div>""", true)
 
         val model = ChatModels.GPT4
         val response = socket.api.chat(
@@ -68,7 +68,7 @@ class BehaviorScriptCoder(
             ), model
         )
 
-        sessionDiv.append("""<div>${MarkdownUtil.renderMarkdown(response.choices.get(0).message?.content ?: "")}</div>""", true)
+        sessionMessage.append("""<div>${MarkdownUtil.renderMarkdown(response.choices.get(0).message?.content ?: "")}</div>""", true)
     }
 
 }

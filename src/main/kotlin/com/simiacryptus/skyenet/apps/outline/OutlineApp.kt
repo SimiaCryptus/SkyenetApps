@@ -1,10 +1,10 @@
 package com.simiacryptus.skyenet.apps.outline
 
 import com.simiacryptus.skyenet.ApplicationBase
-import com.simiacryptus.skyenet.ApplicationSession
+import com.simiacryptus.skyenet.session.ApplicationSocketManager
 import com.simiacryptus.skyenet.chat.ChatSocket
-import com.simiacryptus.skyenet.platform.SessionID
-import com.simiacryptus.skyenet.platform.UserInfo
+import com.simiacryptus.skyenet.platform.Session
+import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.session.*
 import org.slf4j.LoggerFactory
 
@@ -25,17 +25,17 @@ open class OutlineApp(
         val writeFinalEssay: Boolean = false,
     )
     override val settingsClass: Class<*> get() = Settings::class.java
-    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(sessionId: SessionID): T? = Settings() as T
+    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
 
-    override fun processMessage(
-        sessionId: SessionID,
-        userId: UserInfo?,
+    override fun newSession(
+        session: Session,
+        user: User?,
         userMessage: String,
-        session: ApplicationSession,
-        sessionDiv: SessionDiv,
+        socketManager: ApplicationSocketManager.ApplicationInterface,
+        sessionMessage: SessionMessage,
         socket: ChatSocket
     ) {
-        val settings = getSettings<Settings>(sessionId, userId)
+        val settings = getSettings<Settings>(session, user)
         OutlineBuilder(
             api = socket.api,
             dataStorage = dataStorage,
@@ -44,9 +44,9 @@ open class OutlineApp(
             minSize = settings?.minTokensForExpansion ?: 16,
             writeFinalEssay = settings?.writeFinalEssay ?: false,
             showProjector = settings?.showProjector ?: true,
-            userId = userId,
-            sessionId = sessionId,
-        ).buildMap(userMessage, session, sessionDiv, domainName)
+            userId = user,
+            session = session,
+        ).buildMap(userMessage, socketManager, sessionMessage, domainName)
     }
 
     companion object {

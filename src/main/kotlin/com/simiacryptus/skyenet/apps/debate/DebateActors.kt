@@ -80,12 +80,12 @@ interface DebateActors {
             model = ChatModels.GPT4,
         )
 
-        fun moderator() = ParsedActor(
+        private fun moderator() = ParsedActor(
             DebateParser::class.java,
             prompt = """You will take a user request, and plan a debate. You will introduce the debaters, and then provide a list of questions to ask.""",
             model = ChatModels.GPT4,
         )
-        fun summarizor() = SimpleActor(
+        private fun summarizor() = SimpleActor(
             prompt = """You are a helpful writing assistant, tasked with writing a markdown document combining the user massages given in an impartial manner""",
             model = ChatModels.GPT4,
         )

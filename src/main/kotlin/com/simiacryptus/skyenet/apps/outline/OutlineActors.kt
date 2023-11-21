@@ -82,14 +82,14 @@ interface OutlineActors {
             }?.flatMap { it.entries.map { it.key to it.value } }?.toList()?.toMap() ?: emptyMap()
         }
 
-        fun initialAuthor(temperature: Double) = ParsedActor(
+        private fun initialAuthor(temperature: Double) = ParsedActor(
             OutlineParser::class.java,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
             model = ChatModels.GPT4Turbo,
             temperature = temperature,
         )
 
-        fun expansionAuthor(temperature: Double): ParsedActor<Outline> = ParsedActor(
+        private fun expansionAuthor(temperature: Double): ParsedActor<Outline> = ParsedActor(
             parserClass = OutlineParser::class.java,
             action = "Expand",
             prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
@@ -97,7 +97,7 @@ interface OutlineActors {
             temperature = temperature,
         )
 
-        fun finalWriter(temperature: Double) = SimpleActor(
+        private fun finalWriter(temperature: Double) = SimpleActor(
             prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
             model = ChatModels.GPT4Turbo,
             temperature = temperature,

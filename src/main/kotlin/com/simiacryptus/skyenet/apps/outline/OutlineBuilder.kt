@@ -5,6 +5,7 @@ import com.simiacryptus.openai.GPT4Tokenizer
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.session.ApplicationSocketManager
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.ActorType
@@ -12,10 +13,10 @@ import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminal
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
 import com.simiacryptus.skyenet.platform.DataStorage
-import com.simiacryptus.skyenet.platform.SessionID
-import com.simiacryptus.skyenet.platform.UserInfo
-import com.simiacryptus.skyenet.session.SessionBase
-import com.simiacryptus.skyenet.session.SessionDiv
+import com.simiacryptus.skyenet.platform.Session
+import com.simiacryptus.skyenet.platform.User
+import com.simiacryptus.skyenet.session.SocketManagerBase
+import com.simiacryptus.skyenet.session.SessionMessage
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil.toJson
@@ -30,9 +31,9 @@ class OutlineBuilder(
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
-    userId: UserInfo?,
-    sessionId: SessionID
-) : ActorSystem<ActorType>(OutlineActors.actorMap(temperature), dataStorage, userId, sessionId) {
+    userId: User?,
+    session: Session
+) : ActorSystem<ActorType>(OutlineActors.actorMap(temperature), dataStorage, userId, session) {
     init {
         require(iterations > -1)
     }
@@ -50,21 +51,21 @@ class OutlineBuilder(
 
     fun buildMap(
         userMessage: String,
-        session: SessionBase,
-        sessionDiv: SessionDiv,
+        session: ApplicationSocketManager.ApplicationInterface,
+        sessionMessage: SessionMessage,
         domainName: String
     ) {
         //language=HTML
-        sessionDiv.append("""<div class="user-message">${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
+        sessionMessage.append("""<div class="user-message">${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
         val answer = questionSeeder.answer(*questionSeeder.chatMessages(userMessage), api = api)
         //language=HTML
-        sessionDiv.append(
+        sessionMessage.append(
             """<div class="response-message">${MarkdownUtil.renderMarkdown(answer.getText())}</div>""",
             true
         )
         val outline = answer.getObj()
         //language=HTML
-        sessionDiv.append("""<pre class="verbose">${toJson(outline)}</pre>""", false)
+        sessionMessage.append("""<pre class="verbose">${toJson(outline)}</pre>""", false)
 
         this.userQuestion = userMessage
         outlineManager.root = OutlineManager.Node(answer.getText(), outline)
@@ -78,7 +79,7 @@ class OutlineBuilder(
         sessionDir.resolve("nodes.json").writeText(toJson(outlineManager.nodes))
         sessionDir.resolve("relationships.json").writeText(toJson(outlineManager.relationships))
 
-        val finalOutlineDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
+        val finalOutlineDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
         //language=HTML
         finalOutlineDiv.append("""<div class="response-header">Final Outline</div>""", true)
         val finalOutline = outlineManager.buildFinalOutline()
@@ -91,13 +92,13 @@ class OutlineBuilder(
         sessionDir.resolve("textOutline.txt").writeText(textOutline)
 
         if (showProjector) {
-            val projectorDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
+            val projectorDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
             //language=HTML
             projectorDiv.append("""<div class="response-header">Embedding Projector</div>""", true)
             val response = EmbeddingVisualizer(
                 api = api,
                 dataStorage = dataStorage,
-                sessionID = sessionDiv.sessionID(),
+                sessionID = sessionMessage.sessionID(),
                 appPath = "idea_mapper",
                 host = domainName,
                 session = session,
@@ -108,7 +109,7 @@ class OutlineBuilder(
         }
 
         if (writeFinalEssay) {
-            val finalRenderDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
+            val finalRenderDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
             //language=HTML
             finalRenderDiv.append("""<div class="response-header">Final Render</div>""", true)
             val finalEssay = getFinalEssay(finalOutline)
@@ -138,7 +139,7 @@ class OutlineBuilder(
     }
 
     private fun process(
-        session: SessionBase,
+        session: ApplicationSocketManager.ApplicationInterface,
         node: OutlineManager.Node,
         depth: Int
     ) {
@@ -174,13 +175,13 @@ class OutlineBuilder(
         parent: OutlineManager.Node,
         actor: ParsedActor<Outline>,
         sectionName: String,
-        session: SessionBase
+        session: ApplicationSocketManager.ApplicationInterface
     ): OutlineManager.Node? {
         if (GPT4Tokenizer(false).estimateTokenCount(parent.data) <= minSize) {
             log.debug("Skipping: ${parent.data}")
             return null
         }
-        val newSessionDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner)
+        val newSessionDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
         //language=HTML
         newSessionDiv.append("""<div class="response-header">Expand $sectionName</div>""", true)
 

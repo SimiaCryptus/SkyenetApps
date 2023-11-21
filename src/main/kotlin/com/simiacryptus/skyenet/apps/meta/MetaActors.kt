@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 
 
 class MetaActors(
-    val interpreterClass: KClass<out Heart> = KotlinInterpreter::class,
+    private val interpreterClass: KClass<out Heart> = KotlinInterpreter::class,
     val symbols: Map<String, Any> = mapOf(),
     val model: ChatModels = ChatModels.GPT4Turbo,
     val autoEvaluate: Boolean = true,

@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.apps.meta
 import com.simiacryptus.openai.OpenAIClient
 import com.simiacryptus.openai.models.ChatModels
 import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.session.ApplicationSocketManager
 import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.ParsedActor
@@ -10,23 +11,23 @@ import com.simiacryptus.skyenet.actors.ParsedResponse
 import com.simiacryptus.skyenet.apps.meta.MetaActors.ActorType
 import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
 import com.simiacryptus.skyenet.platform.DataStorage
-import com.simiacryptus.skyenet.platform.SessionID
-import com.simiacryptus.skyenet.platform.UserInfo
-import com.simiacryptus.skyenet.session.SessionBase
-import com.simiacryptus.skyenet.session.SessionDiv
+import com.simiacryptus.skyenet.platform.Session
+import com.simiacryptus.skyenet.platform.User
+import com.simiacryptus.skyenet.session.SocketManagerBase
+import com.simiacryptus.skyenet.session.SessionMessage
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.util.JsonUtil
 import java.util.*
 
 
 open class AgentBuilder(
-    userId: UserInfo?,
-    sessionId: SessionID,
+    userId: User?,
+    sessionId: Session,
     val userMessage: String,
     val api: OpenAIClient,
     @Suppress("unused") val dataStorage: DataStorage,
-    val session: SessionBase,
-    val sessionDiv: SessionDiv,
+    val session: ApplicationSocketManager.ApplicationInterface,
+    val sessionMessage: SessionMessage,
     val model: ChatModels = ChatModels.GPT35Turbo,
     val autoEvaluate: Boolean = true,
     val temperature: Double = 0.3,
@@ -34,7 +35,7 @@ open class AgentBuilder(
     symbols = mapOf(
         "dataStorage" to dataStorage,
         "session" to session,
-        "sessionDiv" to sessionDiv,
+        "sessionDiv" to sessionMessage,
         "sessionId" to sessionId,
     ),
     model = model,
@@ -56,18 +57,18 @@ open class AgentBuilder(
         try {
             this.userPrompt = userMessage
             //language=HTML
-            sessionDiv.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
+            sessionMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
             val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage), api = api)
             //language=HTML
-            sessionDiv.append("""<div class="response-message">${renderMarkdown(design.getText())}</div>""", true)
+            sessionMessage.append("""<div class="response-message">${renderMarkdown(design.getText())}</div>""", true)
             //language=HTML
-            sessionDiv.append("""<pre class="verbose">${JsonUtil.toJson(design.getObj())}</pre>""", false)
+            sessionMessage.append("""<pre class="verbose">${JsonUtil.toJson(design.getObj())}</pre>""", false)
 
             val actImpls = implementActors(session, userMessage, design)
             val flowImpl = getFlowStepCode(session, userMessage, design, actImpls)
             val mainImpl = getMainFunction(session, userMessage, design, actImpls, flowImpl)
 
-            val finalCodeDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
+            val finalCodeDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
             //language=HTML
             finalCodeDiv.append("""<div class="response-header">Final Code</div>""", true)
             //language=MARKDOWN
@@ -86,19 +87,19 @@ open class AgentBuilder(
             finalCodeDiv.append("""<div class="response-message">${renderMarkdown(code)}</div>""", false)
         } catch (e: Throwable) {
             log.warn("Error", e)
-            session.send("""${SessionBase.randomID()},<div class="error">${renderMarkdown(e.message ?: "")}</div>""")
+            session.send("""${SocketManagerBase.randomID()},<div class="error">${renderMarkdown(e.message ?: "")}</div>""")
         }
 
     }
 
     private fun getMainFunction(
-        session: SessionBase,
+        session: ApplicationSocketManager.ApplicationInterface,
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
         actorImpls: Map<String, String>,
         flowStepCode: Map<String, String>
     ): String {
-        val mainFunctionDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
+        val mainFunctionDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
         mainFunctionDiv.append("""<div class="response-header">Main Function</div>""", true)
         val mainFunction = flowStepDesigner.answerWithPrefix(
             codePrefix = (actorImpls.values + flowStepCode.values).joinToString(
@@ -127,11 +128,11 @@ open class AgentBuilder(
     }
 
     private fun implementActors(
-        session: SessionBase,
+        session: ApplicationSocketManager.ApplicationInterface,
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
     ) = design.getObj().actors?.map { actorDesign ->
-        val actorDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
+        val actorDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
         //language=HTML
         actorDiv.append("""<div class="response-header">Actor: ${actorDesign.name}</div>""", true)
         val type = actorDesign.type ?: ""
@@ -171,12 +172,12 @@ open class AgentBuilder(
     }?.toMap() ?: mapOf()
 
     private fun getFlowStepCode(
-        session: SessionBase,
+        session: ApplicationSocketManager.ApplicationInterface,
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
         actorImpls: Map<String, String>,
     ) = design.getObj().logicFlow?.items?.map { logicFlowItem ->
-        val logicFlowDiv = session.newSessionDiv(SessionBase.randomID(), ApplicationBase.spinner, false)
+        val logicFlowDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
         //language=HTML
         logicFlowDiv.append(
             """<div class="response-header">Logic Flow: ${logicFlowItem.name}</div>""",
