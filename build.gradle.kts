@@ -29,7 +29,7 @@ kotlin {
 }
 
 val jetty_version = "11.0.18"
-val skyenet_version = "1.0.36"
+val skyenet_version = "1.0.37"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 dependencies {

@@ -16,7 +16,6 @@ import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.session.ApplicationInterface
 import com.simiacryptus.skyenet.session.SocketManagerBase
-import com.simiacryptus.skyenet.session.SessionMessage
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.util.JsonUtil.toJson
@@ -25,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class OutlineBuilder(
     val api: OpenAIAPI,
-    val dataStorage: DataStorage,
+    dataStorage: DataStorage,
     private val iterations: Int,
     private val temperature: Double,
     private val minSize: Int,
@@ -51,10 +50,10 @@ class OutlineBuilder(
 
     fun buildMap(
         userMessage: String,
-        session: ApplicationInterface,
-        sessionMessage: SessionMessage,
+        ui: ApplicationInterface,
         domainName: String
     ) {
+        val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
         //language=HTML
         sessionMessage.append("""<div class="user-message">${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
         val answer = questionSeeder.answer(*questionSeeder.chatMessages(userMessage), api = api)
@@ -70,7 +69,7 @@ class OutlineBuilder(
         this.userQuestion = userMessage
         outlineManager.root = OutlineManager.Node(answer.getText(), outline)
         if (iterations > 0) {
-            process(session, outlineManager.root!!, (iterations - 1))
+            process(ui, outlineManager.root!!, (iterations - 1))
             while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
             while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
         }
@@ -79,7 +78,7 @@ class OutlineBuilder(
         sessionDir.resolve("nodes.json").writeText(toJson(outlineManager.nodes))
         sessionDir.resolve("relationships.json").writeText(toJson(outlineManager.relationships))
 
-        val finalOutlineDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
+        val finalOutlineDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
         //language=HTML
         finalOutlineDiv.append("""<div class="response-header">Final Outline</div>""", true)
         val finalOutline = outlineManager.buildFinalOutline()
@@ -92,7 +91,7 @@ class OutlineBuilder(
         sessionDir.resolve("textOutline.txt").writeText(textOutline)
 
         if (showProjector) {
-            val projectorDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
+            val projectorDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
             //language=HTML
             projectorDiv.append("""<div class="response-header">Embedding Projector</div>""", true)
             val response = EmbeddingVisualizer(
@@ -101,7 +100,7 @@ class OutlineBuilder(
                 sessionID = sessionMessage.sessionID(),
                 appPath = "idea_mapper",
                 host = domainName,
-                session = session,
+                session = ui,
                 userId = userId,
             ).writeTensorflowEmbeddingProjectorHtml(*outlineManager.getAllItems(finalOutline).toTypedArray())
             //language=HTML
@@ -109,7 +108,7 @@ class OutlineBuilder(
         }
 
         if (writeFinalEssay) {
-            val finalRenderDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
+            val finalRenderDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
             //language=HTML
             finalRenderDiv.append("""<div class="response-header">Final Render</div>""", true)
             val finalEssay = getFinalEssay(finalOutline)

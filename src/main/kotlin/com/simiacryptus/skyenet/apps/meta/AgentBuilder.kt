@@ -24,18 +24,17 @@ open class AgentBuilder(
     user: User?,
     session: Session,
     dataStorage: DataStorage,
-    val api: OpenAIAPI,
-    val model: ChatModels = ChatModels.GPT35Turbo,
     val ui: ApplicationInterface,
-    val userMessage: String,
-    val autoEvaluate: Boolean = true,
-    val temperature: Double = 0.3,
+    val api: OpenAIAPI,
+    model: ChatModels = ChatModels.GPT35Turbo,
+    autoEvaluate: Boolean = true,
+    temperature: Double = 0.3,
 ) : ActorSystem<ActorType>(MetaActors(
     symbols = mapOf(
+        "user" to user,
+        "session" to session,
         "dataStorage" to dataStorage,
         "ui" to ui,
-        "session" to session,
-        "user" to user,
     ).filterValues { null != it }.mapValues { it.value!! },
     model = model,
     autoEvaluate = autoEvaluate,
@@ -49,13 +48,9 @@ open class AgentBuilder(
     private val codingActorDesigner by lazy { getActor(ActorType.CODING) as CodingActor }
     private val flowStepDesigner by lazy { getActor(ActorType.FLOW_STEP) as CodingActor }
 
-    private var userPrompt: String? = null
-
-    fun buildAgent(
-    ) {
+    fun buildAgent(userMessage: String) {
         try {
             val rootMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
-            this.userPrompt = userMessage
             //language=HTML
             rootMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
             val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage), api = api)
@@ -89,7 +84,6 @@ open class AgentBuilder(
             log.warn("Error", e)
             ui.send("""${SocketManagerBase.randomID()},<div class="error">${renderMarkdown(e.message ?: "")}</div>""")
         }
-
     }
 
     private fun getMainFunction(

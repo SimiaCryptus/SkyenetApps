@@ -25,6 +25,7 @@ class AdminCommandCoder(
         ui: ApplicationInterface,
         api: OpenAIAPI
     ) {
+        val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
         sessionMessage.append("""<div>$userMessage</div>""", true)
 
         val model = ChatModels.GPT4

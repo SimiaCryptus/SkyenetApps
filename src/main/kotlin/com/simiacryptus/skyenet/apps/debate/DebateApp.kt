@@ -29,7 +29,7 @@ open class DebateApp(
                 dataStorage = dataStorage,
                 userId = user,
                 session = session
-            ).debate(userMessage, ui, sessionMessage, domainName)
+            ).debate(userMessage, ui, domainName)
         } catch (e: Throwable) {
             log.warn("Error", e)
         }

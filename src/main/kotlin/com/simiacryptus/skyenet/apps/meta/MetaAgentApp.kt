@@ -37,13 +37,12 @@ open class MetaAgentApp(
                 user = user,
                 session = session,
                 dataStorage = dataStorage,
-                userMessage = userMessage,
                 api = api,
                 ui = ui,
                 model = settings?.model ?: ChatModels.GPT35Turbo,
                 autoEvaluate = settings?.autoEvaluate ?: true,
                 temperature = settings?.temperature ?: 0.3,
-            ).buildAgent()
+            ).buildAgent(userMessage = userMessage)
         } catch (e: Throwable) {
             log.warn("Error", e)
         }

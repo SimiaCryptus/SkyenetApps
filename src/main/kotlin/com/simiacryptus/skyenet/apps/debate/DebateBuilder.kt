@@ -16,7 +16,7 @@ import com.simiacryptus.util.JsonUtil.toJson
 
 class DebateBuilder(
     val api: OpenAIAPI,
-    val dataStorage: DataStorage,
+    dataStorage: DataStorage,
     userId: User?,
     session: Session
 ) : ActorSystem<ActorType>(DebateActors.actorMap, dataStorage, userId, session) {
@@ -25,7 +25,8 @@ class DebateBuilder(
     private val moderator get() = getActor(ActorType.MODERATOR) as ParsedActor<DebateSetup>
     private val summarizor get() = getActor(ActorType.SUMMARIZOR) as SimpleActor
 
-    fun debate(userMessage: String, session: ApplicationInterface, sessionMessage: SessionMessage, domainName: String) {
+    fun debate(userMessage: String, ui: ApplicationInterface, domainName: String) {
+        val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
         sessionMessage.append("""<div>${renderMarkdown(userMessage)}</div>""", true)
         val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage), api = api)
         sessionMessage.append("""<div>${renderMarkdown(moderatorResponse.getText())}</div>""", true)
@@ -33,9 +34,9 @@ class DebateBuilder(
 
         val totalSummary =
             (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().map { question ->
-                val summarizorDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
+                val summarizorDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
                 val answers = (moderatorResponse.getObj().debators?.list ?: emptyList()).parallelStream()
-                    .map { actor -> answer(session, actor, question) }.toList()
+                    .map { actor -> answer(ui, actor, question) }.toList()
                 summarizorDiv.append(
                     """<div>Summarizing: ${
                         renderMarkdown(question.text ?: "").trim()
@@ -52,7 +53,7 @@ class DebateBuilder(
         } +
                 (moderatorResponse.getObj().questions?.list?.map { it.text ?: "" }?.filter { it.isNotBlank() }?.toSet()
                     ?: emptySet())
-        val projectorDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
+        val projectorDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
         projectorDiv.append("""<div>Embedding Projector</div>""", true)
         val response = EmbeddingVisualizer(
             api = api,
@@ -60,12 +61,12 @@ class DebateBuilder(
             sessionID = sessionMessage.sessionID(),
             appPath = "debate_mapper",
             host = domainName,
-            session = session,
+            session = ui,
             userId = userId,
         ).writeTensorflowEmbeddingProjectorHtml(*argumentList.toTypedArray())
         projectorDiv.append("""<div>$response</div>""", false)
 
-        val conclusionDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
+        val conclusionDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
         conclusionDiv.append("""<pre class="verbose">${toJson(totalSummary)}</pre>""", true)
         val summarizorResponse = summarizor.answer(*totalSummary.toTypedArray(), api = api)
         conclusionDiv.append("""<pre class="verbose">${toJson(summarizorResponse)}</pre>""", false)

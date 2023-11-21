@@ -25,6 +25,7 @@ open class SimpleCodingApp(
         api: OpenAIAPI
     ) {
         try {
+            val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
             sessionMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
             val response = actor.answer(userMessage, api = api)
             val canPlay = ApplicationServices.authorizationManager.isAuthorized(
