@@ -1,12 +1,10 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.skyenet.Heart
 import com.simiacryptus.skyenet.actors.opt.ActorOptimization
 import com.simiacryptus.skyenet.actors.opt.Expectation
 import com.simiacryptus.skyenet.actors.test.CodingActorTestBase
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 
 open class CodingActorImplementationActorTest : CodingActorTestBase() {
 

@@ -1,8 +1,7 @@
 package com.simiacryptus.skyenet.apps.outline
 
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.openai.GPT4Tokenizer
-import com.simiacryptus.openai.OpenAIAPI
+import com.simiacryptus.jopenai.API
 import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.application.ApplicationServer
 import com.simiacryptus.skyenet.actors.ParsedActor
@@ -18,12 +17,12 @@ import com.simiacryptus.skyenet.application.ApplicationInterface
 import com.simiacryptus.skyenet.session.SocketManagerBase
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.util.MarkdownUtil
-import com.simiacryptus.util.JsonUtil.toJson
+import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
 class OutlineBuilder(
-    val api: OpenAIAPI,
+    val api: API,
     dataStorage: DataStorage,
     private val iterations: Int,
     private val temperature: Double,
@@ -124,7 +123,7 @@ class OutlineBuilder(
     private fun getFinalEssay(
         finalOutline: Outline
     ): String = try {
-        if (GPT4Tokenizer(false).estimateTokenCount(finalOutline.getTextOutline()) > (finalWriter.model.maxTokens * 0.6).toInt()) {
+        if (com.simiacryptus.jopenai.GPT4Tokenizer(false).estimateTokenCount(finalOutline.getTextOutline()) > (finalWriter.model.maxTokens * 0.6).toInt()) {
             outlineManager.explode(finalOutline)?.joinToString("\n") { getFinalEssay(it) } ?: ""
         } else {
             log.debug("Outline: \n\t${finalOutline.getTextOutline().replace("\n", "\n\t")}")
@@ -176,7 +175,7 @@ class OutlineBuilder(
         sectionName: String,
         session: ApplicationInterface
     ): OutlineManager.Node? {
-        if (GPT4Tokenizer(false).estimateTokenCount(parent.data) <= minSize) {
+        if (com.simiacryptus.jopenai.GPT4Tokenizer(false).estimateTokenCount(parent.data) <= minSize) {
             log.debug("Skipping: ${parent.data}")
             return null
         }

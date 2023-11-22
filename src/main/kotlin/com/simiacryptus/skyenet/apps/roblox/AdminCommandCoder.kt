@@ -1,9 +1,9 @@
 package com.simiacryptus.skyenet.apps.roblox
 
-import com.simiacryptus.openai.OpenAIAPI
-import com.simiacryptus.openai.models.ChatModels
-import com.simiacryptus.openai.OpenAIClient
-import com.simiacryptus.openai.OpenAIClientBase.Companion.toContentList
+import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.ClientUtil.toContentList
 import com.simiacryptus.skyenet.application.ApplicationInterface
 import com.simiacryptus.skyenet.application.ApplicationServer
 import com.simiacryptus.skyenet.platform.Session
@@ -24,20 +24,20 @@ class AdminCommandCoder(
         user: User?,
         userMessage: String,
         ui: ApplicationInterface,
-        api: OpenAIAPI
+        api: API
     ) {
-        val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner, false)
+        val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), spinner, false)
         sessionMessage.append("""<div>$userMessage</div>""", true)
 
         val model = ChatModels.GPT4
         val response = (api as OpenAIClient).chat(
-            OpenAIClient.ChatRequest(
+            com.simiacryptus.jopenai.ApiModel.ChatRequest(
                 messages = ArrayList(
-                    listOf(OpenAIClient.ChatMessage(role = OpenAIClient.Role.system, content = """
+                    listOf(com.simiacryptus.jopenai.ApiModel.ChatMessage(role = com.simiacryptus.jopenai.ApiModel.Role.system, content = """
                         You will convert the natural language description of an action for a Roblox game command into a Lua definition
                     """.trimIndent().toContentList()),
-                    OpenAIClient.ChatMessage(role = OpenAIClient.Role.user, content = "Modify the user's walkspeed".toContentList()),
-                    OpenAIClient.ChatMessage(role = OpenAIClient.Role.assistant, content = """
+                    com.simiacryptus.jopenai.ApiModel.ChatMessage(role = com.simiacryptus.jopenai.ApiModel.Role.user, content = "Modify the user's walkspeed".toContentList()),
+                    com.simiacryptus.jopenai.ApiModel.ChatMessage(role = com.simiacryptus.jopenai.ApiModel.Role.assistant, content = """
                         ```lua
                         {
                             PrimaryAlias = "walkspeed",
@@ -58,7 +58,7 @@ class AdminCommandCoder(
                         }
                         ```
                     """.trimIndent().toContentList()),
-                    OpenAIClient.ChatMessage(role = OpenAIClient.Role.user, content = userMessage.toContentList())
+                    com.simiacryptus.jopenai.ApiModel.ChatMessage(role = com.simiacryptus.jopenai.ApiModel.Role.user, content = userMessage.toContentList())
                 )
                 ),
                 temperature = temperature,

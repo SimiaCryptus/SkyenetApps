@@ -1,7 +1,7 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.openai.OpenAIAPI
-import com.simiacryptus.openai.models.ChatModels
+import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.skyenet.application.ApplicationServer
 import com.simiacryptus.skyenet.Brain.Companion.indent
 import com.simiacryptus.skyenet.actors.ActorSystem
@@ -16,7 +16,7 @@ import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.session.SocketManagerBase
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.jopenai.util.JsonUtil
 import org.intellij.lang.annotations.Language
 import java.util.*
 
@@ -26,7 +26,7 @@ open class AgentBuilder(
     session: Session,
     dataStorage: DataStorage,
     val ui: ApplicationInterface,
-    val api: OpenAIAPI,
+    val api: API,
     model: ChatModels = ChatModels.GPT35Turbo,
     autoEvaluate: Boolean = true,
     temperature: Double = 0.3,
@@ -95,8 +95,8 @@ open class AgentBuilder(
             } ?: ""
 
             @Language("kotlin") val appCode = """
-            |import com.simiacryptus.openai.OpenAIAPI
-            |import com.simiacryptus.openai.models.ChatModels
+            |import com.simiacryptus.jopenai.OpenAIAPI
+            |import com.simiacryptus.jopenai.models.ChatModels
             |import com.simiacryptus.skyenet.application.ApplicationBase
             |import com.simiacryptus.skyenet.platform.Session
             |import com.simiacryptus.skyenet.platform.User
@@ -149,8 +149,8 @@ open class AgentBuilder(
             """.trimMargin()
 
             @Language("kotlin") val builderCode = """
-            |import com.simiacryptus.openai.OpenAIAPI
-            |import com.simiacryptus.openai.models.ChatModels
+            |import com.simiacryptus.jopenai.OpenAIAPI
+            |import com.simiacryptus.jopenai.models.ChatModels
             |import com.simiacryptus.skyenet.actors.ActorSystem
             |import com.simiacryptus.skyenet.actors.CodingActor
             |import com.simiacryptus.skyenet.actors.ParsedActor
@@ -187,7 +187,7 @@ open class AgentBuilder(
             """.trimMargin()
 
             @Language("kotlin") val agentsCode = """
-            |import com.simiacryptus.openai.models.ChatModels
+            |import com.simiacryptus.jopenai.models.ChatModels
             |import com.simiacryptus.skyenet.actors.BaseActor
             |
             |class ${classBaseName}Actors(

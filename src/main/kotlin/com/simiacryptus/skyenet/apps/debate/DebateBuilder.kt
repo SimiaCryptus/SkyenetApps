@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps.debate
 
-import com.simiacryptus.openai.OpenAIAPI
+import com.simiacryptus.jopenai.API
 import com.simiacryptus.skyenet.actors.ActorSystem
 import com.simiacryptus.skyenet.application.ApplicationServer
 import com.simiacryptus.skyenet.session.*
@@ -13,10 +13,10 @@ import com.simiacryptus.skyenet.platform.DataStorage
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.util.JsonUtil.toJson
+import com.simiacryptus.jopenai.util.JsonUtil.toJson
 
 class DebateBuilder(
-    val api: OpenAIAPI,
+    val api: API,
     dataStorage: DataStorage,
     userId: User?,
     session: Session

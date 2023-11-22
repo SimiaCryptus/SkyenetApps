@@ -1,10 +1,10 @@
 package com.simiacryptus.skyenet.apps.outline
 
-import com.simiacryptus.openai.models.ChatModels
-import com.simiacryptus.openai.proxy.ValidatedObject
+import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
-import com.simiacryptus.util.describe.Description
+import com.simiacryptus.jopenai.describe.Description
 import java.util.function.Function
 
 interface OutlineActors {
@@ -78,7 +78,7 @@ interface OutlineActors {
         fun Outline.getTerminalNodeMap(): Map<String, Item> {
             return items?.map { item ->
                 if (item.children?.items?.isEmpty() != false) mapOf(item.section_name!! to item)
-                else item.children?.getTerminalNodeMap()?.mapKeys { key -> item.section_name + " / " + key } ?: mapOf()
+                else item.children.getTerminalNodeMap()?.mapKeys { key -> item.section_name + " / " + key } ?: mapOf()
             }?.flatMap { it.entries.map { it.key to it.value } }?.toList()?.toMap() ?: emptyMap()
         }
 

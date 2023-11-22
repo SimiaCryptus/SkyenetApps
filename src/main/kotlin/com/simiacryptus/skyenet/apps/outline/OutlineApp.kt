@@ -1,11 +1,10 @@
 package com.simiacryptus.skyenet.apps.outline
 
-import com.simiacryptus.openai.OpenAIAPI
+import com.simiacryptus.jopenai.API
 import com.simiacryptus.skyenet.application.ApplicationInterface
 import com.simiacryptus.skyenet.application.ApplicationServer
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
-import com.simiacryptus.skyenet.session.*
 import org.slf4j.LoggerFactory
 
 open class OutlineApp(
@@ -32,7 +31,7 @@ open class OutlineApp(
         user: User?,
         userMessage: String,
         ui: ApplicationInterface,
-        api: OpenAIAPI
+        api: API
     ) {
         val settings = getSettings<Settings>(session, user)
         OutlineBuilder(

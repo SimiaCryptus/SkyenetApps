@@ -1,12 +1,12 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.openai.models.ChatModels
-import com.simiacryptus.openai.proxy.ValidatedObject
+import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
-import com.simiacryptus.util.describe.Description
+import com.simiacryptus.jopenai.describe.Description
 import org.intellij.lang.annotations.Language
 import java.util.function.Function
 

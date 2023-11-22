@@ -1,7 +1,7 @@
 package com.simiacryptus.skyenet
 
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
-import com.simiacryptus.util.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.intellij.lang.annotations.Language
@@ -24,7 +24,7 @@ class InterpreterTests {
     fun test() {
         val interpreter = KotlinInterpreter()
         val code = """
-            |import com.simiacryptus.openai.OpenAIClient
+            |import com.simiacryptus.jopenai.OpenAIClient
             |import com.simiacryptus.skyenet.actors.ParsedActor
             |import com.simiacryptus.skyenet.heart.GroovyInterpreter
             |import com.simiacryptus.skyenet.heart.KotlinInterpreter

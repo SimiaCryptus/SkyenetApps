@@ -1,11 +1,10 @@
 package com.simiacryptus.skyenet.apps.debate
 
-import com.simiacryptus.openai.OpenAIAPI
+import com.simiacryptus.jopenai.API
 import com.simiacryptus.skyenet.application.ApplicationInterface
 import com.simiacryptus.skyenet.application.ApplicationServer
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
-import com.simiacryptus.skyenet.session.*
 import org.slf4j.LoggerFactory
 
 open class DebateApp(
@@ -22,7 +21,7 @@ open class DebateApp(
         user: User?,
         userMessage: String,
         ui: ApplicationInterface,
-        api: OpenAIAPI
+        api: API
     ) {
         try {
             DebateBuilder(

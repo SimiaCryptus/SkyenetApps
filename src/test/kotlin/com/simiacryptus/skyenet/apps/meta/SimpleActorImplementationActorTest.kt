@@ -1,7 +1,6 @@
 package com.simiacryptus.skyenet.apps.meta
 
 import com.simiacryptus.skyenet.actors.opt.ActorOptimization
-import com.simiacryptus.skyenet.actors.opt.Expectation
 import com.simiacryptus.skyenet.actors.test.CodingActorTestBase
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import org.intellij.lang.annotations.Language
@@ -12,8 +11,6 @@ object SimpleActorImplementationActorTest : CodingActorTestBase() {
     @Test
     override fun testRun() = super.testRun()
 
-    //    @Test
-    override fun testOptimize() = super.testOptimize()
     override val actor = MetaActors().simpleActorDesigner()
     override val interpreterClass = KotlinInterpreter::class
 

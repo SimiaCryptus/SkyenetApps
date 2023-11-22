@@ -10,8 +10,6 @@ object ParsedActorImplementationActorTest : CodingActorTestBase() {
 
     @Test
     override fun testRun() = super.testRun()
-//    @Test
-    override fun testOptimize() = super.testOptimize()
     override val interpreterClass get() = KotlinInterpreter::class
     override val actor = MetaActors().parsedActorDesigner()
     override val testCases = listOf(

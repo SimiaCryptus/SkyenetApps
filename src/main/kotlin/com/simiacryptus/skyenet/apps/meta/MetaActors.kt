@@ -1,13 +1,13 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.openai.models.ChatModels
-import com.simiacryptus.openai.proxy.ValidatedObject
+import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.Heart
 import com.simiacryptus.skyenet.actors.BaseActor
 import com.simiacryptus.skyenet.actors.CodingActor
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.heart.KotlinInterpreter
-import com.simiacryptus.util.describe.Description
+import com.simiacryptus.jopenai.describe.Description
 import org.intellij.lang.annotations.Language
 import java.util.function.Function
 import kotlin.reflect.KClass
@@ -170,10 +170,10 @@ class MetaActors(
         |
         |For context, here is the constructor signature for SimpleActor class:
         |```kotlin
-        |import com.simiacryptus.openai.models.ChatModels
+        |import com.simiacryptus.jopenai.models.ChatModels
         |import com.simiacryptus.skyenet.actors.SimpleActor
         |import org.intellij.lang.annotations.Language
-        |import com.simiacryptus.openai.models.OpenAITextModel
+        |import com.simiacryptus.jopenai.models.OpenAITextModel
         |
         |class SimpleActor(
         |    prompt: String,
@@ -217,8 +217,8 @@ class MetaActors(
         |
         |For context, here is the constructor signature for ParsedActor class:
         |```kotlin
-        |import com.simiacryptus.openai.models.ChatModels
-        |import com.simiacryptus.openai.models.OpenAITextModel
+        |import com.simiacryptus.jopenai.models.ChatModels
+        |import com.simiacryptus.jopenai.models.OpenAITextModel
         |import java.util.function.Function
         |
         |open class ParsedActor<T:Any>(
@@ -232,8 +232,8 @@ class MetaActors(
         |
         |In this code example an example actor is defined with a prompt, name, and parsing class:
         |```kotlin
-        |import com.simiacryptus.openai.models.ChatModels
-        |import com.simiacryptus.openai.proxy.ValidatedObject
+        |import com.simiacryptus.jopenai.models.ChatModels
+        |import com.simiacryptus.jopenai.proxy.ValidatedObject
         |import com.simiacryptus.skyenet.actors.ParsedActor
         |import com.simiacryptus.util.describe.Description
         |import org.intellij.lang.annotations.Language
@@ -283,8 +283,8 @@ class MetaActors(
         |
         |For context, here is the constructor signature for CodingActor class:
         |```kotlin
-        |import com.simiacryptus.openai.models.ChatModels
-        |import com.simiacryptus.openai.models.OpenAITextModel
+        |import com.simiacryptus.jopenai.models.ChatModels
+        |import com.simiacryptus.jopenai.models.OpenAITextModel
         |import com.simiacryptus.skyenet.Heart
         |import com.simiacryptus.util.describe.AbbrevWhitelistYamlDescriber
         |import com.simiacryptus.util.describe.TypeDescriber

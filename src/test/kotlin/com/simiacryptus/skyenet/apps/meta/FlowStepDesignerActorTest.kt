@@ -10,8 +10,6 @@ object FlowStepDesignerActorTest : CodingActorTestBase() {
 
     @Test
     override fun testRun() = super.testRun()
-//    @Test
-    override fun testOptimize() = super.testOptimize()
     override val interpreterClass get() = KotlinInterpreter::class
     override val actor = MetaActors().flowStepDesigner()
     override val testCases = listOf(
@@ -79,7 +77,7 @@ object FlowStepDesignerActorTest : CodingActorTestBase() {
 
                 // This should use the assistant message role
                 """
-                import com.simiacryptus.openai.OpenAIClient
+                import com.simiacryptus.jopenai.OpenAIClient
                 import com.simiacryptus.skyenet.actors.SimpleActor
                 
                 class RequirementsActor(api: OpenAIClient) : SimpleActor(
