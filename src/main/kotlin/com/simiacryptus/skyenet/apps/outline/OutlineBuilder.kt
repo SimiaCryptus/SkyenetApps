@@ -2,11 +2,10 @@ package com.simiacryptus.skyenet.apps.outline
 
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.GPT4Tokenizer
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.ActorType
-import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminalNodeMap
-import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
-import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
+import com.simiacryptus.skyenet.apps.outline.OutlineManager.NodeList
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
@@ -18,6 +17,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SocketManagerBase
 import com.simiacryptus.skyenet.webui.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -37,12 +37,12 @@ class OutlineBuilder(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private val questionSeeder get() = getActor(ActorType.INITIAL) as ParsedActor<Outline>
+    private val questionSeeder get() = getActor(ActorType.INITIAL) as ParsedActor<NodeList>
     private val finalWriter get() = getActor(ActorType.FINAL) as SimpleActor
 
     @Suppress("UNCHECKED_CAST")
-    private val expandWriter get() = getActor(ActorType.EXPAND) as ParsedActor<Outline>
-    private val outlineManager: OutlineManager = OutlineManager()
+    private val expandWriter get() = getActor(ActorType.EXPAND) as ParsedActor<NodeList>
+
     private var userQuestion: String? = null
     private val activeThreadCounter = AtomicInteger(0)
     private val pool = MoreExecutors.listeningDecorator(java.util.concurrent.Executors.newCachedThreadPool())
@@ -54,11 +54,11 @@ class OutlineBuilder(
     ) {
         val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner, false)
         //language=HTML
-        sessionMessage.append("""<div class="user-message">${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
+        sessionMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
         val answer = questionSeeder.answer(*questionSeeder.chatMessages(userMessage), api = api)
         //language=HTML
         sessionMessage.append(
-            """<div class="response-message">${MarkdownUtil.renderMarkdown(answer.getText())}</div>""",
+            """<div class="response-message">${renderMarkdown(answer.getText())}</div>""",
             true
         )
         val outline = answer.getObj()
@@ -66,16 +66,15 @@ class OutlineBuilder(
         sessionMessage.append("""<pre class="verbose">${toJson(outline)}</pre>""", false)
 
         this.userQuestion = userMessage
-        outlineManager.root = OutlineManager.Node(answer.getText(), outline)
+        val outlineManager = OutlineManager(OutlineManager.OutlinedText(answer.getText(), outline))
         if (iterations > 0) {
-            process(ui, outlineManager.root!!, (iterations - 1))
+            process(ui, outlineManager, outlineManager.rootNode, (iterations - 1))
             while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
             while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
         }
 
         val sessionDir = dataStorage.getSessionDir(userId, sessionId)
         sessionDir.resolve("nodes.json").writeText(toJson(outlineManager.nodes))
-        sessionDir.resolve("relationships.json").writeText(toJson(outlineManager.relationships))
 
         val finalOutlineDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner)
         //language=HTML
@@ -101,7 +100,7 @@ class OutlineBuilder(
                 host = domainName,
                 session = ui,
                 userId = userId,
-            ).writeTensorflowEmbeddingProjectorHtml(*outlineManager.getAllItems(finalOutline).toTypedArray())
+            ).writeTensorflowEmbeddingProjectorHtml(*outlineManager.getLeafDescriptions(finalOutline).toTypedArray())
             //language=HTML
             projectorDiv.append("""<div class="response-message">$response</div>""", false)
         }
@@ -110,24 +109,25 @@ class OutlineBuilder(
             val finalRenderDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner)
             //language=HTML
             finalRenderDiv.append("""<div class="response-header">Final Render</div>""", true)
-            val finalEssay = getFinalEssay(finalOutline)
+            val finalEssay = getFinalEssay(finalOutline, outlineManager)
             sessionDir.resolve("finalEssay.md").writeText(finalEssay)
             //language=HTML
             finalRenderDiv.append(
-                """<div class="response-message">${MarkdownUtil.renderMarkdown(finalEssay)}</div>""",
+                """<div class="response-message">${renderMarkdown(finalEssay)}</div>""",
                 false
             )
         }
     }
 
     private fun getFinalEssay(
-        finalOutline: Outline
+        nodeList: NodeList,
+        manager: OutlineManager
     ): String = try {
-        if (com.simiacryptus.jopenai.GPT4Tokenizer(false).estimateTokenCount(finalOutline.getTextOutline()) > (finalWriter.model.maxTokens * 0.6).toInt()) {
-            outlineManager.explode(finalOutline)?.joinToString("\n") { getFinalEssay(it) } ?: ""
+        if (GPT4Tokenizer(false).estimateTokenCount(nodeList.getTextOutline()) > (finalWriter.model.maxTokens * 0.6).toInt()) {
+            manager.expandNodes(nodeList)?.joinToString("\n") { getFinalEssay(it, manager) } ?: ""
         } else {
-            log.debug("Outline: \n\t${finalOutline.getTextOutline().replace("\n", "\n\t")}")
-            val answer = finalWriter.answer(finalOutline.getTextOutline(), api = api)
+            log.debug("Outline: \n\t${nodeList.getTextOutline().replace("\n", "\n\t")}")
+            val answer = finalWriter.answer(nodeList.getTextOutline(), api = api)
             log.debug("Rendering: \n\t${answer.replace("\n", "\n\t")}")
             answer
         }
@@ -138,30 +138,24 @@ class OutlineBuilder(
 
     private fun process(
         session: ApplicationInterface,
-        node: OutlineManager.Node,
+        manager : OutlineManager,
+        node: OutlineManager.OutlinedText,
         depth: Int
     ) {
         for ((item, childNode) in node.outline.getTerminalNodeMap()) {
             pool.submit {
                 activeThreadCounter.incrementAndGet()
                 try {
-                    val newNode = process(node, expandWriter, item, session) ?: return@submit
-                    synchronized(outlineManager.expandedOutlineNodeMap) {
-                        if (!outlineManager.expandedOutlineNodeMap.containsKey(childNode)) {
-                            outlineManager.expandedOutlineNodeMap[childNode] = newNode
+                    val newNode = process(node, expandWriter, item, session, manager) ?: return@submit
+                    synchronized(manager.expansionMap) {
+                        if (!manager.expansionMap.containsKey(childNode)) {
+                            manager.expansionMap[childNode] = newNode
                         } else {
-                            val existingNode = outlineManager.expandedOutlineNodeMap[childNode]!!
-                            log.warn("Conflict: ${existingNode.data} vs ${newNode.data}")
-                            outlineManager.relationships.add(
-                                OutlineManager.Relationship(
-                                    existingNode,
-                                    newNode,
-                                    "Conflict"
-                                )
-                            )
+                            val existingNode = manager.expansionMap[childNode]!!
+                            log.warn("Conflict: ${existingNode.text} vs ${newNode.text}")
                         }
                     }
-                    if (depth > 0) process(session, newNode, depth - 1)
+                    if (depth > 0) process(session, manager, newNode, depth - 1)
                 } finally {
                     activeThreadCounter.decrementAndGet()
                 }
@@ -170,31 +164,31 @@ class OutlineBuilder(
     }
 
     private fun process(
-        parent: OutlineManager.Node,
-        actor: ParsedActor<Outline>,
+        parent: OutlineManager.OutlinedText,
+        actor: ParsedActor<NodeList>,
         sectionName: String,
-        session: ApplicationInterface
-    ): OutlineManager.Node? {
-        if (com.simiacryptus.jopenai.GPT4Tokenizer(false).estimateTokenCount(parent.data) <= minSize) {
-            log.debug("Skipping: ${parent.data}")
+        session: ApplicationInterface,
+        outlineManager : OutlineManager,
+    ): OutlineManager.OutlinedText? {
+        if (GPT4Tokenizer(false).estimateTokenCount(parent.text) <= minSize) {
+            log.debug("Skipping: ${parent.text}")
             return null
         }
         val newSessionDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner)
         //language=HTML
         newSessionDiv.append("""<div class="response-header">Expand $sectionName</div>""", true)
 
-        val answer = actor.answer(*actor.chatMessages(userQuestion ?: "", parent.data, sectionName), api = api)
+        val answer = actor.answer(*actor.chatMessages(userQuestion ?: "", parent.text, sectionName), api = api)
         //language=HTML
         newSessionDiv.append(
-            """<div class="response-message">${MarkdownUtil.renderMarkdown(answer.getText())}</div>""",
+            """<div class="response-message">${renderMarkdown(answer.getText())}</div>""",
             true
         )
         //language=HTML
         newSessionDiv.append("""<pre class="verbose">${toJson(answer.getObj())}</pre>""", false)
 
-        val newNode = OutlineManager.Node(answer.getText(), answer.getObj())
+        val newNode = OutlineManager.OutlinedText(answer.getText(), answer.getObj())
         outlineManager.nodes.add(newNode)
-        outlineManager.relationships.add(OutlineManager.Relationship(parent, newNode, "Expanded $sectionName"))
         return newNode
     }
 

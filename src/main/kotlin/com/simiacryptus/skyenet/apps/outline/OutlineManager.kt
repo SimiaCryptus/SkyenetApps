@@ -1,97 +1,148 @@
 package com.simiacryptus.skyenet.apps.outline
 
-import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.deepClone
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.simiacryptus.jopenai.proxy.ValidatedObject
 
-open class OutlineManager {
+open class OutlineManager(val rootNode: OutlinedText) {
+
+    data class NodeList(
+        val nodes: List<Node>? = null,
+    ) : ValidatedObject {
+        override fun validate() = when {
+            nodes == null -> false
+            !nodes.all { it.validate() } -> false
+            nodes.size != nodes.map { it.name ?: "" }.distinct().size -> false
+            else -> true
+        }
+
+        fun deepClone(): NodeList =
+            NodeList(this.nodes?.map { it.deepClone() })
+
+        @JsonIgnore
+        fun getTextOutline(): String {
+            val sb = StringBuilder()
+            nodes?.forEach { item ->
+                sb.append(item.getTextOutline().trim())
+                sb.append("\n")
+            }
+            return sb.toString()
+        }
+
+        @JsonIgnore
+        fun getTerminalNodeMap(): Map<String, Node> {
+            return nodes?.map { item ->
+                if (item.children?.nodes?.isEmpty() != false) mapOf(item.name!! to item)
+                else item.children.getTerminalNodeMap().mapKeys { key -> item.name + " / " + key } ?: mapOf()
+            }?.flatMap { it.entries.map { it.key to it.value } }?.toList()?.toMap() ?: emptyMap()
+        }
+    }
 
     data class Node(
-        val data: String,
-        val outline: OutlineActors.Outline,
+        val name: String? = null,
+        val children: NodeList? = null,
+        val description: String? = null,
+    ) : ValidatedObject {
+        override fun validate() = when {
+            null == name -> false
+            name.isEmpty() -> false
+            else -> true
+        }
+
+        fun deepClone(): Node = Node(
+            name = this.name,
+            children = this.children?.deepClone(),
+            description = this.description
+        )
+
+        @JsonIgnore
+        fun getTextOutline(): String {
+            val sb = StringBuilder()
+            sb.append("* " + ((description?.replace("\n", "\\n") ?: name)?.trim() ?: ""))
+            sb.append("\n")
+            val childrenTxt = children?.getTextOutline()?.replace("\n", "\n\t")?.trim() ?: ""
+            if (childrenTxt.isNotEmpty()) sb.append("\t" + childrenTxt)
+            return sb.toString()
+        }
+
+    }
+
+    data class OutlinedText(
+        val text: String,
+        val outline: NodeList,
     )
 
-    data class Relationship(
-        val from: Node,
-        val to: Node,
-        val name: String
-    )
+    val nodes = mutableListOf<OutlinedText>()
+    val expansionMap = mutableMapOf<Node, OutlinedText>()
 
-    var root: Node? = null
-    val relationships = mutableListOf<Relationship>()
-    val nodes = mutableListOf<Node>()
-    val expandedOutlineNodeMap = mutableMapOf<OutlineActors.Item, Node>()
+    fun expandNodes(nodeList: NodeList): List<NodeList>? {
+        val size = nodeList.nodes?.size ?: 0
+        return when {
+            size == 0 -> listOf(nodeList)
+            size > 1 -> nodeList.nodes?.map { NodeList(listOf(it.deepClone())) }
+            else -> {
+                val child = nodeList.nodes?.first() ?: return listOf(nodeList)
+                expandNodes(child).map { NodeList(listOf(it.deepClone())) }
+            }
+        }
+    }
 
-    private fun explode(item: OutlineActors.Item): List<OutlineActors.Item> {
-        val size = item.children?.items?.size ?: 0
-        if(size > 1) return item.children?.items?.map {
-            OutlineActors.Item(
-                section_name = it.section_name,
-                text = it.text,
-                children = OutlineActors.Outline(listOf(it.deepClone())),
+    private fun expandNodes(node: Node): List<Node> {
+        val size = node.children?.nodes?.size ?: 0
+        if (size > 1) return node.children?.nodes?.map {
+            Node(
+                name = it.name,
+                description = it.description,
+                children = NodeList(listOf(it.deepClone())),
             )
         } ?: listOf() else if (size == 0) {
-            return listOf(item)
+            return listOf(node)
         } else {
             // size == 1
-            val child = item.children?.items?.first() ?: return listOf(item)
-            val explodedChild = explode(child)
-            return explodedChild.map {
-                OutlineActors.Item(
-                    section_name = it.section_name,
-                    text = it.text,
-                    children = OutlineActors.Outline(listOf(it.deepClone())),
+            val child = node.children?.nodes?.first() ?: return listOf(node)
+            val expandSectionsdChild = expandNodes(child)
+            return expandSectionsdChild.map {
+                Node(
+                    name = it.name,
+                    description = it.description,
+                    children = NodeList(listOf(it.deepClone())),
                 )
             }
         }
     }
 
-    fun explode(outline: OutlineActors.Outline): List<OutlineActors.Outline>? {
-        val size = outline.items?.size ?: 0
-        return when {
-            size == 0 -> listOf(outline)
-            size > 1 -> outline.items?.map {OutlineActors.Outline(listOf(it.deepClone())) }
-            else -> {
-                val child = outline.items?.first() ?: return listOf(outline)
-                explode(child).map { OutlineActors.Outline(listOf(it.deepClone())) }
-            }
-        }
+    fun getLeafDescriptions(nodeList: NodeList): List<String> =
+        nodeList.nodes?.flatMap { getLeafDescriptions(it) } ?: listOf()
+
+    private fun getLeafDescriptions(outline: Node): List<String> =
+        listOf(outline.description ?: "") + (outline.children?.nodes?.flatMap { getLeafDescriptions(it) } ?: listOf())
+
+    fun buildFinalOutline(): NodeList {
+        return buildFinalOutline(rootNode?.outline?.deepClone() ?: return NodeList()) ?: NodeList()
     }
 
-    fun getAllItems(outline: OutlineActors.Outline): List<String>  = outline.items?.flatMap { getAllItems(it) } ?: listOf()
-
-    private fun getAllItems(outline: OutlineActors.Item): List<String> = listOf(outline.text ?: "") + (outline.children?.items?.flatMap { getAllItems(it) } ?: listOf())
-
-    fun buildFinalOutline(): OutlineActors.Outline {
-        var clonedRoot = root?.outline?.deepClone()
-        if(null != clonedRoot) clonedRoot = replaceWithExpandedNodes(clonedRoot)
-        return clonedRoot ?: OutlineActors.Outline()
-    }
-
-    private fun replaceWithExpandedNodes(node: OutlineActors.Outline?): OutlineActors.Outline? {
-        return OutlineActors.Outline(items = node?.items?.map { item: OutlineActors.Item ->
-            val expandedOutline = expandedOutlineNodeMap[item]?.outline?.deepClone()
+    private fun buildFinalOutline(outline: NodeList?): NodeList? {
+        return NodeList(nodes = outline?.nodes?.map { node: Node ->
+            val expandedOutline = expansionMap[node]?.outline?.deepClone()
             when {
-                expandedOutline == node -> item.deepClone()
-                node == item.children -> item.deepClone()
-                expandedOutline == null -> item.deepClone()
+                expandedOutline == node.children -> node.deepClone()
+                outline == node.children -> node.deepClone()
+                expandedOutline == null -> node.deepClone()
                 else -> {
-                    var children = getOutlineForSubstitution(item.children, expandedOutline)
-                    if (null != children) children = replaceWithExpandedNodes(children)
-                    item.deepClone().copy(children = children)
+                    var children = if (1 == (expandedOutline.nodes?.size ?: 0)) {
+                        expandedOutline.nodes?.first()?.children ?: node.children
+                    } else if ((expandedOutline.nodes?.size ?: 0) > 1) {
+                        expandedOutline
+                    } else {
+                        node.children
+                    }
+                    if (null != children) children = buildFinalOutline(children)
+                    node.deepClone().copy(children = children)
                 }
             }
         } ?: return null)
     }
 
-    private fun getOutlineForSubstitution(
-        prior: OutlineActors.Outline?,
-        expanded: OutlineActors.Outline
-    ): OutlineActors.Outline? {
-        return if (1 == (expanded.items?.size ?: 0)) {
-            expanded.items?.first()?.children ?: prior
-        } else if ((expanded.items?.size ?: 0) > 1) {
-            expanded
-        } else {
-            prior
-        }
+    companion object {
+        private val log = org.slf4j.LoggerFactory.getLogger(OutlineManager::class.java)
     }
 }
