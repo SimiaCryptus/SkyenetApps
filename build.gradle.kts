@@ -45,8 +45,8 @@ dependencies {
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
     implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
 
-    implementation(group = "org.apache.spark", name = "spark-core_2.13", version = spark_version)
-    implementation(group = "org.apache.spark", name = "spark-sql_2.13", version = spark_version)
+//    implementation(group = "org.apache.spark", name = "spark-core_2.13", version = spark_version)
+//    implementation(group = "org.apache.spark", name = "spark-sql_2.13", version = spark_version)
     implementation(group = "org.scala-lang", name = "scala-library", version = scala_version)
     implementation(group = "org.scala-lang", name = "scala-compiler", version = scala_version)
     implementation(group = "org.scala-lang", name = "scala-reflect", version = scala_version)

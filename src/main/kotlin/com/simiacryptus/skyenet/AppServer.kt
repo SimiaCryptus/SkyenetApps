@@ -10,10 +10,6 @@ import com.simiacryptus.skyenet.apps.roblox.AdminCommandCoder
 import com.simiacryptus.skyenet.apps.roblox.BehaviorScriptCoder
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
-import com.simiacryptus.skyenet.scala.ScalaLocalInterpreter
-import org.apache.spark.SparkConf
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.SparkSession
 
 
 open class AppServer(
@@ -29,19 +25,19 @@ open class AppServer(
         }
     }
 
-    private val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
+//    private val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
     override val childWebApps by lazy {
 
         listOf(
             ChildWebApp("/meta_agent", MetaAgentApp()),
             ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName)),
-            ChildWebApp("/spark_coder", SimpleCodingApp("Spark Coding Assistant", CodingActor(
-                ScalaLocalInterpreter::class, symbols = mapOf(
-                    "sc" to SparkContext.getOrCreate(sparkConf),
-                    "spark" to SparkSession.builder().config(sparkConf).getOrCreate(),
-                )
-            )
-            )),
+//            ChildWebApp("/spark_coder", SimpleCodingApp("Spark Coding Assistant", CodingActor(
+//                ScalaLocalInterpreter::class, symbols = mapOf(
+//                    "sc" to SparkContext.getOrCreate(sparkConf),
+//                    "spark" to SparkSession.builder().config(sparkConf).getOrCreate(),
+//                )
+//            )
+//            )),
             ChildWebApp("/aws_coder", SimpleCodingApp("AWS Coding Assistant", CodingActor(
                 KotlinInterpreter::class, symbols = mapOf(
                     // Region
