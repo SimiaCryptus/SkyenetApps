@@ -1,15 +1,15 @@
 package com.simiacryptus.skyenet.apps.roblox
 
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.models.ChatModels
-import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.ClientUtil.toContentList
-import com.simiacryptus.skyenet.application.ApplicationInterface
-import com.simiacryptus.skyenet.application.ApplicationServer
-import com.simiacryptus.skyenet.platform.Session
-import com.simiacryptus.skyenet.platform.User
-import com.simiacryptus.skyenet.session.*
-import com.simiacryptus.skyenet.util.MarkdownUtil
+import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.skyenet.webui.session.SocketManagerBase
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil
 
 class BehaviorScriptCoder(
     applicationName: String = "Roblox BehaviorScript Coder",

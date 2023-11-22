@@ -2,21 +2,21 @@ package com.simiacryptus.skyenet.apps.meta
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
-import com.simiacryptus.skyenet.application.ApplicationServer
-import com.simiacryptus.skyenet.Brain.Companion.indent
-import com.simiacryptus.skyenet.actors.ActorSystem
-import com.simiacryptus.skyenet.actors.CodingActor
-import com.simiacryptus.skyenet.actors.ParsedActor
-import com.simiacryptus.skyenet.actors.ParsedResponse
-import com.simiacryptus.skyenet.application.ApplicationInterface
+import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.meta.MetaActors.ActorType
 import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
-import com.simiacryptus.skyenet.platform.DataStorage
-import com.simiacryptus.skyenet.platform.Session
-import com.simiacryptus.skyenet.platform.User
-import com.simiacryptus.skyenet.session.SocketManagerBase
-import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.skyenet.core.Brain.Companion.indent
+import com.simiacryptus.skyenet.core.actors.ActorSystem
+import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.ParsedResponse
+import com.simiacryptus.skyenet.core.platform.DataStorage
+import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.skyenet.webui.session.SocketManagerBase
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
 import java.util.*
 

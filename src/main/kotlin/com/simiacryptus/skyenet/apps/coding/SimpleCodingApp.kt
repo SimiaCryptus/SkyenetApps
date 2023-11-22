@@ -1,12 +1,15 @@
 package com.simiacryptus.skyenet.apps.coding
 
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.skyenet.application.ApplicationServer
-import com.simiacryptus.skyenet.actors.CodingActor
-import com.simiacryptus.skyenet.application.ApplicationInterface
-import com.simiacryptus.skyenet.platform.*
-import com.simiacryptus.skyenet.session.*
-import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.skyenet.core.platform.AuthorizationManager
+import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.skyenet.webui.session.SocketManagerBase
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.util.*
 

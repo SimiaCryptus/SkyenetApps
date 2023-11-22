@@ -2,16 +2,15 @@ package com.simiacryptus.skyenet
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.regions.DefaultAwsRegionProviderChain
-import com.simiacryptus.skyenet.actors.CodingActor
-import com.simiacryptus.skyenet.application.ApplicationDirectory
 import com.simiacryptus.skyenet.apps.coding.SimpleCodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
 import com.simiacryptus.skyenet.apps.outline.OutlineApp
 import com.simiacryptus.skyenet.apps.roblox.AdminCommandCoder
 import com.simiacryptus.skyenet.apps.roblox.BehaviorScriptCoder
-import com.simiacryptus.skyenet.heart.KotlinInterpreter
-import com.simiacryptus.skyenet.heart.ScalaLocalInterpreter
+import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
+import com.simiacryptus.skyenet.scala.ScalaLocalInterpreter
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
@@ -19,7 +18,7 @@ import org.apache.spark.sql.SparkSession
 
 open class AppServer(
     localName: String, publicName: String, port: Int
-) : ApplicationDirectory(
+) : com.simiacryptus.skyenet.webui.application.ApplicationDirectory(
     localName = localName, publicName = publicName, port = port
 ) {
 
@@ -41,7 +40,8 @@ open class AppServer(
                     "sc" to SparkContext.getOrCreate(sparkConf),
                     "spark" to SparkSession.builder().config(sparkConf).getOrCreate(),
                 )
-            ))),
+            )
+            )),
             ChildWebApp("/aws_coder", SimpleCodingApp("AWS Coding Assistant", CodingActor(
                 KotlinInterpreter::class, symbols = mapOf(
                     // Region
@@ -49,7 +49,8 @@ open class AppServer(
                     // AWSCredentialsProvider
                     "credentials" to DefaultAWSCredentialsProviderChain.getInstance(),
                 )
-            ))),
+            )
+            )),
             ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
 
             // Legacy for the kids

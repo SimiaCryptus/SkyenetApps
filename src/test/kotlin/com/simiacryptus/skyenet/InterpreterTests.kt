@@ -1,7 +1,7 @@
 package com.simiacryptus.skyenet
 
-import com.simiacryptus.skyenet.heart.KotlinInterpreter
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.intellij.lang.annotations.Language

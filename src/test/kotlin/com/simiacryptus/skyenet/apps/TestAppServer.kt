@@ -1,10 +1,10 @@
 package com.simiacryptus.skyenet.apps
 
 import com.simiacryptus.skyenet.AppServer
-import com.simiacryptus.skyenet.platform.ApplicationServices
-import com.simiacryptus.skyenet.platform.AuthenticationManager
-import com.simiacryptus.skyenet.platform.AuthorizationManager
-import com.simiacryptus.skyenet.platform.User
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.skyenet.core.platform.AuthenticationManager
+import com.simiacryptus.skyenet.core.platform.AuthorizationManager
+import com.simiacryptus.skyenet.core.platform.User
 import kotlin.random.Random
 
 object TestAppServer : AppServer(

@@ -2,22 +2,22 @@ package com.simiacryptus.skyenet.apps.outline
 
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.skyenet.actors.ActorSystem
-import com.simiacryptus.skyenet.application.ApplicationServer
-import com.simiacryptus.skyenet.actors.ParsedActor
-import com.simiacryptus.skyenet.actors.SimpleActor
+import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.ActorType
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTerminalNodeMap
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Companion.getTextOutline
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
-import com.simiacryptus.skyenet.platform.DataStorage
-import com.simiacryptus.skyenet.platform.Session
-import com.simiacryptus.skyenet.platform.User
-import com.simiacryptus.skyenet.application.ApplicationInterface
-import com.simiacryptus.skyenet.session.SocketManagerBase
-import com.simiacryptus.skyenet.util.EmbeddingVisualizer
-import com.simiacryptus.skyenet.util.MarkdownUtil
-import com.simiacryptus.jopenai.util.JsonUtil.toJson
+import com.simiacryptus.skyenet.core.actors.ActorSystem
+import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.core.platform.DataStorage
+import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.skyenet.webui.session.SocketManagerBase
+import com.simiacryptus.skyenet.webui.util.EmbeddingVisualizer
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 

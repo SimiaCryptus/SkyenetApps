@@ -1,9 +1,9 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.skyenet.actors.opt.ActorOptimization
-import com.simiacryptus.skyenet.actors.opt.Expectation
-import com.simiacryptus.skyenet.actors.test.CodingActorTestBase
-import com.simiacryptus.skyenet.heart.KotlinInterpreter
+import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization
+import com.simiacryptus.skyenet.core.actors.opt.Expectation
+import com.simiacryptus.skyenet.core.actors.test.CodingActorTestBase
+import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import org.junit.jupiter.api.Test
 
 object FlowStepDesignerActorTest : CodingActorTestBase() {

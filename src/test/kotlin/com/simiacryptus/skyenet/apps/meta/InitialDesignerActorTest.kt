@@ -1,8 +1,8 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.skyenet.actors.opt.ActorOptimization
-import com.simiacryptus.skyenet.actors.opt.Expectation
-import com.simiacryptus.skyenet.actors.test.ParsedActorTestBase
+import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization
+import com.simiacryptus.skyenet.core.actors.opt.Expectation
+import com.simiacryptus.skyenet.core.actors.test.ParsedActorTestBase
 import org.junit.jupiter.api.Test
 
 object InitialDesignerActorTest :

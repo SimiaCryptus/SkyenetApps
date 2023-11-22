@@ -1,13 +1,13 @@
 package com.simiacryptus.skyenet.apps.meta
 
+import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.skyenet.Heart
-import com.simiacryptus.skyenet.actors.BaseActor
-import com.simiacryptus.skyenet.actors.CodingActor
-import com.simiacryptus.skyenet.actors.ParsedActor
-import com.simiacryptus.skyenet.heart.KotlinInterpreter
-import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.skyenet.core.Heart
+import com.simiacryptus.skyenet.core.actors.BaseActor
+import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import org.intellij.lang.annotations.Language
 import java.util.function.Function
 import kotlin.reflect.KClass

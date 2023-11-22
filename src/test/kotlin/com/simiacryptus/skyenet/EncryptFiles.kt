@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet
 
-import com.simiacryptus.skyenet.util.AwsUtil
+import com.simiacryptus.skyenet.core.util.AwsUtil
 
 object EncryptFiles {
 
