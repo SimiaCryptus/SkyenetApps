@@ -1,7 +1,8 @@
 package com.simiacryptus.skyenet.apps.debate
 
 import com.simiacryptus.openai.OpenAIAPI
-import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.application.ApplicationInterface
+import com.simiacryptus.skyenet.application.ApplicationServer
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
 import com.simiacryptus.skyenet.session.*
@@ -11,7 +12,7 @@ open class DebateApp(
     applicationName: String = "DebateMapper",
     temperature: Double = 0.3,
     val domainName: String,
-) : ApplicationBase(
+) : ApplicationServer(
     applicationName = applicationName,
     temperature = temperature,
 ) {

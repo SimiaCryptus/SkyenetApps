@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.openai.GPT4Tokenizer
 import com.simiacryptus.openai.OpenAIAPI
 import com.simiacryptus.skyenet.actors.ActorSystem
-import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.application.ApplicationServer
 import com.simiacryptus.skyenet.actors.ParsedActor
 import com.simiacryptus.skyenet.actors.SimpleActor
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.ActorType
@@ -14,7 +14,7 @@ import com.simiacryptus.skyenet.apps.outline.OutlineActors.Outline
 import com.simiacryptus.skyenet.platform.DataStorage
 import com.simiacryptus.skyenet.platform.Session
 import com.simiacryptus.skyenet.platform.User
-import com.simiacryptus.skyenet.session.ApplicationInterface
+import com.simiacryptus.skyenet.application.ApplicationInterface
 import com.simiacryptus.skyenet.session.SocketManagerBase
 import com.simiacryptus.skyenet.util.EmbeddingVisualizer
 import com.simiacryptus.skyenet.util.MarkdownUtil
@@ -53,7 +53,7 @@ class OutlineBuilder(
         ui: ApplicationInterface,
         domainName: String
     ) {
-        val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
+        val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner, false)
         //language=HTML
         sessionMessage.append("""<div class="user-message">${MarkdownUtil.renderMarkdown(userMessage)}</div>""", true)
         val answer = questionSeeder.answer(*questionSeeder.chatMessages(userMessage), api = api)
@@ -78,7 +78,7 @@ class OutlineBuilder(
         sessionDir.resolve("nodes.json").writeText(toJson(outlineManager.nodes))
         sessionDir.resolve("relationships.json").writeText(toJson(outlineManager.relationships))
 
-        val finalOutlineDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
+        val finalOutlineDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner)
         //language=HTML
         finalOutlineDiv.append("""<div class="response-header">Final Outline</div>""", true)
         val finalOutline = outlineManager.buildFinalOutline()
@@ -91,7 +91,7 @@ class OutlineBuilder(
         sessionDir.resolve("textOutline.txt").writeText(textOutline)
 
         if (showProjector) {
-            val projectorDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
+            val projectorDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner)
             //language=HTML
             projectorDiv.append("""<div class="response-header">Embedding Projector</div>""", true)
             val response = EmbeddingVisualizer(
@@ -108,7 +108,7 @@ class OutlineBuilder(
         }
 
         if (writeFinalEssay) {
-            val finalRenderDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
+            val finalRenderDiv = ui.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner)
             //language=HTML
             finalRenderDiv.append("""<div class="response-header">Final Render</div>""", true)
             val finalEssay = getFinalEssay(finalOutline)
@@ -180,7 +180,7 @@ class OutlineBuilder(
             log.debug("Skipping: ${parent.data}")
             return null
         }
-        val newSessionDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner)
+        val newSessionDiv = session.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner)
         //language=HTML
         newSessionDiv.append("""<div class="response-header">Expand $sectionName</div>""", true)
 

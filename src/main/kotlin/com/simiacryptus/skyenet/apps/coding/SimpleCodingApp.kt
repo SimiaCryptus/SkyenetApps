@@ -1,8 +1,9 @@
 package com.simiacryptus.skyenet.apps.coding
 
 import com.simiacryptus.openai.OpenAIAPI
-import com.simiacryptus.skyenet.ApplicationBase
+import com.simiacryptus.skyenet.application.ApplicationServer
 import com.simiacryptus.skyenet.actors.CodingActor
+import com.simiacryptus.skyenet.application.ApplicationInterface
 import com.simiacryptus.skyenet.platform.*
 import com.simiacryptus.skyenet.session.*
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
@@ -13,7 +14,7 @@ open class SimpleCodingApp(
     applicationName: String,
     private val actor: CodingActor,
     temperature: Double = 0.1,
-) : ApplicationBase(
+) : ApplicationServer(
     applicationName = applicationName,
     temperature = temperature,
 ) {
@@ -25,7 +26,7 @@ open class SimpleCodingApp(
         api: OpenAIAPI
     ) {
         try {
-            val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationBase.spinner, false)
+            val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), ApplicationServer.spinner, false)
             sessionMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
             val response = actor.answer(userMessage, api = api)
             val canPlay = ApplicationServices.authorizationManager.isAuthorized(

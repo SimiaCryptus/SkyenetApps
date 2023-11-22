@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.regions.DefaultAwsRegionProviderChain
 import com.simiacryptus.skyenet.actors.CodingActor
+import com.simiacryptus.skyenet.application.ApplicationDirectory
 import com.simiacryptus.skyenet.apps.coding.SimpleCodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
