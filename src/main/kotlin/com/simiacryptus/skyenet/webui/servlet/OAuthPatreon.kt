@@ -51,15 +51,24 @@ open class OAuthPatreon(
         override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
             val code = req.getParameter("code")
             if (code != null) {
+                val bodyString =
+                    "code=$code&grant_type=authorization_code&client_id=${config.clientId}&client_secret=${config.clientSecret}&redirect_uri=$redirectUri"
+                log.info("""
+                    Finalizing login with code $code
+                    config.clientId = ${config.clientId}
+                    config.clientSecret = ...${config.clientSecret.takeLast(4)}
+                    redirectUri = $redirectUri
+                    bodyString = $bodyString
+                """.trimIndent())
                 val tokenResponse = Request.create(Method.POST, URI(patreonTokenUrl))
                     .bodyString(
-                        "code=$code&grant_type=authorization_code&client_id=${config.clientId}&client_secret=${config.clientSecret}&redirect_uri=$redirectUri",
+                        bodyString,
                         ContentType.APPLICATION_FORM_URLENCODED
                     ).execute().returnContent().asString()
                 val accessToken = extractAccessToken(tokenResponse) // Implement this function to parse the JSON response
                 val userInfoResponse = Request.create(Method.GET, URI(patreonUserUrl))
                     .addHeader("Authorization", "Bearer $accessToken")
-                    .execute().returnContent().asString()
+                    .execute().returnContent().asString() // <-- 400 Bad Request
                 val user = parseUserInfo(userInfoResponse)
                 ApplicationServices.authenticationManager.putUser(accessToken = accessToken, user = user)
                 log.info("User $user logged in with session $accessToken")
