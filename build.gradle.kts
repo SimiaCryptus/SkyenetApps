@@ -45,6 +45,7 @@ dependencies {
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
     implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
+    implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version = "5.2.1")
 
 //    implementation(group = "org.apache.spark", name = "spark-core_2.13", version = spark_version)
 //    implementation(group = "org.apache.spark", name = "spark-sql_2.13", version = spark_version)
