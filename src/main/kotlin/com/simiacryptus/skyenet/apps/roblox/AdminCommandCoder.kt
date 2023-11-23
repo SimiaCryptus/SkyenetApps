@@ -27,7 +27,7 @@ class AdminCommandCoder(
         api: API
     ) {
         val message = ui.newMessage()
-        message.append("""<div>$userMessage</div>""")
+        message.echo(userMessage)
 
         val model = ChatModels.GPT4
         val response = (api as OpenAIClient).chat(
@@ -74,7 +74,7 @@ class AdminCommandCoder(
             ), model
         )
 
-        message.append("""<div>${MarkdownUtil.renderMarkdown(response.choices.get(0).message?.content ?: "")}</div>""")
+        message.add(MarkdownUtil.renderMarkdown(response.choices.get(0).message?.content ?: ""))
     }
 
 }

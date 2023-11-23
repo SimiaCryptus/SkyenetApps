@@ -31,10 +31,9 @@ open class OutlineManager(val rootNode: OutlinedText) {
         @JsonIgnore
         fun getTerminalNodeMap(): Map<String, Node> {
             val nodeMap = children?.map { node ->
-                node.children?.getTerminalNodeMap()
-                    ?.mapKeys { entry ->
-                        node.name + " / " + entry.key
-                    } ?: mapOf(node.name to node)
+                val map = node.children?.getTerminalNodeMap()
+                    ?.mapKeys { entry -> node.name + " / " + entry.key }
+                if (map.isNullOrEmpty()) mapOf(node.name to node) else map
             }?.flatMap { it.entries }?.associate { (it.key ?: "") to it.value }
             return if (nodeMap.isNullOrEmpty()) {
                 emptyMap()
@@ -66,8 +65,8 @@ open class OutlineManager(val rootNode: OutlinedText) {
             val sb = StringBuilder()
             sb.append("* " + ((description?.replace("\n", "\\n") ?: name)?.trim() ?: ""))
             sb.append("\n")
-            val childrenTxt = children?.getTextOutline()?.replace("\n", "\n\t")?.trim() ?: ""
-            if (childrenTxt.isNotEmpty()) sb.append("\t" + childrenTxt)
+            val childrenTxt = children?.getTextOutline()?.replace("\n", "\n  ")?.trim() ?: ""
+            if (childrenTxt.isNotEmpty()) sb.append("  " + childrenTxt)
             return sb.toString()
         }
 

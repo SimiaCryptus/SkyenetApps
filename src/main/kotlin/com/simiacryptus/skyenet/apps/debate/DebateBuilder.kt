@@ -26,24 +26,20 @@ class DebateBuilder(
 
     fun debate(userMessage: String, ui: ApplicationInterface, domainName: String) {
         val message = ui.newMessage()
-        message.append("""<div>${renderMarkdown(userMessage)}</div>""")
+        message.echo(renderMarkdown(userMessage))
         val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage), api = api)
-        message.append("""<div>${renderMarkdown(moderatorResponse.getText())}</div>""")
-        message.complete("""<pre class="verbose">${toJson(moderatorResponse.getObj())}</pre>""")
+        message.complete(renderMarkdown(moderatorResponse.getText()))
+        message.verbose(toJson(moderatorResponse.getObj()))
 
         val totalSummary =
             (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().map { question ->
                 val message = ui.newMessage()
                 val answers = (moderatorResponse.getObj().debators?.list ?: emptyList()).parallelStream()
                     .map { actor -> answer(ui, actor, question) }.toList()
-                message.append(
-                    """<div>Summarizing: ${
-                        renderMarkdown(question.text ?: "").trim()
-                    }</div>"""
-                )
+                message.header("Summarizing: ${renderMarkdown(question.text ?: "")}")
                 val summarizorResponse =
                     summarizor.answer(*(listOf((question.text ?: "").trim()) + answers).toTypedArray(), api = api)
-                message.complete("""<div>${renderMarkdown(summarizorResponse)}</div>""")
+                message.complete(renderMarkdown(summarizorResponse))
                 summarizorResponse
             }.toList()
 
@@ -53,23 +49,23 @@ class DebateBuilder(
                 (moderatorResponse.getObj().questions?.list?.map { it.text ?: "" }?.filter { it.isNotBlank() }?.toSet()
                     ?: emptySet())
         val projectorMessage = ui.newMessage()
-        projectorMessage.append("""<div>Embedding Projector</div>""")
+        projectorMessage.header("Embedding Projector")
         val response = TensorflowProjector(
             api = api,
             dataStorage = dataStorage,
-            sessionID = message.sessionID(),
+            sessionID = session,
             appPath = "debate_mapper",
             host = domainName,
             session = ui,
-            userId = userId,
+            userId = user,
         ).writeTensorflowEmbeddingProjectorHtml(*argumentList.toTypedArray())
-        projectorMessage.complete("""<div>$response</div>""")
+        projectorMessage.complete(response)
 
         val conclusionMessage = ui.newMessage()
-        conclusionMessage.append("""<pre class="verbose">${toJson(totalSummary)}</pre>""")
+        conclusionMessage.verbose(toJson(totalSummary))
         val summarizorResponse = summarizor.answer(*totalSummary.toTypedArray(), api = api)
-        conclusionMessage.complete("""<pre class="verbose">${toJson(summarizorResponse)}</pre>""")
-        conclusionMessage.complete("""<div>${renderMarkdown(summarizorResponse)}</div>""")
+        conclusionMessage.verbose(toJson(summarizorResponse))
+        conclusionMessage.complete(renderMarkdown(summarizorResponse))
     }
 
     private fun answer(
@@ -78,16 +74,12 @@ class DebateBuilder(
         question: Question
     ): String {
         val message = session.newMessage()
-        message.append(
-            """<div>${actor.name?.trim() ?: ""} - ${
-                renderMarkdown(question.text ?: "").trim()
-            }</div>"""
-        )
+        message.add((actor.name?.trim() ?: "") + " - " + renderMarkdown(question.text ?: "").trim())
         val debator = getActorConfig(actor)
         val response = debator.answer(*debator.chatMessages(question.text ?: ""), api = api)
-        message.complete("""<div>${renderMarkdown(response.getText())}</div>""")
+        message.complete(renderMarkdown(response.getText()))
         outlines[actor.name!! + ": " + question.text!!] = response.getObj()
-        message.complete("""<pre class="verbose">${toJson(response.getObj()).trim()}</pre>""")
+        message.verbose(toJson(response.getObj()))
         return response.getText()
     }
 

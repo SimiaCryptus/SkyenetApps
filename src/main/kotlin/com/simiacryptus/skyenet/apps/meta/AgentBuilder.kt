@@ -52,21 +52,17 @@ open class AgentBuilder(
     fun buildAgent(userMessage: String) {
         try {
             val rootMessage = ui.newMessage()
-            //language=HTML
-            rootMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""")
+            rootMessage.echo(renderMarkdown(userMessage))
             val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage), api = api)
-            //language=HTML
-            rootMessage.append("""<div class="response-message">${renderMarkdown(design.getText())}</div>""")
-            //language=HTML
-            rootMessage.complete("""<pre class="verbose">${JsonUtil.toJson(design.getObj())}</pre>""")
+            rootMessage.complete(renderMarkdown(design.getText()))
+            rootMessage.verbose(JsonUtil.toJson(design.getObj()))
 
             val actImpls = implementActors(ui, userMessage, design)
             val flowImpl = getFlowStepCode(ui, userMessage, design, actImpls)
             val mainImpl = getMainFunction(ui, userMessage, design, actImpls, flowImpl)
 
             val finalCodeMessage = ui.newMessage()
-            //language=HTML
-            finalCodeMessage.append("""<div class="response-header">Final Code</div>""")
+            finalCodeMessage.header("Final Code")
 
             val imports =
                 (actImpls.values + flowImpl.values + listOf(mainImpl)).flatMap { it.imports() }
@@ -218,10 +214,10 @@ open class AgentBuilder(
             |""".trimMargin()
 
             //language=HTML
-            finalCodeMessage.complete("""<div class="response-message">${renderMarkdown(code)}</div>""")
+            finalCodeMessage.complete(renderMarkdown(code))
         } catch (e: Throwable) {
             log.warn("Error", e)
-            ui.send("""${SocketManagerBase.randomID()},<div class="error">${renderMarkdown(e.message ?: "")}</div>""")
+            ui.newMessage().error(e)
         }
     }
 
@@ -233,7 +229,7 @@ open class AgentBuilder(
         flowStepCode: Map<String, String>
     ): String {
         val message = session.newMessage()
-        message.append("""<div class="response-header">Main Function</div>""")
+        message.header("Main Function")
         val mainFunction = flowStepDesigner.answerWithPrefix(
             codePrefix = (actorImpls.values + flowStepCode.values).joinToString(
                 "\n\n"
@@ -246,16 +242,13 @@ open class AgentBuilder(
             ), api = api
         ).getCode()
         message.complete(
-            """<div class="response-message">${
-                //language=MARKDOWN
-                renderMarkdown(
-                    """
+            renderMarkdown(
+                """
                     |```kotlin
                     |$mainFunction
                     |```
                     """.trimMargin()
-                )
-            }</div>"""
+            )
         )
         return mainFunction
     }
@@ -267,7 +260,7 @@ open class AgentBuilder(
     ) = design.getObj().actors?.map { actorDesign ->
         val message = session.newMessage()
         //language=HTML
-        message.append("""<div class="response-header">Actor: ${actorDesign.name}</div>""")
+        message.header("Actor: ${actorDesign.name}")
         val type = actorDesign.type ?: ""
         val messages = simpleActorDesigner.chatMessages(
             userMessage,
@@ -290,16 +283,13 @@ open class AgentBuilder(
         val code = response.getCode()
         //language=HTML
         message.complete(
-            """<div class="response-message">${
-                //language=MARKDOWN
-                renderMarkdown(
-                    """
-                                |```kotlin
-                                |$code
-                                |```
-                                """.trimMargin()
-                )
-            }</div>"""
+            renderMarkdown(
+                """
+                |```kotlin
+                |$code
+                |```
+                """.trimMargin()
+            )
         )
         actorDesign.name to code
     }?.toMap() ?: mapOf()
@@ -311,8 +301,7 @@ open class AgentBuilder(
         actorImpls: Map<String, String>,
     ) = design.getObj().logicFlow?.items?.map { logicFlowItem ->
         val message = session.newMessage()
-        //language=HTML
-        message.append("""<div class="response-header">Logic Flow: ${logicFlowItem.name}</div>""")
+        message.header("Logic Flow: ${logicFlowItem.name}")
         val messages = flowStepDesigner.chatMessages(
             userMessage,
             design.getText(),
@@ -325,16 +314,13 @@ open class AgentBuilder(
         val code = response.getCode()
         //language=HTML
         message.complete(
-            """<div class="response-message">${
-                //language=MARKDOWN
-                renderMarkdown(
-                    """
-                                |```kotlin
-                                |$code
-                                |```
-                                """.trimMargin()
-                )
-            }</div>"""
+            renderMarkdown(
+                """
+                |```kotlin
+                |$code
+                |```
+                """.trimMargin()
+            )
         )
         logicFlowItem.name to code
     }?.toMap() ?: mapOf()
