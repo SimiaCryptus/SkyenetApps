@@ -29,7 +29,7 @@ kotlin {
 }
 
 val jetty_version = "11.0.18"
-val skyenet_version = "1.0.38"
+val skyenet_version = "1.0.39"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 dependencies {
@@ -40,6 +40,7 @@ dependencies {
     implementation(group = "com.simiacryptus.skyenet", name = "kotlin", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
+    implementation(group = "com.patreon", name = "patreon", version = "0.4.2")
 
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
