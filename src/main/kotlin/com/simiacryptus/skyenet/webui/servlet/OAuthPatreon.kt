@@ -25,7 +25,7 @@ open class OAuthPatreon(
 ) : OAuthBase(redirectUri) {
 
     override fun configure(context: WebAppContext, addFilter: Boolean): WebAppContext {
-        context.addServlet(ServletHolder("googleLogin", LoginServlet()), "/login")
+        context.addServlet(ServletHolder("patreonLogin", LoginServlet()), "/login")
         context.addServlet(ServletHolder("patreonLogin", LoginServlet()), "/patreonLogin")
         context.addServlet(ServletHolder("patreonOAuth2callback", CallbackServlet()), "/patreonOAuth2callback")
         if (addFilter) context.addFilter(FilterHolder(SessionIdFilter({ request ->
