@@ -42,17 +42,11 @@ open class OutlineApp(
             minSize = settings?.minTokensForExpansion ?: 16,
             writeFinalEssay = settings?.writeFinalEssay ?: false,
             showProjector = settings?.showProjector ?: true,
-            userId = user,
+            user = user,
             session = session,
             userMessage = userMessage,
             ui = ui,
             domainName = domainName,
         ).buildMap()
     }
-
-    companion object {
-        private val log = LoggerFactory.getLogger(OutlineApp::class.java)
-    }
-
-
 }

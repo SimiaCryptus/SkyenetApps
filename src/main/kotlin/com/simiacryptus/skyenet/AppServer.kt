@@ -38,15 +38,7 @@ open class AppServer(
 //                )
 //            )
 //            )),
-            ChildWebApp("/aws_coder", SimpleCodingApp("AWS Coding Assistant", CodingActor(
-                KotlinInterpreter::class, symbols = mapOf(
-                    // Region
-                    "region" to DefaultAwsRegionProviderChain().getRegion(),
-                    // AWSCredentialsProvider
-                    "credentials" to DefaultAWSCredentialsProviderChain.getInstance(),
-                )
-            )
-            )),
+            ChildWebApp("/aws_coder", SimpleCodingApp("AWS Coding Assistant"            )),
             ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
 
             // Legacy for the kids

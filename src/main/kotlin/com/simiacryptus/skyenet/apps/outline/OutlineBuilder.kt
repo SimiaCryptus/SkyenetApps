@@ -24,7 +24,7 @@ class OutlineBuilder(
     val api: API,
     dataStorage: DataStorage,
     session: Session,
-    userId: User?,
+    user: User?,
     temperature: Double,
     private val iterations: Int,
     private val minSize: Int,
@@ -33,7 +33,7 @@ class OutlineBuilder(
     val userMessage: String,
     val ui: ApplicationInterface,
     val domainName: String
-) : ActorSystem<ActorType>(OutlineActors.actorMap(temperature), dataStorage, userId, session) {
+) : ActorSystem<ActorType>(OutlineActors.actorMap(temperature), dataStorage, user, session) {
     init {
         require(iterations > -1)
     }
