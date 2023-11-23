@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.regions.DefaultAwsRegionProviderChain
+import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.coding.SimpleCodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
@@ -9,7 +10,10 @@ import com.simiacryptus.skyenet.apps.outline.OutlineApp
 import com.simiacryptus.skyenet.apps.roblox.AdminCommandCoder
 import com.simiacryptus.skyenet.apps.roblox.BehaviorScriptCoder
 import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.util.AwsUtil
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
+import com.simiacryptus.skyenet.webui.servlet.OAuthBase
+import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 
 
 open class AppServer(
@@ -46,5 +50,11 @@ open class AppServer(
             ChildWebApp("/roblox_script", BehaviorScriptCoder()),
         )}
 
+    override fun authenticatedWebsite(): OAuthBase = OAuthPatreon(
+        redirectUri = "$domainName/patreonOAuth2callback",
+        config = JsonUtil.fromJson(
+            AwsUtil.decryptResource("patreon.json.kms", javaClass.classLoader),
+            OAuthPatreon.PatreonOAuthInfo::class.java)
+    )
 }
 

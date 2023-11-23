@@ -42,10 +42,4 @@ object TestAppServer : AppServer(
     }
 
 
-    override fun authenticatedWebsite(): OAuthBase = OAuthPatreon(
-        redirectUri = "$domainName/oauth2callback",
-        config = JsonUtil.fromJson(
-            decryptResource("patreon.json.kms", javaClass.classLoader),
-            OAuthPatreon.PatreonOAuthInfo::class.java)
-    )
 }
