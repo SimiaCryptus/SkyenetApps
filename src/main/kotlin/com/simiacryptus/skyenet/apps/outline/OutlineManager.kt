@@ -6,22 +6,22 @@ import com.simiacryptus.jopenai.proxy.ValidatedObject
 open class OutlineManager(val rootNode: OutlinedText) {
 
     data class NodeList(
-        val nodes: List<Node>? = null,
+        val children: List<Node>? = null,
     ) : ValidatedObject {
         override fun validate() = when {
-            nodes == null -> false
-            !nodes.all { it.validate() } -> false
-            nodes.size != nodes.map { it.name ?: "" }.distinct().size -> false
+            children == null -> false
+            !children.all { it.validate() } -> false
+            children.size != children.map { it.name ?: "" }.distinct().size -> false
             else -> true
         }
 
         fun deepClone(): NodeList =
-            NodeList(this.nodes?.map { it.deepClone() })
+            NodeList(this.children?.map { it.deepClone() })
 
         @JsonIgnore
         fun getTextOutline(): String {
             val sb = StringBuilder()
-            nodes?.forEach { item ->
+            children?.forEach { item ->
                 sb.append(item.getTextOutline().trim())
                 sb.append("\n")
             }
@@ -30,10 +30,17 @@ open class OutlineManager(val rootNode: OutlinedText) {
 
         @JsonIgnore
         fun getTerminalNodeMap(): Map<String, Node> {
-            return nodes?.map { item ->
-                if (item.children?.nodes?.isEmpty() != false) mapOf(item.name!! to item)
-                else item.children.getTerminalNodeMap().mapKeys { key -> item.name + " / " + key } ?: mapOf()
-            }?.flatMap { it.entries.map { it.key to it.value } }?.toList()?.toMap() ?: emptyMap()
+            val nodeMap = children?.map { node ->
+                node.children?.getTerminalNodeMap()
+                    ?.mapKeys { entry ->
+                        node.name + " / " + entry.key
+                    } ?: mapOf(node.name to node)
+            }?.flatMap { it.entries }?.associate { (it.key ?: "") to it.value }
+            return if (nodeMap.isNullOrEmpty()) {
+                emptyMap()
+            } else {
+                nodeMap
+            }
         }
     }
 
@@ -75,20 +82,20 @@ open class OutlineManager(val rootNode: OutlinedText) {
     val expansionMap = mutableMapOf<Node, OutlinedText>()
 
     fun expandNodes(nodeList: NodeList): List<NodeList>? {
-        val size = nodeList.nodes?.size ?: 0
+        val size = nodeList.children?.size ?: 0
         return when {
             size == 0 -> listOf(nodeList)
-            size > 1 -> nodeList.nodes?.map { NodeList(listOf(it.deepClone())) }
+            size > 1 -> nodeList.children?.map { NodeList(listOf(it.deepClone())) }
             else -> {
-                val child = nodeList.nodes?.first() ?: return listOf(nodeList)
+                val child = nodeList.children?.first() ?: return listOf(nodeList)
                 expandNodes(child).map { NodeList(listOf(it.deepClone())) }
             }
         }
     }
 
     private fun expandNodes(node: Node): List<Node> {
-        val size = node.children?.nodes?.size ?: 0
-        if (size > 1) return node.children?.nodes?.map {
+        val size = node.children?.children?.size ?: 0
+        if (size > 1) return node.children?.children?.map {
             Node(
                 name = it.name,
                 description = it.description,
@@ -98,7 +105,7 @@ open class OutlineManager(val rootNode: OutlinedText) {
             return listOf(node)
         } else {
             // size == 1
-            val child = node.children?.nodes?.first() ?: return listOf(node)
+            val child = node.children?.children?.first() ?: return listOf(node)
             val expandSectionsdChild = expandNodes(child)
             return expandSectionsdChild.map {
                 Node(
@@ -111,27 +118,30 @@ open class OutlineManager(val rootNode: OutlinedText) {
     }
 
     fun getLeafDescriptions(nodeList: NodeList): List<String> =
-        nodeList.nodes?.flatMap { getLeafDescriptions(it) } ?: listOf()
+        nodeList.children?.flatMap { getLeafDescriptions(it) } ?: listOf()
 
     private fun getLeafDescriptions(outline: Node): List<String> =
-        listOf(outline.description ?: "") + (outline.children?.nodes?.flatMap { getLeafDescriptions(it) } ?: listOf())
+        listOf(outline.description ?: "") + (outline.children?.children?.flatMap { getLeafDescriptions(it) }
+            ?: listOf())
 
     fun buildFinalOutline(): NodeList {
         return buildFinalOutline(rootNode?.outline?.deepClone() ?: return NodeList()) ?: NodeList()
     }
 
     private fun buildFinalOutline(outline: NodeList?): NodeList? {
-        return NodeList(nodes = outline?.nodes?.map { node: Node ->
-            val expandedOutline = expansionMap[node]?.outline?.deepClone()
+        return NodeList(children = outline?.children?.map { node: Node ->
+            val expanded = (expansionMap[node]?.outline ?: node.children)?.deepClone()
             when {
-                expandedOutline == node.children -> node.deepClone()
-                outline == node.children -> node.deepClone()
-                expandedOutline == null -> node.deepClone()
+                expanded == null -> {
+                    log.warn("No expansion for ${node.name}")
+                    node.deepClone()
+                }
+
                 else -> {
-                    var children = if (1 == (expandedOutline.nodes?.size ?: 0)) {
-                        expandedOutline.nodes?.first()?.children ?: node.children
-                    } else if ((expandedOutline.nodes?.size ?: 0) > 1) {
-                        expandedOutline
+                    var children = if (1 == (expanded.children?.size ?: 0)) {
+                        expanded.children?.first()?.children ?: node.children
+                    } else if ((expanded.children?.size ?: 0) > 1) {
+                        expanded
                     } else {
                         node.children
                     }

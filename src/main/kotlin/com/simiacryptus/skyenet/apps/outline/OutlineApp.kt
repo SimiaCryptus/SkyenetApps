@@ -44,7 +44,10 @@ open class OutlineApp(
             showProjector = settings?.showProjector ?: true,
             userId = user,
             session = session,
-        ).buildMap(userMessage, ui, domainName)
+            userMessage = userMessage,
+            ui = ui,
+            domainName = domainName,
+        ).buildMap()
     }
 
     companion object {

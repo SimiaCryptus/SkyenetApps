@@ -29,40 +29,44 @@ open class SimpleCodingApp(
         api: API
     ) {
         try {
-            val sessionMessage = ui.newMessage(SocketManagerBase.randomID(), spinner, false)
-            sessionMessage.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""", true)
+            val message = ui.newMessage()
+            message.append("""<div class="user-message">${renderMarkdown(userMessage)}</div>""")
             val response = actor.answer(userMessage, api = api)
             val canPlay = ApplicationServices.authorizationManager.isAuthorized(
                 this::class.java,
                 user,
                 AuthorizationManager.OperationType.Execute
             )
-            val playLink = if(!canPlay) "" else {
+            val playLink = if (!canPlay) "" else {
                 ui.hrefLink("▶", "href-link play-button") {
                     //language=HTML
-                    sessionMessage.append("""<div class="response-header">Running...</div>""", true)
+                    message.append("""<div class="response-header">Running...</div>""")
                     val result = response.run()
                     //language=HTML
-                    sessionMessage.append(
+                    message.complete(
                         """
                         |<div class="response-message">
                         |<pre>${result.resultValue}</pre>
                         |<pre>${result.resultOutput}</pre>
                         |</div>
-                        """.trimMargin(), false
+                        """.trimMargin()
                     )
                 }
             }
             //language=HTML
-            sessionMessage.append("""<div class="response-message">${
-                //language=MARKDOWN
-                renderMarkdown("""
+            message.complete(
+                """<div class="response-message">${
+                    //language=MARKDOWN
+                    renderMarkdown(
+                        """
                 |```${actor.interpreter.getLanguage().lowercase(Locale.getDefault())}
                 |${response.getCode()}
                 |```
                 |$playLink
-                """.trimMargin().trim())
-            }</div>""", false)
+                """.trimMargin().trim()
+                    )
+                }</div>"""
+            )
         } catch (e: Throwable) {
             log.warn("Error", e)
             //language=HTML
