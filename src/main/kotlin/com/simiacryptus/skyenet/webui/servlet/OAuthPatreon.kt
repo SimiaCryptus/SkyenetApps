@@ -60,10 +60,11 @@ open class OAuthPatreon(
                 val tokenData = JsonUtil.fromJson<TokenResponse>(tokenResponse, TokenResponse::class.java)
                 val userInfo = getUserInfo(tokenData.access_token!!)
                 log.info("User data: ${JsonUtil.toJson(userInfo)}")
+                val attributes = userInfo.data?.attributes
                 val user = User(
-                    email = userInfo.email!!,
-                    name = userInfo.fullName,
-                    picture = userInfo.thumbUrl,
+                    email = attributes?.email!!,
+                    name = attributes.full_name,
+                    picture = attributes.image_url,
                 )
                 val accessToken = UUID.randomUUID().toString()
                 ApplicationServices.authenticationManager.putUser(accessToken = accessToken, user = user)
@@ -92,66 +93,6 @@ open class OAuthPatreon(
             }
     }
 
-    data class PatreonUserInfo(
-        val fullName: String? = null,
-        val discordId: String? = null,
-        val twitch: String? = null,
-        val vanity: String? = null,
-        val email: String? = null,
-        val about: String? = null,
-        val facebookId: String? = null,
-        val imageUrl: String? = null,
-        val thumbUrl: String? = null,
-        val youtube: String? = null,
-        val twitter: String? = null,
-        val facebook: String? = null,
-        val created: Date? = null,
-        val url: String? = null,
-        val isEmailVerified: Boolean? = null,
-        val likeCount: Int? = null,
-        val commentCount: Int? = null,
-        val pledges: List<Pledge>? = null
-    )
-
-    data class Pledge(
-        val amountCents: Int? = null,
-        val createdAt: String? = null,
-        val declinedSince: String? = null,
-        val patronPaysFees: Boolean? = null,
-        val pledgeCapCents: Int? = null,
-        val totalHistoricalAmountCents: Int? = null,
-        val isPaused: Boolean? = null,
-        val hasShippingAddress: Boolean? = null,
-        val creator: User? = null,
-        val patron: User? = null,
-        val reward: Reward? = null,
-    )
-    data class Reward(
-        val amount_cents: Int? = null,
-        val created_at: String? = null,
-        val description: String? = null,
-        val remaining: Float? = null,
-        val requires_shipping: Boolean? = null,
-        val url: String? = null,
-        val user_limit: Int? = null,
-        val edited_at: String? = null,
-        val patron_count: Int? = null,
-        val published: Boolean? = null,
-        val published_at: String? = null,
-        val image_url: String? = null,
-        val discord_role_ids: List<String>? = null,
-        val title: String? = null,
-        val unpublished_at: String? = null,
-    )
-
-    data class TokenResponse(
-        val access_token: String? = null,
-        val expires_in: Long? = null,
-        val token_type: String? = null,
-        val scope: String? = null,
-        val refresh_token: String? = null,
-        val version: String? = null,
-    )
     data class PatreonOAuthInfo(
         val name: String? = null,
         val clientId: String? = null,
@@ -159,6 +100,144 @@ open class OAuthPatreon(
         val clientSecret: String? = null,
         val creatorAccessToken: String? = null,
         val creatorRefreshToken: String? = null
+    )
+
+    data class TokenResponse(
+        val access_token: String,
+        val expires_in: Long,
+        val token_type: String,
+        val scope: String,
+        val refresh_token: String,
+        val version: String,
+    )
+    data class PatreonUserInfo(
+        val data: Data? = null,
+        val included: List<Included>? = null,
+        val links: Links? = null
+    )
+
+    data class Data(
+        val attributes: Attributes? = null,
+        val id: String? = null,
+        val relationships: Relationships? = null,
+        val type: String? = null
+    )
+
+    data class Attributes(
+        val about: String? = null,
+        val age_verification_status: String? = null,
+        val apple_id: String? = null,
+        val can_see_nsfw: Boolean? = null,
+        val created: String? = null,
+        val current_user_block_status: String? = null,
+        val default_country_code: String? = null,
+        val discord_id: String? = null,
+        val email: String? = null,
+        val facebook: String? = null,
+        val facebook_id: String? = null,
+        val first_name: String? = null,
+        val full_name: String? = null,
+        val gender: Int? = null,
+        val google_id: String? = null,
+        val has_password: Boolean? = null,
+        val image_url: String? = null,
+        val is_deleted: Boolean? = null,
+        val is_email_verified: Boolean? = null,
+        val is_nuked: Boolean? = null,
+        val is_suspended: Boolean? = null,
+        val last_name: String? = null,
+        val patron_currency: String? = null,
+        val social_connections: SocialConnections? = null,
+        val thumb_url: String? = null,
+        val twitch: String? = null,
+        val twitter: String? = null,
+        val url: String? = null,
+        val vanity: String? = null,
+        val youtube: String? = null
+    )
+
+    data class SocialConnections(
+        val discord: String? = null,
+        val facebook: String? = null,
+        val google: String? = null,
+        val instagram: String? = null,
+        val reddit: String? = null,
+        val spotify: String? = null,
+        val spotify_open_access: String? = null,
+        val twitch: String? = null,
+        val twitter: String? = null,
+        val vimeo: String? = null,
+        val youtube: String? = null
+    )
+
+    data class Relationships(
+        val campaign: CampaignRelationship? = null,
+        val pledges: PledgesRelationship? = null
+    )
+
+    data class CampaignRelationship(
+        val data: CampaignData? = null,
+        val links: CampaignLinks? = null
+    )
+
+    data class CampaignData(
+        val id: String? = null,
+        val type: String? = null
+    )
+
+    data class CampaignLinks(
+        val related: String? = null
+    )
+
+    data class PledgesRelationship(
+        val data: List<PledgeData>? = null
+    )
+
+    data class PledgeData(
+        val id: String? = null,
+        val type: String? = null
+    )
+
+    data class Included(
+        val attributes: IncludedAttributes? = null,
+        val id: String? = null,
+        val relationships: IncludedRelationships? = null,
+        val type: String? = null
+    )
+
+    data class IncludedAttributes(
+        // Define all the fields you need for IncludedAttributes
+        // Example:
+        val amount: Int? = null,
+        val amount_cents: Int? = null,
+        val created_at: String? = null,
+        // ... Add other fields as per your JSON structure
+    )
+
+    data class IncludedRelationships(
+        // Define all the fields you need for IncludedRelationships
+        // Example:
+        val campaign: CampaignRelationship? = null,
+        val creator: CreatorRelationship? = null
+        // ... Add other fields as per your JSON structure
+    )
+
+    data class CreatorRelationship(
+        val data: CreatorData? = null,
+        val links: CreatorLinks? = null
+    )
+
+    data class CreatorData(
+        val id: String? = null,
+        val type: String? = null
+    )
+
+    data class CreatorLinks(
+        val related: String? = null
+    )
+
+    data class Links(
+        val self: String? = null
     )
 
     companion object {
