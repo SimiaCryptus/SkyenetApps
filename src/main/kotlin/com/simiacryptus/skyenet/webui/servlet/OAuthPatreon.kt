@@ -37,7 +37,6 @@ open class OAuthPatreon(
 
     private val patreonAuthorizationUrl = "https://www.patreon.com/oauth2/authorize"
     private val patreonTokenUrl = "https://www.patreon.com/api/oauth2/token"
-    private val patreonUserUrl = "https://www.patreon.com/api/oauth2/v2/identity?include=memberships&fields[user]=email,full_name,image_url"
 
     private inner class LoginServlet : HttpServlet() {
         override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
@@ -57,11 +56,18 @@ open class OAuthPatreon(
                         "code=$code&grant_type=authorization_code&client_id=${config.clientId}&client_secret=${config.clientSecret}&redirect_uri=$redirectUri",
                         ContentType.APPLICATION_FORM_URLENCODED
                     ).execute().returnContent().asString()
-                val accessToken = extractAccessToken(tokenResponse) // Implement this function to parse the JSON response
-                val userInfoResponse = Request.create(Method.GET, URI(patreonUserUrl))
-                    .addHeader("Authorization", "Bearer $accessToken")
-                    .execute().returnContent().asString()
-                val user = parseUserInfo(userInfoResponse)
+                if (tokenResponse == null) throw RuntimeException("Token response is null")
+                log.info("Token response: $tokenResponse")
+                val tokenData = JsonUtil.fromJson<TokenResponse>(tokenResponse, TokenResponse::class.java)
+                val userInfo = PatreonAPI(tokenData.access_token).fetchUser().get()
+                log.info("User data: ${JsonUtil.toJson(userInfo)}")
+                val user = User(
+                    email = userInfo.email,
+                    name = userInfo.fullName,
+                    picture = userInfo.thumbUrl,
+                    id = userInfo.id
+                )
+                val accessToken = UUID.randomUUID().toString()
                 ApplicationServices.authenticationManager.putUser(accessToken = accessToken, user = user)
                 log.info("User $user logged in with session $accessToken")
                 val sessionCookie = Cookie(AuthenticationManager.AUTH_COOKIE, accessToken)
@@ -71,8 +77,8 @@ open class OAuthPatreon(
                 sessionCookie.maxAge = TimeUnit.HOURS.toSeconds(1).toInt()
                 sessionCookie.comment = "Authentication Session ID"
                 resp.addCookie(sessionCookie)
-                val redirect = req.getParameter("state")?.urlDecode()
-                resp.sendRedirect(redirect ?: "/")
+                val redirect = req.getParameter("state")?.urlDecode() ?: "/"
+                resp.sendRedirect(redirect)
             } else {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Authorization code not found")
             }
@@ -81,38 +87,12 @@ open class OAuthPatreon(
 
     data class TokenResponse(
         val access_token: String,
-        // ... add other fields from the token response if necessary
-    )
-
-    data class PatreonUserResponse(
-        val access_token: String,
         val expires_in: Long,
         val token_type: String,
         val scope: String,
         val refresh_token: String,
         val version: String,
     )
-
-    private fun extractAccessToken(tokenResponse: String?): String {
-        if (tokenResponse == null) throw RuntimeException("Token response is null")
-        log.info("Token response: $tokenResponse")
-        val tokenData = JsonUtil.fromJson<TokenResponse>(tokenResponse, TokenResponse::class.java)
-        return tokenData.access_token
-    }
-
-    private fun parseUserInfo(userInfoResponse: String?): User {
-        if (userInfoResponse == null) throw RuntimeException("User info response is null")
-        log.info("User info response: $userInfoResponse")
-        val accessData = JsonUtil.fromJson<PatreonUserResponse>(userInfoResponse, PatreonUserResponse::class.java)
-        val fetchUser = PatreonAPI(accessData.access_token).fetchUser()
-        val user = fetchUser.get()
-        log.info("User data: ${JsonUtil.toJson(user)}")
-        return User(
-            email = user.email,
-            name = user.fullName,
-            picture = user.thumbUrl
-        )
-    }
 
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(OAuthPatreon::class.java)
