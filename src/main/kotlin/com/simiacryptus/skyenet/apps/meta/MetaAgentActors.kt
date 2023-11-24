@@ -268,25 +268,23 @@ class MetaAgentActors(
         |For context, here is the constructor signature for ParsedActor class:
         |```kotlin
         |import com.simiacryptus.jopenai.models.ChatModels
-        |import com.simiacryptus.jopenai.models.OpenAITextModel
         |import java.util.function.Function
         |
         |open class ParsedActor<T:Any>(
         |    val parserClass: Class<out Function<String, T>>,
         |    prompt: String,
         |    val action: String? = null,
-        |    model: OpenAITextModel = ChatModels.GPT35Turbo,
+        |    model: ChatModels = ChatModels.GPT35Turbo,
         |    temperature: Double = 0.3,
         |)
         |```
         |
         |In this code example an example actor is defined with a prompt, name, and parsing class:
         |```kotlin
+        |import com.simiacryptus.jopenai.describe.Description
         |import com.simiacryptus.jopenai.models.ChatModels
         |import com.simiacryptus.jopenai.proxy.ValidatedObject
         |import com.simiacryptus.skyenet.core.actors.ParsedActor
-        |import com.simiacryptus.jopenai.describe.Description
-        |import org.intellij.lang.annotations.Language
         |import java.util.function.Function
         |
         |interface ExampleParser : Function<String, ExampleResult> {
@@ -305,7 +303,7 @@ class MetaAgentActors(
         |}
         |
         |fun exampleParsedActor() = ParsedActor<ExampleResult>(
-        |    ExampleParser::class.java,
+        |    parserClass = ExampleParser::class.java,
         |    model = ChatModels.GPT4Turbo,
         |    prompt = ""${'"'}
         |            |You are a question answering assistant.
@@ -391,13 +389,87 @@ class MetaAgentActors(
     fun flowStepDesigner() = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
+        runtimeSymbols = mapOf(
+            "log" to log
+        ),
         model = model,
         details = """
-        |You are a software implementation assistant.
-        |Your task is to implement a step in the logic flow of a ChatGPT-based actor system.
-        |Respond to the user request with an implementation of the requested logic flow step.
-        |Preceding "assistant" messages define the existing code of the system, which you will append to.
-        """.trimMargin().trim(),
+        |You are a software implementor.
+        |
+        |Your task is to implement logic for an "agent" system that uses gpt "actors" to construct a model of a creative process.
+        |This "creative process" can be thought of as a cognitive process, an individual's work process, or an organizational process.
+        |The idea is that the overall structure is procedural and can be modeled in code, but individual steps are creative and can be modeled with gpt.
+        |
+        |Actors process inputs in the form of ChatGPT messages (often a single string) but vary in their output. 
+        |Usage examples of each actor type follows:
+        |
+        |Simple actors contain a system directive, and simply return the chat model's response to the user query.
+        |```kotlin
+        |fun useExampleSimpleActor(): String {
+        |    val answer = exampleSimpleActor().answer("This is an example question.", api = api)
+        |    log.info("Answer: " + answer)
+        |    return answer
+        |}
+        |```
+        |
+        |Parsed actors use a 2-stage system; first, queries are responded in the same manner as simple actors using a system prompt. 
+        |This natural-language response is then parsed into a typed object, which can be used in the application logic.
+        |```kotlin
+        |import com.simiacryptus.jopenai.util.JsonUtil
+        |import com.simiacryptus.skyenet.core.actors.ParsedActor
+        |import com.simiacryptus.skyenet.core.actors.CodingActor
+        |
+        |fun <T:Any> useExampleParsedActor(parsedActor: ParsedActor<T>): T {
+        |    val answer = parsedActor.answer("This is an example question.", api = api)
+        |    log.info("Natural Language Answer: " + answer.getText());
+        |    log.info("Parsed Answer: " + JsonUtil.toJson(answer.getObj()));
+        |    return answer.getObj()
+        |}
+        |```
+        |
+        |Coding actors combine ChatGPT-powered code generation with compilation and validation to produce quality code without having to run it.
+        |```kotlin
+        |fun useExampleCodingActor(): CodingActor.CodeResult {
+        |    val answer = exampleCodingActor().answer("This is an example question.", api = api)
+        |    log.info("Answer: " + answer.getCode())
+        |    val executionResult = answer.run()
+        |    log.info("Execution Log: " + executionResult.resultOutput)
+        |    log.info("Execution Result: " + executionResult.resultValue)
+        |    return answer
+        |}
+        |```
+        |
+        |Image actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
+        |```kotlin
+        |fun useExampleImageActor(): BufferedImage {
+        |    val answer = exampleImageActor().answer("Example image description", api = api)
+        |    log.info("Rendering Prompt: " + answer.getText())
+        |    return answer.getImage()
+        |}
+        |```
+        |
+        |**IMPORTANT**: Do not define new actors. Use the provided actors specified in the preceding messages.
+        |
+        |While implementing logic, the progress should be displayed to the user using the `ui` object.
+        |The UI display generally follows a pattern similar to:
+        |
+        |```kotlin
+        |val task = ui.newTask()
+        |try {
+        |    task.header("Main Function")
+        |    task.add("Normal message")
+        |    task.verbose("Verbose output - not shown by default")
+        |    task.add(ui.textInput { log.info("Message Recieved: " + it) })
+        |    task.add(ui.hrefLink("Click Me!") { log.info("Link clicked") })
+        |    task.complete()
+        |    return
+        |} catch (e: Throwable) {
+        |    task.error(e)
+        |    throw e
+        |}
+        |```
+        |
+        |""".trimMargin().trim(),
         autoEvaluate = autoEvaluate,
         temperature = temperature,
     )

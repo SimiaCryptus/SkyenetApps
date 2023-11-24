@@ -39,7 +39,7 @@ interface OutlineActors {
 
         private fun expansionAuthor(temperature: Double): ParsedActor<NodeList> = ParsedActor(
             parserClass = OutlineParser::class.java,
-            action = "Expand",
+            name = "Expand",
             prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
             model = ChatModels.GPT35Turbo,
             temperature = temperature,

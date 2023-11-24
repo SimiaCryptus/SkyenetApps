@@ -7,7 +7,13 @@ import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.ActorType
 import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.AgentDesign
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.camelCase
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.imports
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.pascalCase
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.sortCode
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.stripImports
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.upperSnakeCase
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.ParsedResponse
 import com.simiacryptus.skyenet.core.platform.DataStorage
@@ -16,7 +22,6 @@ import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
-import java.util.*
 
 
 open class MetaAgentAgent(
@@ -34,6 +39,7 @@ open class MetaAgentAgent(
         "session" to session,
         "dataStorage" to dataStorage,
         "ui" to ui,
+        "api" to api,
     ).filterValues { null != it }.mapValues { it.value!! },
     model = model,
     autoEvaluate = autoEvaluate,
@@ -50,7 +56,7 @@ open class MetaAgentAgent(
     private val flowStepDesigner by lazy { getActor(ActorType.FLOW_STEP) as CodingActor }
 
     fun buildAgent(userMessage: String) {
-        val rootMessage = ui.newMessage()
+        val rootMessage = ui.newTask()
         val design = try {
             rootMessage.echo(renderMarkdown(userMessage))
             val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage), api = api)
@@ -63,11 +69,11 @@ open class MetaAgentAgent(
             throw e
         }
 
-        val actImpls = implementActors(ui, userMessage, design)
-        val flowImpl = getFlowStepCode(ui, userMessage, design, actImpls)
-        val mainImpl = getMainFunction(ui, userMessage, design, actImpls, flowImpl)
+        val actImpls = implementActors(userMessage, design)
+        val flowImpl = getFlowStepCode(userMessage, design, actImpls)
+        val mainImpl = getMainFunction(userMessage, design, actImpls, flowImpl)
 
-        val finalCodeMessage = ui.newMessage()
+        val finalCodeMessage = ui.newTask()
         try {
             finalCodeMessage.header("Final Code")
 
@@ -228,15 +234,29 @@ open class MetaAgentAgent(
             throw e
         }
     }
+    fun demo() {
+        val task = ui.newTask()
+        try {
+            task.header("Main Function")
+            task.add("Normal message")
+            task.add(ui.textInput { log.info("Message Recieved: " + it) })
+            task.add(ui.hrefLink("Click Me!") { log.info("Link clicked") })
+            task.verbose("Verbose output - not shown by default")
+            task.complete()
+            return
+        } catch (e: Throwable) {
+            task.error(e)
+            throw e
+        }
+    }
 
     private fun getMainFunction(
-        session: ApplicationInterface,
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
         actorImpls: Map<String, String>,
         flowStepCode: Map<String, String>
     ): String {
-        val message = session.newMessage()
+        val message = ui.newTask()
         try {
             message.header("Main Function")
             val mainFunction = flowStepDesigner.answerWithPrefix(
@@ -267,11 +287,10 @@ open class MetaAgentAgent(
     }
 
     private fun implementActors(
-        session: ApplicationInterface,
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
     ) = design.getObj().actors?.map { actorDesign ->
-        val message = session.newMessage()
+        val message = ui.newTask()
         try {
             //language=HTML
             message.header("Actor: ${actorDesign.name}")
@@ -315,12 +334,11 @@ open class MetaAgentAgent(
     }?.toMap() ?: mapOf()
 
     private fun getFlowStepCode(
-        session: ApplicationInterface,
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
         actorImpls: Map<String, String>,
     ) = design.getObj().logicFlow?.items?.map { logicFlowItem ->
-        val message = session.newMessage()
+        val message = ui.newTask()
         try {
             message.header("Logic Flow: ${logicFlowItem.name}")
             val messages = flowStepDesigner.chatMessages(
@@ -352,61 +370,6 @@ open class MetaAgentAgent(
 
     companion object {
         private val log = org.slf4j.LoggerFactory.getLogger(MetaAgentAgent::class.java)
-
-        fun String.camelCase(locale: Locale = Locale.getDefault()): String {
-            val words = fromPascalCase().split(" ").map { it.trim() }.filter { it.isNotEmpty() }
-            return words.first().lowercase(locale) + words.drop(1).joinToString("") {
-                it.replaceFirstChar { c ->
-                    when {
-                        c.isLowerCase() -> c.titlecase(locale)
-                        else -> c.toString()
-                    }
-                }
-            }
-        }
-
-        fun String.pascalCase(locale: Locale = Locale.getDefault()): String =
-            fromPascalCase().split(" ").map { it.trim() }.filter { it.isNotEmpty() }.joinToString("") {
-                it.replaceFirstChar { c ->
-                    when {
-                        c.isLowerCase() -> c.titlecase(locale)
-                        else -> c.toString()
-                    }
-                }
-            }
-
-        // Detect changes in the case of the first letter and prepend a space
-        fun String.fromPascalCase(): String = buildString {
-            var lastChar = ' '
-            for (c in this@fromPascalCase) {
-                if (c.isUpperCase() && lastChar.isLowerCase()) append(' ')
-                append(c)
-                lastChar = c
-            }
-        }
-
-        fun String.upperSnakeCase(locale: Locale = Locale.getDefault()): String =
-            fromPascalCase().split(" ").map { it.trim() }.filter { it.isNotEmpty() }.joinToString("_") {
-                it.replaceFirstChar { c ->
-                    when {
-                        c.isLowerCase() -> c.titlecase(locale)
-                        else -> c.toString()
-                    }
-                }
-            }.uppercase(locale)
-
-        fun String.sortCode(bodyWrapper: (String) -> String = { it }): String {
-            val (imports, otherCode) = this.split("\n").partition { it.trim().startsWith("import ") }
-            return imports.distinct().sorted().joinToString("\n") + "\n\n" + bodyWrapper(otherCode.joinToString("\n"))
-        }
-
-        fun String.imports(): List<String> {
-            return this.split("\n").filter { it.trim().startsWith("import ") }.distinct().sorted()
-        }
-
-        fun String.stripImports(): String {
-            return this.split("\n").filter { !it.trim().startsWith("import ") }.joinToString("\n")
-        }
 
     }
 }

@@ -7,7 +7,7 @@ import com.simiacryptus.skyenet.core.actors.CodingActor.CodeResult
 import com.simiacryptus.skyenet.core.platform.*
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.session.SessionMessage
+import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -33,7 +33,7 @@ class CodingAgent(
     fun start(
         userMessage: String,
     ) {
-        val message = ui.newMessage()
+        val message = ui.newTask()
         try {
             message.echo(MarkdownUtil.renderMarkdown(userMessage))
             val response = actor.answer(userMessage, api = api)
@@ -47,7 +47,7 @@ class CodingAgent(
     private fun displayCode(
         user: User?,
         ui: ApplicationInterface,
-        message: SessionMessage,
+        message: SessionTask,
         response: CodeResult,
         userMessage: String,
         api: API
@@ -57,7 +57,7 @@ class CodingAgent(
                 MarkdownUtil.renderMarkdown(
                     //language=Markdown
                     """
-                |```${actor.interpreter.getLanguage().lowercase(Locale.getDefault())}
+                |```${actor.language.lowercase(Locale.getDefault())}
                 |${response.getCode()}
                 |```
                 """.trimMargin().trim()

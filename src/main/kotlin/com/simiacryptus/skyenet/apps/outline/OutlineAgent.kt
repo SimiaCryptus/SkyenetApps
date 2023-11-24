@@ -14,7 +14,7 @@ import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.session.SessionMessage
+import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.util.TensorflowProjector
 import org.slf4j.LoggerFactory
@@ -48,7 +48,7 @@ class OutlineAgent(
     private val pool = MoreExecutors.listeningDecorator(java.util.concurrent.Executors.newCachedThreadPool())
 
     fun buildMap() {
-        val message = ui.newMessage()
+        val message = ui.newTask()
         val outlineManager = try {
             message.echo(renderMarkdown(this.userMessage))
             val root = initial.answer(*initial.chatMessages(this.userMessage), api = api)
@@ -70,7 +70,7 @@ class OutlineAgent(
         val sessionDir = dataStorage.getSessionDir(user, session)
         sessionDir.resolve("nodes.json").writeText(toJson(outlineManager.nodes))
 
-        val finalOutlineMessage = ui.newMessage()
+        val finalOutlineMessage = ui.newTask()
         finalOutlineMessage.header("Final Outline")
         val finalOutline = outlineManager.buildFinalOutline()
         finalOutlineMessage.verbose(toJson(finalOutline))
@@ -80,7 +80,7 @@ class OutlineAgent(
         sessionDir.resolve("textOutline.md").writeText(textOutline)
 
         if (showProjector) {
-            val projectorMessage = ui.newMessage()
+            val projectorMessage = ui.newTask()
             projectorMessage.header("Embedding Projector")
             try {
                 val response = TensorflowProjector(
@@ -102,7 +102,7 @@ class OutlineAgent(
         }
 
         if (writeFinalEssay) {
-            val finalRenderMessage = ui.newMessage()
+            val finalRenderMessage = ui.newTask()
             finalRenderMessage.header("Final Render")
             try {
                 val finalEssay = buildFinalEssay(finalOutline, outlineManager)
@@ -134,13 +134,13 @@ class OutlineAgent(
         if (terminalNodeMap.isEmpty()) {
             val errorMessage = "No terminal nodes: ${node.text}"
             log.warn(errorMessage)
-            ui.newMessage().error(errorMessage)
+            ui.newTask().error(errorMessage)
             return
         }
         for ((item, childNode) in terminalNodeMap) {
             pool.submit {
                 activeThreadCounter.incrementAndGet()
-                val message = ui.newMessage()
+                val message = ui.newTask()
                 try {
                     val newNode = processNode(node, item, manager, message) ?: return@submit
                     synchronized(manager.expansionMap) {
@@ -150,7 +150,7 @@ class OutlineAgent(
                             val existingNode = manager.expansionMap[childNode]!!
                             val errorMessage = "Conflict: ${existingNode} vs ${newNode}"
                             log.warn(errorMessage)
-                            ui.newMessage().error(errorMessage)
+                            ui.newTask().error(errorMessage)
                         }
                     }
                     message.complete()
@@ -169,7 +169,7 @@ class OutlineAgent(
         parent: OutlinedText,
         sectionName: String,
         outlineManager: OutlineManager,
-        message: SessionMessage,
+        message: SessionTask,
     ): OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
             log.debug("Skipping: ${parent.text}")

@@ -33,7 +33,7 @@ val skyenet_version = "1.0.39"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 dependencies {
-    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.35")
+    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.36")
 
     implementation(group = "com.simiacryptus.skyenet", name = "core", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "groovy", version = skyenet_version)

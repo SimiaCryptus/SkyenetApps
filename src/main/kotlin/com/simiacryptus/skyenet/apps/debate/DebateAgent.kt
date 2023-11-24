@@ -27,7 +27,7 @@ class DebateAgent(
     private val summarizor get() = getActor(ActorType.SUMMARIZOR) as SimpleActor
 
     fun debate(userMessage: String) {
-        val message = ui.newMessage()
+        val message = ui.newTask()
         message.echo(renderMarkdown(userMessage))
         val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage), api = api)
         message.complete(renderMarkdown(moderatorResponse.getText()))
@@ -35,7 +35,7 @@ class DebateAgent(
 
         val totalSummary =
             (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().map { question ->
-                val message = ui.newMessage()
+                val message = ui.newTask()
                 val answers = (moderatorResponse.getObj().debators?.list ?: emptyList()).parallelStream()
                     .map { actor -> answer(ui, actor, question) }.toList()
                 message.header("Summarizing: ${renderMarkdown(question.text ?: "")}")
@@ -50,7 +50,7 @@ class DebateAgent(
         } +
                 (moderatorResponse.getObj().questions?.list?.map { it.text ?: "" }?.filter { it.isNotBlank() }?.toSet()
                     ?: emptySet())
-        val projectorMessage = ui.newMessage()
+        val projectorMessage = ui.newTask()
         projectorMessage.header("Embedding Projector")
         val response = TensorflowProjector(
             api = api,
@@ -63,7 +63,7 @@ class DebateAgent(
         ).writeTensorflowEmbeddingProjectorHtml(*argumentList.toTypedArray())
         projectorMessage.complete(response)
 
-        val conclusionMessage = ui.newMessage()
+        val conclusionMessage = ui.newTask()
         conclusionMessage.verbose(toJson(totalSummary))
         val summarizorResponse = summarizor.answer(*totalSummary.toTypedArray(), api = api)
         conclusionMessage.verbose(toJson(summarizorResponse))
@@ -75,7 +75,7 @@ class DebateAgent(
         actor: Debator,
         question: Question
     ): String {
-        val message = session.newMessage()
+        val message = session.newTask()
         message.add((actor.name?.trim() ?: "") + " - " + renderMarkdown(question.text ?: "").trim())
         val debator = getActorConfig(actor)
         val response = debator.answer(*debator.chatMessages(question.text ?: ""), api = api)

@@ -1,13 +1,19 @@
 package com.simiacryptus.skyenet.apps.meta
 
+import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
+import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.actors.ImageActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import org.intellij.lang.annotations.Language
+import org.slf4j.LoggerFactory
+import java.awt.image.BufferedImage
 import java.util.function.Function
 
 /**
@@ -39,7 +45,17 @@ interface ExampleActors {
                 |""".trimMargin().trim(),
     )
 
+    fun <T:Any> useExampleParsedActor(parsedActor: ParsedActor<T>): T {
+        val answer = parsedActor.answer("This is an example question.", api = api)
+        log.info("Natural Language Answer: " + answer.getText());
+        log.info("Parsed Answer: " + JsonUtil.toJson(answer.getObj()));
+        return answer.getObj()
+    }
+
     companion object {
+
+        val api : API = OpenAIClient()
+        val log = LoggerFactory.getLogger(ExampleActors::class.java)
 
         fun exampleCodingActor() = CodingActor(
             interpreterClass = KotlinInterpreter::class,
@@ -55,12 +71,35 @@ interface ExampleActors {
             autoEvaluate = true,
         )
 
-
         @Language("Markdown")fun exampleSimpleActor() = SimpleActor(
             prompt = """
             |You are a writing assistant.
             """.trimMargin().trim(),
         )
+
+
+        @Language("Markdown")fun exampleImageActor() = ImageActor()
+
+        fun useExampleImageActor(): BufferedImage {
+            val answer = exampleImageActor().answer("Example image description", api = api)
+            log.info("Rendering Prompt: " + answer.getText())
+            return answer.getImage()
+        }
+
+        fun useExampleCodingActor(): CodingActor.CodeResult {
+            val answer = exampleCodingActor().answer("This is an example question.", api = api)
+            log.info("Answer: " + answer.getCode())
+            val executionResult = answer.run()
+            log.info("Execution Log: " + executionResult.resultOutput)
+            log.info("Execution Result: " + executionResult.resultValue)
+            return answer
+        }
+
+        fun useExampleSimpleActor(): String {
+            val answer = exampleSimpleActor().answer("This is an example question.", api = api)
+            log.info("Answer: " + answer)
+            return answer
+        }
 
     }
 }

@@ -26,7 +26,7 @@ class AdminCommandCoder(
         ui: ApplicationInterface,
         api: API
     ) {
-        val message = ui.newMessage()
+        val message = ui.newTask()
         message.echo(userMessage)
 
         val model = ChatModels.GPT4
