@@ -40,7 +40,6 @@ dependencies {
     implementation(group = "com.simiacryptus.skyenet", name = "kotlin", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
-    implementation(group = "com.patreon", name = "patreon", version = "0.4.2")
 
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
