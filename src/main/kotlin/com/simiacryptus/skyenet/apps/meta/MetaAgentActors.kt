@@ -221,24 +221,25 @@ class MetaAgentActors(
         |For context, here is the constructor signature for ImageActor class:
         |```kotlin
         |import com.simiacryptus.jopenai.models.ChatModels
+        |import com.simiacryptus.jopenai.models.ImageModels
         |import com.simiacryptus.skyenet.core.actors.ImageActor
-        |import org.intellij.lang.annotations.Language
-        |import com.simiacryptus.jopenai.models.OpenAITextModel
         |
         |class ImageActor(
-        |    prompt: String,
+        |    prompt: String = "Transform the user request into an image generation prompt that the user will like",
         |    name: String? = null,
-        |    textModel: OpenAITextModel = ChatModels.GPT35Turbo,
+        |    textModel: ChatModels = ChatModels.GPT35Turbo,
+        |    val imageModel: ImageModels = ImageModels.DallE2,
         |    temperature: Double = 0.3,
+        |    val width: Int = 1024,
+        |    val height: Int = 1024,
         |)
         |```
         |
         |In this code example an example actor is defined with a prompt and a name:
         |```kotlin
         |import com.simiacryptus.skyenet.core.actors.ImageActor
-        |import org.intellij.lang.annotations.Language
         |
-        |@Language("Markdown")fun exampleSimpleActor() = ImageActor(
+        |fun exampleSimpleActor() = ImageActor(
         |    prompt = ""${'"'}
         |    |You are a writing assistant.
         |    ""${'"'}.trimMargin().trim(),
@@ -284,7 +285,7 @@ class MetaAgentActors(
         |import com.simiacryptus.jopenai.models.ChatModels
         |import com.simiacryptus.jopenai.proxy.ValidatedObject
         |import com.simiacryptus.skyenet.core.actors.ParsedActor
-        |import com.simiacryptus.util.describe.Description
+        |import com.simiacryptus.jopenai.describe.Description
         |import org.intellij.lang.annotations.Language
         |import java.util.function.Function
         |
@@ -294,6 +295,7 @@ class MetaAgentActors(
         |}
         |
         |data class ExampleResult(
+        |    @Description("The name of the example")
         |    val name: String? = null,
         |) : ValidatedObject {
         |    override fun validate() = when {
@@ -302,7 +304,7 @@ class MetaAgentActors(
         |    }
         |}
         |
-        |fun exampleParsedActor() = ParsedActor(
+        |fun exampleParsedActor() = ParsedActor<ExampleResult>(
         |    ExampleParser::class.java,
         |    model = ChatModels.GPT4Turbo,
         |    prompt = ""${'"'}
@@ -332,37 +334,38 @@ class MetaAgentActors(
         |
         |For context, here is the constructor signature for CodingActor class:
         |```kotlin
+        |package com.simiacryptus.skyenet.core.actors
+        |
         |import com.simiacryptus.jopenai.models.ChatModels
-        |import com.simiacryptus.jopenai.models.OpenAITextModel
-        |import com.simiacryptus.skyenet.Heart
+        |import com.simiacryptus.skyenet.core.Interpreter
         |import com.simiacryptus.util.describe.AbbrevWhitelistYamlDescriber
         |import com.simiacryptus.util.describe.TypeDescriber
         |import kotlin.reflect.KClass
         |
-        |@Suppress("unused", "MemberVisibilityCanBePrivate")
-        |open class CodingActor(
-        |    private val interpreterClass: KClass<out Heart>,
-        |    private val symbols: Map<String, Any> = mapOf(),
-        |    private val describer: TypeDescriber = AbbrevWhitelistYamlDescriber(
+        |class CodingActor(
+        |    val interpreterClass: KClass<out Interpreter>,
+        |    val symbols: Map<String, Any> = mapOf(),
+        |    val describer: TypeDescriber = AbbrevWhitelistYamlDescriber(
         |        "com.simiacryptus",
         |        "com.github.simiacryptus"
         |    ),
         |    name: String? = interpreterClass.simpleName,
         |    val details: String? = null,
-        |    model: OpenAITextModel = ChatModels.GPT35Turbo,
-        |    val fallbackModel: OpenAITextModel = ChatModels.GPT4Turbo,
+        |    model: ChatModels = ChatModels.GPT35Turbo,
+        |    val fallbackModel: ChatModels = ChatModels.GPT4Turbo,
         |    temperature: Double = 0.1,
         |    val autoEvaluate: Boolean = false,
+        |    private val fixIterations: Int = 3,
+        |    private val fixRetries: Int = 2,
         |)
         |```
         |
         |In this code example an example actor is defined with a prompt, name, and a standard configuration:
         |```kotlin
         |import com.simiacryptus.skyenet.core.actors.CodingActor
-        |import com.simiacryptus.skyenet.heart.KotlinInterpreter
-        |import org.intellij.lang.annotations.Language
+        |import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
         |
-        |@Language("Markdown")fun exampleCodingActor() = CodingActor(
+        |fun exampleCodingActor() = CodingActor(
         |    interpreterClass = KotlinInterpreter::class,
         |    details = ""${'"'}
         |    |You are a software implementation assistant.
@@ -373,7 +376,6 @@ class MetaAgentActors(
         |    |Expected code structure:
         |    |* ...
         |    ""${'"'}.trimMargin().trim(),
-        |    autoEvaluate = autoEvaluate,
         |)
         |```
         |

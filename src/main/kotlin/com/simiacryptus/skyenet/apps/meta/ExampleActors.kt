@@ -41,7 +41,7 @@ interface ExampleActors {
 
     companion object {
 
-        @Language("Markdown")fun exampleCodingActor() = CodingActor(
+        fun exampleCodingActor() = CodingActor(
             interpreterClass = KotlinInterpreter::class,
             details = """
             |You are a software implementation assistant.
