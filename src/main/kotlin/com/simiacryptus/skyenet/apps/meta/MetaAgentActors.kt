@@ -67,6 +67,8 @@ class MetaAgentActors(
         val description: String? = null,
         @Description("simple, parsed, image, or coding")
         val type: String? = null,
+        @Description("string, code, image, or the class name of the parsed object")
+        val resultType: String? = null,
     ) : ValidatedObject {
         override fun validate() = when {
             null == name -> false
@@ -177,12 +179,12 @@ class MetaAgentActors(
         |import com.simiacryptus.jopenai.models.ChatModels
         |import com.simiacryptus.skyenet.core.actors.SimpleActor
         |import org.intellij.lang.annotations.Language
-        |import com.simiacryptus.jopenai.models.OpenAITextModel
+        |import com.simiacryptus.jopenai.models.ChatModels
         |
         |class SimpleActor(
         |    prompt: String,
         |    name: String? = null,
-        |    model: OpenAITextModel = ChatModels.GPT35Turbo,
+        |    model: ChatModels = ChatModels.GPT35Turbo,
         |    temperature: Double = 0.3,
         |)
         |```

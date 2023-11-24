@@ -96,7 +96,7 @@ open class MetaAgentAgent(
             } ?: ""
 
             val actorMapEntries = design.getObj().actors?.joinToString("\n") { actor ->
-                """ActorType.${actor.name?.upperSnakeCase()} to ${actor.name?.camelCase()}(),"""
+                """ActorType.${actor.name?.upperSnakeCase()} to ${actor.name?.camelCase()},"""
             } ?: ""
 
             val actorEnumDefs = design.getObj().actors?.joinToString("\n") { actor ->
@@ -104,18 +104,18 @@ open class MetaAgentAgent(
             } ?: ""
 
             @Language("kotlin") val appCode = """
-            |import com.simiacryptus.jopenai.OpenAIAPI
+            |import com.simiacryptus.jopenai.API
             |import com.simiacryptus.jopenai.models.ChatModels
-            |import com.simiacryptus.skyenet.application.ApplicationBase
-            |import com.simiacryptus.skyenet.platform.Session
-            |import com.simiacryptus.skyenet.platform.User
-            |import com.simiacryptus.skyenet.session.*
+            |import com.simiacryptus.skyenet.webui.application.ApplicationServer
+            |import com.simiacryptus.skyenet.core.platform.Session
+            |import com.simiacryptus.skyenet.core.platform.User
+            |import com.simiacryptus.skyenet.webui.session.*
             |import org.slf4j.LoggerFactory
             |
             |open class ${classBaseName}App(
             |    applicationName: String = "${design.getObj().name}",
             |    temperature: Double = 0.1,
-            |) : ApplicationBase(
+            |) : ApplicationServer(
             |    applicationName = applicationName,
             |    temperature = temperature,
             |) {
@@ -132,7 +132,7 @@ open class MetaAgentAgent(
             |        user: User?,
             |        userMessage: String,
             |        ui: ApplicationInterface,
-            |        api: OpenAIAPI
+            |        api: API
             |    ) {
             |        try {
             |            val settings = getSettings<Settings>(session, user)
@@ -158,22 +158,23 @@ open class MetaAgentAgent(
             """.trimMargin()
 
             @Language("kotlin") val agentCode = """
-            |import com.simiacryptus.jopenai.OpenAIAPI
+            |import com.simiacryptus.jopenai.API
             |import com.simiacryptus.jopenai.models.ChatModels
             |import com.simiacryptus.skyenet.core.actors.ActorSystem
             |import com.simiacryptus.skyenet.core.actors.CodingActor
             |import com.simiacryptus.skyenet.core.actors.ParsedActor
-            |import com.simiacryptus.skyenet.platform.DataStorage
-            |import com.simiacryptus.skyenet.platform.Session
-            |import com.simiacryptus.skyenet.platform.User
-            |import com.simiacryptus.skyenet.session.ApplicationInterface
+            |import com.simiacryptus.skyenet.core.actors.ImageActor
+            |import com.simiacryptus.skyenet.core.platform.DataStorage
+            |import com.simiacryptus.skyenet.core.platform.Session
+            |import com.simiacryptus.skyenet.core.platform.User
+            |import com.simiacryptus.skyenet.webui.application.ApplicationInterface
             |
             |open class ${classBaseName}Agent(
             |    user: User?,
             |    session: Session,
             |    dataStorage: DataStorage,
             |    val ui: ApplicationInterface,
-            |    val api: OpenAIAPI,
+            |    val api: API,
             |    model: ChatModels = ChatModels.GPT35Turbo,
             |    temperature: Double = 0.3,
             |) : ActorSystem<${classBaseName}Actors.ActorType>(${classBaseName}Actors(
@@ -298,10 +299,10 @@ open class MetaAgentAgent(
             val messages = simpleActorDesigner.chatMessages(
                 userMessage,
                 design.getText(),
-                "Implement `fun ${(actorDesign.name!!).camelCase()}() : ${
+                "Implement `val ${(actorDesign.name!!).camelCase()} : ${
                     when (type) {
                         "simple" -> "SimpleActor"
-                        "parsed" -> "ParsedActor"
+                        "parsed" -> "ParsedActor" + if(actorDesign.resultType != null) "<${actorDesign.resultType}>" else ""
                         "coding" -> "CodingActor"
                         "image" -> "ImageActor"
                         else -> throw IllegalArgumentException("Unknown actor type: $type")
