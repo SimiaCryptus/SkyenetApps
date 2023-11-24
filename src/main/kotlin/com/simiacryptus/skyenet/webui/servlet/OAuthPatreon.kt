@@ -1,6 +1,5 @@
 package com.simiacryptus.skyenet.webui.servlet
 
-import com.patreon.PatreonAPI
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.AuthenticationManager
