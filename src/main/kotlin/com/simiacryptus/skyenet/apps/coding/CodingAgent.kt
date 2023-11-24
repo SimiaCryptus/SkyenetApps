@@ -2,8 +2,8 @@ package com.simiacryptus.skyenet.apps.coding
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.skyenet.core.actors.ActorSystem
-import com.simiacryptus.skyenet.core.actors.CodeResult
 import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.actors.CodingActor.CodeResult
 import com.simiacryptus.skyenet.core.platform.*
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.reflect.KClass
 
-class SimpleCodingActorSystem(
+class CodingAgent(
     val api: API,
     dataStorage: DataStorage,
     session: Session,
@@ -21,7 +21,7 @@ class SimpleCodingActorSystem(
     val ui: ApplicationInterface,
     val interpreter: KClass<KotlinInterpreter>,
     val symbols: Map<String, Any>,
-) : ActorSystem<SimpleCodingActorSystem.ActorTypes>(
+) : ActorSystem<CodingAgent.ActorTypes>(
     actorMap(interpreter, symbols), dataStorage, user, session
 ) {
     val actor by lazy { getActor(ActorTypes.CodingActor) as CodingActor }
@@ -109,7 +109,7 @@ class SimpleCodingActorSystem(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(SimpleCodingActorSystem::class.java)
+        private val log = LoggerFactory.getLogger(CodingAgent::class.java)
 
         fun actorMap(interpreterKClass: KClass<KotlinInterpreter>, symbols: Map<String, Any>) = mapOf(
             ActorTypes.CodingActor to CodingActor(interpreterKClass, symbols = symbols)

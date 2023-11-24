@@ -20,7 +20,7 @@ import com.simiacryptus.skyenet.webui.util.TensorflowProjector
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
-class OutlineBuilder(
+class OutlineAgent(
     val api: API,
     dataStorage: DataStorage,
     session: Session,
@@ -185,7 +185,7 @@ class OutlineBuilder(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(OutlineBuilder::class.java)
+        private val log = LoggerFactory.getLogger(OutlineAgent::class.java)
     }
 
 }

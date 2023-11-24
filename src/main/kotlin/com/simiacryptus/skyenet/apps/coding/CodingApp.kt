@@ -8,7 +8,7 @@ import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 
-open class SimpleCodingApp(
+open class CodingApp(
     applicationName: String,
     temperature: Double = 0.1,
 ) : ApplicationServer(
@@ -22,7 +22,7 @@ open class SimpleCodingApp(
         ui: ApplicationInterface,
         api: API
     ) {
-        SimpleCodingActorSystem(
+        CodingAgent(
             api = api,
             dataStorage = dataStorage,
             session = session,

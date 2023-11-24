@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.meta
 
 import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization
+import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization.Companion.toChatMessage
 import com.simiacryptus.skyenet.core.actors.opt.Expectation
 import com.simiacryptus.skyenet.core.actors.test.CodingActorTestBase
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
@@ -10,7 +11,7 @@ open class CodingActorImplementationActorTest : CodingActorTestBase() {
 
     @Test override fun testRun() = super.testRun()
 //    @Test override fun testOptimize() = super.testOptimize()
-    override val actor = MetaActors().codingActorDesigner()
+    override val actor = MetaAgentActors().codingActorDesigner()
     override val interpreterClass get() = KotlinInterpreter::class
     override val testCases = listOf(
         ActorOptimization.TestCase(
@@ -77,7 +78,7 @@ open class CodingActorImplementationActorTest : CodingActorTestBase() {
                 The Software Project Designer system is designed to streamline the process of software project planning. By utilizing specialized GPT-based actors, the system can efficiently transform user inputs into a structured and actionable project plan. This document outlines the initial design and logical flow of the system, which can be further refined and expanded upon to meet specific user needs and industry standards.
                 """.trimIndent(),
                 "Implement DesignProposalActor",
-            ),
+            ).map { it.toChatMessage() },
             expectations = listOf(
                 Expectation.VectorMatch("Great, what kind of book are you looking for?")
             )

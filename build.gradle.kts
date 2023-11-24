@@ -41,6 +41,7 @@ dependencies {
     implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
 
+    implementation(group = "com.google.guava", name = "guava", version = "32.1.3-jre")
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
     implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)

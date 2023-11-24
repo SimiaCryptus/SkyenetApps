@@ -12,7 +12,7 @@ class InterpreterTests {
         val interpreter = KotlinInterpreter()
         val code = """
             |import com.simiacryptus.jopenai.OpenAIClient
-            |import com.simiacryptus.skyenet.actors.ParsedActor
+            |import com.simiacryptus.skyenet.core.actors.ParsedActor
             |import com.simiacryptus.skyenet.heart.GroovyInterpreter
             |import com.simiacryptus.skyenet.heart.KotlinInterpreter
             |import com.simiacryptus.skyenet.heart.ScalaLocalInterpreter

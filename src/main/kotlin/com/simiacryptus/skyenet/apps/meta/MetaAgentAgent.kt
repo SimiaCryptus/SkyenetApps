@@ -3,24 +3,23 @@ package com.simiacryptus.skyenet.apps.meta
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil
-import com.simiacryptus.skyenet.apps.meta.MetaActors.ActorType
-import com.simiacryptus.skyenet.apps.meta.MetaActors.AgentDesign
-import com.simiacryptus.skyenet.core.Brain.Companion.indent
+import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.ActorType
+import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.AgentDesign
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.ParsedResponse
 import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.session.SocketManagerBase
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
 import java.util.*
 
 
-open class AgentBuilder(
+open class MetaAgentAgent(
     user: User?,
     session: Session,
     dataStorage: DataStorage,
@@ -29,7 +28,7 @@ open class AgentBuilder(
     model: ChatModels = ChatModels.GPT35Turbo,
     autoEvaluate: Boolean = true,
     temperature: Double = 0.3,
-) : ActorSystem<ActorType>(MetaActors(
+) : ActorSystem<ActorType>(MetaAgentActors(
     symbols = mapOf(
         "user" to user,
         "session" to session,
@@ -45,23 +44,31 @@ open class AgentBuilder(
     @Suppress("UNCHECKED_CAST")
     private val initialDesigner by lazy { getActor(ActorType.INITIAL) as ParsedActor<AgentDesign> }
     private val simpleActorDesigner by lazy { getActor(ActorType.SIMPLE) as CodingActor }
+    private val imageActorDesigner by lazy { getActor(ActorType.IMAGE) as CodingActor }
     private val parsedActorDesigner by lazy { getActor(ActorType.PARSED) as CodingActor }
     private val codingActorDesigner by lazy { getActor(ActorType.CODING) as CodingActor }
     private val flowStepDesigner by lazy { getActor(ActorType.FLOW_STEP) as CodingActor }
 
     fun buildAgent(userMessage: String) {
-        try {
-            val rootMessage = ui.newMessage()
+        val rootMessage = ui.newMessage()
+        val design = try {
             rootMessage.echo(renderMarkdown(userMessage))
             val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage), api = api)
             rootMessage.complete(renderMarkdown(design.getText()))
             rootMessage.verbose(JsonUtil.toJson(design.getObj()))
+            rootMessage.complete()
+            design
+        } catch (e: Throwable) {
+            rootMessage.error(e)
+            throw e
+        }
 
-            val actImpls = implementActors(ui, userMessage, design)
-            val flowImpl = getFlowStepCode(ui, userMessage, design, actImpls)
-            val mainImpl = getMainFunction(ui, userMessage, design, actImpls, flowImpl)
+        val actImpls = implementActors(ui, userMessage, design)
+        val flowImpl = getFlowStepCode(ui, userMessage, design, actImpls)
+        val mainImpl = getMainFunction(ui, userMessage, design, actImpls, flowImpl)
 
-            val finalCodeMessage = ui.newMessage()
+        val finalCodeMessage = ui.newMessage()
+        try {
             finalCodeMessage.header("Final Code")
 
             val imports =
@@ -76,6 +83,7 @@ open class AgentBuilder(
                         "simple" -> "SimpleActor"
                         "parsed" -> "ParsedActor"
                         "coding" -> "CodingActor"
+                        "image" -> "ImageActor"
                         else -> throw IllegalArgumentException("Unknown actor type: ${actor.type}")
                     }
                 } }"""
@@ -122,7 +130,7 @@ open class AgentBuilder(
             |    ) {
             |        try {
             |            val settings = getSettings<Settings>(session, user)
-            |            ${classBaseName}Builder(
+            |            ${classBaseName}Agent(
             |                user = user,
             |                session = session,
             |                dataStorage = dataStorage,
@@ -143,18 +151,18 @@ open class AgentBuilder(
             |}
             """.trimMargin()
 
-            @Language("kotlin") val builderCode = """
+            @Language("kotlin") val agentCode = """
             |import com.simiacryptus.jopenai.OpenAIAPI
             |import com.simiacryptus.jopenai.models.ChatModels
-            |import com.simiacryptus.skyenet.actors.ActorSystem
-            |import com.simiacryptus.skyenet.actors.CodingActor
-            |import com.simiacryptus.skyenet.actors.ParsedActor
+            |import com.simiacryptus.skyenet.core.actors.ActorSystem
+            |import com.simiacryptus.skyenet.core.actors.CodingActor
+            |import com.simiacryptus.skyenet.core.actors.ParsedActor
             |import com.simiacryptus.skyenet.platform.DataStorage
             |import com.simiacryptus.skyenet.platform.Session
             |import com.simiacryptus.skyenet.platform.User
             |import com.simiacryptus.skyenet.session.ApplicationInterface
             |
-            |open class ${classBaseName}Builder(
+            |open class ${classBaseName}Agent(
             |    user: User?,
             |    session: Session,
             |    dataStorage: DataStorage,
@@ -175,7 +183,7 @@ open class AgentBuilder(
             |    ${flowImpl.values.joinToString("\n\n") { it.trimIndent() }.stripImports().indent("    ")}
             |
             |    companion object {
-            |        private val log = org.slf4j.LoggerFactory.getLogger(${classBaseName}Builder::class.java)
+            |        private val log = org.slf4j.LoggerFactory.getLogger(${classBaseName}Agent::class.java)
             |
             |    }
             |}
@@ -183,7 +191,7 @@ open class AgentBuilder(
 
             @Language("kotlin") val agentsCode = """
             |import com.simiacryptus.jopenai.models.ChatModels
-            |import com.simiacryptus.skyenet.actors.BaseActor
+            |import com.simiacryptus.skyenet.core.actors.BaseActor
             |
             |class ${classBaseName}Actors(
             |    val model: ChatModels = ChatModels.GPT4Turbo,
@@ -209,15 +217,15 @@ open class AgentBuilder(
             //language=MARKDOWN
             val code = """
             |```kotlin
-            |${listOf(imports, appCode, builderCode, agentsCode).joinToString("\n\n") { it.trimIndent() }.sortCode()}
+            |${listOf(imports, appCode, agentCode, agentsCode).joinToString("\n\n") { it.trimIndent() }.sortCode()}
             |```
             |""".trimMargin()
 
             //language=HTML
             finalCodeMessage.complete(renderMarkdown(code))
         } catch (e: Throwable) {
-            log.warn("Error", e)
-            ui.newMessage().error(e)
+            finalCodeMessage.error(e)
+            throw e
         }
     }
 
@@ -229,28 +237,33 @@ open class AgentBuilder(
         flowStepCode: Map<String, String>
     ): String {
         val message = session.newMessage()
-        message.header("Main Function")
-        val mainFunction = flowStepDesigner.answerWithPrefix(
-            codePrefix = (actorImpls.values + flowStepCode.values).joinToString(
-                "\n\n"
-            ) { it.trimIndent() }.sortCode(), *flowStepDesigner.chatMessages(
-                userMessage,
-                design.getText(),
-                "Implement `fun ${design.getObj().name?.camelCase()}(${
-                    listOf(design.getObj().mainInput!!).joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") }
-                })`"
-            ), api = api
-        ).getCode()
-        message.complete(
-            renderMarkdown(
-                """
-                    |```kotlin
-                    |$mainFunction
-                    |```
-                    """.trimMargin()
+        try {
+            message.header("Main Function")
+            val mainFunction = flowStepDesigner.answerWithPrefix(
+                codePrefix = (actorImpls.values + flowStepCode.values).joinToString(
+                    "\n\n"
+                ) { it.trimIndent() }.sortCode(), *flowStepDesigner.chatMessages(
+                    userMessage,
+                    design.getText(),
+                    "Implement `fun ${design.getObj().name?.camelCase()}(${
+                        listOf(design.getObj().mainInput!!).joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") }
+                    })`"
+                ), api = api
+            ).getCode()
+            message.complete(
+                renderMarkdown(
+                    """
+                        |```kotlin
+                        |$mainFunction
+                        |```
+                        """.trimMargin()
+                )
             )
-        )
-        return mainFunction
+            return mainFunction
+        } catch (e: Throwable) {
+            message.error(e)
+            throw e
+        }
     }
 
     private fun implementActors(
@@ -259,39 +272,46 @@ open class AgentBuilder(
         design: ParsedResponse<AgentDesign>,
     ) = design.getObj().actors?.map { actorDesign ->
         val message = session.newMessage()
-        //language=HTML
-        message.header("Actor: ${actorDesign.name}")
-        val type = actorDesign.type ?: ""
-        val messages = simpleActorDesigner.chatMessages(
-            userMessage,
-            design.getText(),
-            "Implement `fun ${(actorDesign.name!!).camelCase()}() : ${
-                when (type) {
-                    "simple" -> "SimpleActor"
-                    "parsed" -> "ParsedActor"
-                    "coding" -> "CodingActor"
-                    else -> throw IllegalArgumentException("Unknown actor type: $type")
-                }
-            }`"
-        )
-        val response = when {
-            type == "simple" -> simpleActorDesigner.answer(*messages, api = api)
-            type == "parsed" -> parsedActorDesigner.answer(*messages, api = api)
-            type == "coding" -> codingActorDesigner.answer(*messages, api = api)
-            else -> throw IllegalArgumentException("Unknown actor type: $type")
-        }
-        val code = response.getCode()
-        //language=HTML
-        message.complete(
-            renderMarkdown(
-                """
-                |```kotlin
-                |$code
-                |```
-                """.trimMargin()
+        try {
+            //language=HTML
+            message.header("Actor: ${actorDesign.name}")
+            val type = actorDesign.type ?: ""
+            val messages = simpleActorDesigner.chatMessages(
+                userMessage,
+                design.getText(),
+                "Implement `fun ${(actorDesign.name!!).camelCase()}() : ${
+                    when (type) {
+                        "simple" -> "SimpleActor"
+                        "parsed" -> "ParsedActor"
+                        "coding" -> "CodingActor"
+                        "image" -> "ImageActor"
+                        else -> throw IllegalArgumentException("Unknown actor type: $type")
+                    }
+                }`"
             )
-        )
-        actorDesign.name to code
+            val response = when {
+                type == "simple" -> simpleActorDesigner.answer(*messages, api = api)
+                type == "parsed" -> parsedActorDesigner.answer(*messages, api = api)
+                type == "coding" -> codingActorDesigner.answer(*messages, api = api)
+                type == "image" -> imageActorDesigner.answer(*messages, api = api)
+                else -> throw IllegalArgumentException("Unknown actor type: $type")
+            }
+            val code = response.getCode()
+            //language=HTML
+            message.complete(
+                renderMarkdown(
+                    """
+                    |```kotlin
+                    |$code
+                    |```
+                    """.trimMargin()
+                )
+            )
+            actorDesign.name to code
+        } catch (e: Throwable) {
+            message.error(e)
+            throw e
+        }
     }?.toMap() ?: mapOf()
 
     private fun getFlowStepCode(
@@ -301,35 +321,40 @@ open class AgentBuilder(
         actorImpls: Map<String, String>,
     ) = design.getObj().logicFlow?.items?.map { logicFlowItem ->
         val message = session.newMessage()
-        message.header("Logic Flow: ${logicFlowItem.name}")
-        val messages = flowStepDesigner.chatMessages(
-            userMessage,
-            design.getText(),
-            "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
-                logicFlowItem.inputs?.joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
-            })`"
-        )
-        val codePrefix = logicFlowItem.actors?.mapNotNull { actorImpls[it] }?.joinToString("\n\n") ?: ""
-        val response = flowStepDesigner.answerWithPrefix(codePrefix = codePrefix, *messages, api = api)
-        val code = response.getCode()
-        //language=HTML
-        message.complete(
-            renderMarkdown(
-                """
-                |```kotlin
-                |$code
-                |```
-                """.trimMargin()
+        try {
+            message.header("Logic Flow: ${logicFlowItem.name}")
+            val messages = flowStepDesigner.chatMessages(
+                userMessage,
+                design.getText(),
+                "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
+                    logicFlowItem.inputs?.joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
+                })`"
             )
-        )
-        logicFlowItem.name to code
+            val codePrefix = logicFlowItem.actors?.mapNotNull { actorImpls[it] }?.joinToString("\n\n") ?: ""
+            val response = flowStepDesigner.answerWithPrefix(codePrefix = codePrefix, *messages, api = api)
+            val code = response.getCode()
+            //language=HTML
+            message.complete(
+                renderMarkdown(
+                    """
+                    |```kotlin
+                    |$code
+                    |```
+                    """.trimMargin()
+                )
+            )
+            logicFlowItem.name to code
+        } catch (e: Throwable) {
+            message.error(e)
+            throw e
+        }
     }?.toMap() ?: mapOf()
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(AgentBuilder::class.java)
+        private val log = org.slf4j.LoggerFactory.getLogger(MetaAgentAgent::class.java)
 
         fun String.camelCase(locale: Locale = Locale.getDefault()): String {
-            val words = fromPascalCase(locale).split(" ").map { it.trim() }.filter { it.isNotEmpty() }
+            val words = fromPascalCase().split(" ").map { it.trim() }.filter { it.isNotEmpty() }
             return words.first().lowercase(locale) + words.drop(1).joinToString("") {
                 it.replaceFirstChar { c ->
                     when {
@@ -341,7 +366,7 @@ open class AgentBuilder(
         }
 
         fun String.pascalCase(locale: Locale = Locale.getDefault()): String =
-            fromPascalCase(locale).split(" ").map { it.trim() }.filter { it.isNotEmpty() }.joinToString("") {
+            fromPascalCase().split(" ").map { it.trim() }.filter { it.isNotEmpty() }.joinToString("") {
                 it.replaceFirstChar { c ->
                     when {
                         c.isLowerCase() -> c.titlecase(locale)
@@ -351,7 +376,7 @@ open class AgentBuilder(
             }
 
         // Detect changes in the case of the first letter and prepend a space
-        fun String.fromPascalCase(locale: Locale = Locale.getDefault()): String = buildString {
+        fun String.fromPascalCase(): String = buildString {
             var lastChar = ' '
             for (c in this@fromPascalCase) {
                 if (c.isUpperCase() && lastChar.isLowerCase()) append(' ')
@@ -359,8 +384,9 @@ open class AgentBuilder(
                 lastChar = c
             }
         }
+
         fun String.upperSnakeCase(locale: Locale = Locale.getDefault()): String =
-            fromPascalCase(locale).split(" ").map { it.trim() }.filter { it.isNotEmpty() }.joinToString("_") {
+            fromPascalCase().split(" ").map { it.trim() }.filter { it.isNotEmpty() }.joinToString("_") {
                 it.replaceFirstChar { c ->
                     when {
                         c.isLowerCase() -> c.titlecase(locale)

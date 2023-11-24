@@ -33,7 +33,7 @@ open class MetaAgentApp(
     ) {
         try {
             val settings = getSettings<Settings>(session, user)
-            AgentBuilder(
+            MetaAgentAgent(
                 user = user,
                 session = session,
                 dataStorage = dataStorage,

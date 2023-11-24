@@ -13,18 +13,20 @@ import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.util.TensorflowProjector
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 
-class DebateBuilder(
+class DebateAgent(
     val api: API,
     dataStorage: DataStorage,
     userId: User?,
-    session: Session
+    session: Session,
+    val ui: ApplicationInterface,
+    val domainName: String
 ) : ActorSystem<ActorType>(DebateActors.actorMap, dataStorage, userId, session) {
     private val outlines = mutableMapOf<String, Outline>()
     @Suppress("UNCHECKED_CAST")
     private val moderator get() = getActor(ActorType.MODERATOR) as ParsedActor<DebateSetup>
     private val summarizor get() = getActor(ActorType.SUMMARIZOR) as SimpleActor
 
-    fun debate(userMessage: String, ui: ApplicationInterface, domainName: String) {
+    fun debate(userMessage: String) {
         val message = ui.newMessage()
         message.echo(renderMarkdown(userMessage))
         val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage), api = api)

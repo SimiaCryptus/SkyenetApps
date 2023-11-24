@@ -1,55 +1,25 @@
 package com.simiacryptus.skyenet.apps.meta
 
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ApiModel
 import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization
 import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization.Companion.toChatMessage
 import com.simiacryptus.skyenet.core.actors.test.CodingActorTestBase
-import com.simiacryptus.skyenet.core.platform.DataStorage
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
-import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.application.ApplicationSocketManager
+import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
-import java.io.File
 
-object FlowStepDesignerActorTest : CodingActorTestBase() {
+object ImageActorImplementationActorTest : CodingActorTestBase() {
 
     @Test
     override fun testRun() = super.testRun()
-    override val interpreterClass get() = KotlinInterpreter::class
-    override val actor = MetaAgentActors(symbols = symbols()).flowStepDesigner()
 
-    private fun symbols(): Map<String, Any> {
-        val user = User("user@test")
-        val session = DataStorage.newGlobalID()
-        val dataStorage = DataStorage(File("."))
-        val socketManager = object : ApplicationSocketManager(session, user, dataStorage, this::class.java) {
-            override fun newSession(
-                session: Session,
-                user: User?,
-                userMessage: String,
-                socketManager: ApplicationSocketManager,
-                api: API
-            ) {
-                throw UnsupportedOperationException()
-            }
+    override val actor = MetaAgentActors().imageActorDesigner()
+    override val interpreterClass = KotlinInterpreter::class
 
-        }
-        val ui = ApplicationInterface(socketManager)
-        return mapOf(
-            "user" to user,
-            "session" to session,
-            "dataStorage" to dataStorage,
-            "ui" to ui,
-        )
-    }
-
+    @Language("Markdown")
     override val testCases = listOf(
         ActorOptimization.TestCase(
             userMessages = listOf(
-                "Create a comic book generator".toChatMessage(),
+                "Create a comic book generator",
                 """
                 To design a system that uses GPT actors to construct a model of a creative process for generating comic books, we need to consider the various stages of comic book creation, such as concept development, scripting, storyboarding, illustration, and dialogue writing. Here's how the system could be structured using different types of actors:
                 
@@ -124,10 +94,9 @@ object FlowStepDesignerActorTest : CodingActorTestBase() {
                 - **Actors Used**: Illustration Actor.
                 
                 Each actor in the system would be designed to handle a specific part of the comic book creation process, with the output of one actor serving as the input for the next. The actors would work in a sequential manner, with the possibility of feedback loops for revisions. For example, the Script Actor might send the script back to the Character Actor for adjustments if new dialogue ideas suggest character changes. The system would be iterative, allowing for refinement at each stage to ensure a cohesive and polished final product.
-                """.trimIndent().trim().toChatMessage(),
-                "\nimport com.simiacryptus.skyenet.core.actors.ParsedActor\nimport com.simiacryptus.jopenai.models.ChatModels\nimport com.simiacryptus.jopenai.models.OpenAITextModel\n\nfun conceptActor(): ParsedActor {\n    return ParsedActor(\n        prompt = \"\"\"\n        You are a creative assistant specialized in generating high-level concepts for comic books. \n        Based on user input, you will provide a structured concept that includes the genre, setting, \n        and basic plot elements for a new comic book story.\n        \"\"\".trimIndent(),\n        name = \"ConceptActor\",\n        model = ChatModels.GPT35Turbo,\n        temperature = 0.3\n        // Assuming ParsedActor has a method to parse the output into a structured format\n        // parseMethod = someParsingFunction\n    )\n}\n".trimIndent().toChatMessage(role = ApiModel.Role.assistant),
-                "Implement `fun conceptDevelopment()`".toChatMessage()
-            ),
+                """.trimIndent().trim(),
+                "Implement `fun storyboardActor() : ImageActor`",
+            ).map { it.toChatMessage() },
             expectations = listOf(
             )
         )

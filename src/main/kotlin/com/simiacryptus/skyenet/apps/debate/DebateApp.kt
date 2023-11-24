@@ -24,12 +24,14 @@ open class DebateApp(
         api: API
     ) {
         try {
-            DebateBuilder(
+            DebateAgent(
                 api = api,
                 dataStorage = dataStorage,
                 userId = user,
-                session = session
-            ).debate(userMessage, ui, domainName)
+                session = session,
+                ui = ui,
+                domainName = domainName
+            ).debate(userMessage)
         } catch (e: Throwable) {
             log.warn("Error", e)
         }

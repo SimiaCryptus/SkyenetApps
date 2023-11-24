@@ -5,7 +5,6 @@ import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import org.slf4j.LoggerFactory
 
 open class OutlineApp(
     applicationName: String = "IdeaMapper",
@@ -34,7 +33,7 @@ open class OutlineApp(
         api: API
     ) {
         val settings = getSettings<Settings>(session, user)
-        OutlineBuilder(
+        OutlineAgent(
             api = api,
             dataStorage = dataStorage,
             iterations = settings?.depth ?: 1,

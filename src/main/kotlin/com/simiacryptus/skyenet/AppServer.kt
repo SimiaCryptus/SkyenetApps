@@ -1,17 +1,13 @@
 package com.simiacryptus.skyenet
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
-import com.amazonaws.regions.DefaultAwsRegionProviderChain
 import com.simiacryptus.jopenai.util.JsonUtil
-import com.simiacryptus.skyenet.apps.coding.SimpleCodingApp
+import com.simiacryptus.skyenet.apps.coding.CodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
 import com.simiacryptus.skyenet.apps.outline.OutlineApp
 import com.simiacryptus.skyenet.apps.roblox.AdminCommandCoder
 import com.simiacryptus.skyenet.apps.roblox.BehaviorScriptCoder
-import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.core.util.AwsUtil
-import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 
@@ -42,7 +38,7 @@ open class AppServer(
 //                )
 //            )
 //            )),
-            ChildWebApp("/aws_coder", SimpleCodingApp("AWS Coding Assistant"            )),
+            ChildWebApp("/aws_coder", CodingApp("AWS Coding Assistant"            )),
             ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
 
             // Legacy for the kids

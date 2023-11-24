@@ -3,7 +3,7 @@ package com.simiacryptus.skyenet.apps.meta
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.skyenet.core.Heart
+import com.simiacryptus.skyenet.core.Interpreter
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
@@ -13,8 +13,8 @@ import java.util.function.Function
 import kotlin.reflect.KClass
 
 
-class MetaActors(
-    private val interpreterClass: KClass<out Heart> = KotlinInterpreter::class,
+class MetaAgentActors(
+    private val interpreterClass: KClass<out Interpreter> = KotlinInterpreter::class,
     val symbols: Map<String, Any> = mapOf(),
     val model: ChatModels = ChatModels.GPT4Turbo,
     val autoEvaluate: Boolean = true,
@@ -24,6 +24,7 @@ class MetaActors(
     enum class ActorType {
         INITIAL,
         SIMPLE,
+        IMAGE,
         PARSED,
         CODING,
         FLOW_STEP,
@@ -32,6 +33,7 @@ class MetaActors(
     val actorMap: Map<ActorType, BaseActor<out Any>> = mapOf(
         ActorType.INITIAL to initialDesigner(),
         ActorType.SIMPLE to simpleActorDesigner(),
+        ActorType.IMAGE to imageActorDesigner(),
         ActorType.PARSED to parsedActorDesigner(),
         ActorType.CODING to codingActorDesigner(),
         ActorType.FLOW_STEP to flowStepDesigner(),
@@ -63,7 +65,7 @@ class MetaActors(
         @Description("Java class name of the actor")
         val name: String? = null,
         val description: String? = null,
-        @Description("simple, parsed, or coding")
+        @Description("simple, parsed, image, or coding")
         val type: String? = null,
     ) : ValidatedObject {
         override fun validate() = when {
@@ -72,7 +74,7 @@ class MetaActors(
             name.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> false
             null == type -> false
             type.isEmpty() -> false
-            type.notIn("simple", "parsed", "coding") -> false
+            type.notIn("simple", "parsed", "coding", "image") -> false
             else -> true
         }
 
@@ -136,6 +138,8 @@ class MetaActors(
             |   This can be used for incremental code generation, where symbols defined by previous code generation actors can be used by later actors.
             |   This can also be used to translate user requests into executed code, i.e. requested actions performed by the system.
             |   Supported languages are Scala, Kotlin, and Groovy.
+            |4. "Image" actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
+            |   This image prompt is then used to generate an image, which is returned to the user.
             |
             |Some important design principles:
             |1. ChatGPT has an optimal token window of still around 4k to "logic" although it now can support 128k of input tokens.
@@ -171,7 +175,7 @@ class MetaActors(
         |For context, here is the constructor signature for SimpleActor class:
         |```kotlin
         |import com.simiacryptus.jopenai.models.ChatModels
-        |import com.simiacryptus.skyenet.actors.SimpleActor
+        |import com.simiacryptus.skyenet.core.actors.SimpleActor
         |import org.intellij.lang.annotations.Language
         |import com.simiacryptus.jopenai.models.OpenAITextModel
         |
@@ -185,7 +189,7 @@ class MetaActors(
         |
         |In this code example an example actor is defined with a prompt and a name:
         |```kotlin
-        |import com.simiacryptus.skyenet.actors.SimpleActor
+        |import com.simiacryptus.skyenet.core.actors.SimpleActor
         |import com.simiacryptus.skyenet.heart.KotlinInterpreter
         |import org.intellij.lang.annotations.Language
         |
@@ -198,6 +202,51 @@ class MetaActors(
         |
         |Respond to the request with an instantiation function of the requested actor, similar to the provided example.
         |DO NOT subclass the SimpleActor class. Use the constructor directly within the function.
+        |
+        """.trimMargin().trim(),
+        autoEvaluate = autoEvaluate,
+        temperature = temperature,
+    )
+
+    @Language("Markdown")
+    fun imageActorDesigner() = CodingActor(
+        interpreterClass = interpreterClass,
+        symbols = symbols,
+        model = model,
+        details = """
+        |You are a software implementation assistant.
+        |Your task is to implement a "image" actor that takes part in a larger system.
+        |"Image" actors contain a system directive and can process a list of user messages into a response.
+        |
+        |For context, here is the constructor signature for ImageActor class:
+        |```kotlin
+        |import com.simiacryptus.jopenai.models.ChatModels
+        |import com.simiacryptus.skyenet.core.actors.ImageActor
+        |import org.intellij.lang.annotations.Language
+        |import com.simiacryptus.jopenai.models.OpenAITextModel
+        |
+        |class ImageActor(
+        |    prompt: String,
+        |    name: String? = null,
+        |    textModel: OpenAITextModel = ChatModels.GPT35Turbo,
+        |    temperature: Double = 0.3,
+        |)
+        |```
+        |
+        |In this code example an example actor is defined with a prompt and a name:
+        |```kotlin
+        |import com.simiacryptus.skyenet.core.actors.ImageActor
+        |import org.intellij.lang.annotations.Language
+        |
+        |@Language("Markdown")fun exampleSimpleActor() = ImageActor(
+        |    prompt = ""${'"'}
+        |    |You are a writing assistant.
+        |    ""${'"'}.trimMargin().trim(),
+        |)
+        |```
+        |
+        |Respond to the request with an instantiation function of the requested actor, similar to the provided example.
+        |DO NOT subclass the ImageActor class. Use the constructor directly within the function.
         |
         """.trimMargin().trim(),
         autoEvaluate = autoEvaluate,
@@ -234,7 +283,7 @@ class MetaActors(
         |```kotlin
         |import com.simiacryptus.jopenai.models.ChatModels
         |import com.simiacryptus.jopenai.proxy.ValidatedObject
-        |import com.simiacryptus.skyenet.actors.ParsedActor
+        |import com.simiacryptus.skyenet.core.actors.ParsedActor
         |import com.simiacryptus.util.describe.Description
         |import org.intellij.lang.annotations.Language
         |import java.util.function.Function
@@ -309,7 +358,7 @@ class MetaActors(
         |
         |In this code example an example actor is defined with a prompt, name, and a standard configuration:
         |```kotlin
-        |import com.simiacryptus.skyenet.actors.CodingActor
+        |import com.simiacryptus.skyenet.core.actors.CodingActor
         |import com.simiacryptus.skyenet.heart.KotlinInterpreter
         |import org.intellij.lang.annotations.Language
         |
@@ -352,7 +401,7 @@ class MetaActors(
     )
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(MetaActors::class.java)
+        val log = org.slf4j.LoggerFactory.getLogger(MetaAgentActors::class.java)
         fun <T> T.notIn(vararg examples: T) = !examples.contains(this)
 
     }
