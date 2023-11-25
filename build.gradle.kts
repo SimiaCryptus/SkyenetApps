@@ -32,6 +32,7 @@ val jetty_version = "11.0.18"
 val skyenet_version = "1.0.39"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
+val jackson_version = "2.15.3"
 dependencies {
     implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.36")
 
@@ -40,6 +41,10 @@ dependencies {
     implementation(group = "com.simiacryptus.skyenet", name = "kotlin", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
+
+    implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
+    implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
+    implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jackson_version)
 
     implementation(group = "com.google.guava", name = "guava", version = "32.1.3-jre")
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
@@ -55,7 +60,9 @@ dependencies {
 
     implementation(group = "commons-io", name = "commons-io", version = "2.15.0")
     implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
-    implementation(group = "com.amazonaws", name = "aws-java-sdk", version = "1.12.587")
+    implementation(platform("software.amazon.awssdk:bom:2.21.9"))
+    implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.21.29")
+    implementation(group = "software.amazon.awssdk", name = "sso", version = "2.21.29")
 
     implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.9")
     implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.4.11")

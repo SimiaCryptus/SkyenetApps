@@ -1,12 +1,11 @@
 package com.simiacryptus.skyenet.apps.coding
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
-import com.amazonaws.regions.DefaultAwsRegionProviderChain
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.skyenet.core.platform.*
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 
 open class CodingApp(
     applicationName: String,
@@ -33,7 +32,7 @@ open class CodingApp(
                 // Region
                 "region" to DefaultAwsRegionProviderChain().getRegion(),
                 // AWSCredentialsProvider
-                "credentials" to DefaultAWSCredentialsProviderChain.getInstance(),
+                //"credentials" to DefaultAWSCredentialsProviderChain.getInstance(),
             ),
         ).start(
             userMessage = userMessage,
