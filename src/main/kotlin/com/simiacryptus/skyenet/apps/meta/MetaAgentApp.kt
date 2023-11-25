@@ -18,7 +18,7 @@ open class MetaAgentApp(
 
     data class Settings(
         val model: ChatModels = ChatModels.GPT4Turbo,
-        val autoEvaluate: Boolean = false,
+        val validateCode: Boolean = false,
         val temperature: Double = 0.1,
     )
     override val settingsClass: Class<*> get() = Settings::class.java
@@ -40,7 +40,7 @@ open class MetaAgentApp(
                 api = api,
                 ui = ui,
                 model = settings?.model ?: ChatModels.GPT35Turbo,
-                autoEvaluate = settings?.autoEvaluate ?: true,
+                autoEvaluate = settings?.validateCode ?: true,
                 temperature = settings?.temperature ?: 0.3,
             ).buildAgent(userMessage = userMessage)
         } catch (e: Throwable) {

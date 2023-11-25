@@ -51,7 +51,7 @@ class OutlineAgent(
         val message = ui.newTask()
         val outlineManager = try {
             message.echo(renderMarkdown(this.userMessage))
-            val root = initial.answer(*initial.chatMessages(this.userMessage), api = api)
+            val root = initial.answer(listOf(this.userMessage), api = api)
             message.add(renderMarkdown(root.getText()))
             message.verbose(toJson(root.getObj()))
             message.complete()
@@ -122,7 +122,7 @@ class OutlineAgent(
     ): String = if (tokenizer.estimateTokenCount(nodeList.getTextOutline()) > (summary.model.maxTokens * 0.6).toInt()) {
         manager.expandNodes(nodeList)?.joinToString("\n") { buildFinalEssay(it, manager) } ?: ""
     } else {
-        summary.answer(nodeList.getTextOutline(), api = api)
+        summary.answer(listOf(nodeList.getTextOutline()), api = api)
     }
 
     private fun processRecursive(
@@ -176,7 +176,7 @@ class OutlineAgent(
             return null
         }
         message.header("Expand $sectionName")
-        val answer = expand.answer(*expand.chatMessages(this.userMessage, parent.text, sectionName), api = api)
+        val answer = expand.answer(listOf(this.userMessage, parent.text, sectionName), api = api)
         message.add(renderMarkdown(answer.getText()))
         message.verbose(toJson(answer.getObj()))
         val newNode = OutlinedText(answer.getText(), answer.getObj())

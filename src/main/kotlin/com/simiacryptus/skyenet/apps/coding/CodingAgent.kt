@@ -36,7 +36,7 @@ class CodingAgent(
         val message = ui.newTask()
         try {
             message.echo(MarkdownUtil.renderMarkdown(userMessage))
-            val response = actor.answer(userMessage, api = api)
+            val response = actor.answer(CodingActor.CodeRequest(listOf(userMessage)), api = api)
             displayCode(user, ui, message, response, userMessage, api)
         } catch (e: Throwable) {
             log.warn("Error", e)
@@ -73,7 +73,7 @@ class CodingAgent(
                 ui.hrefLink("▶", "href-link play-button") {
                     val header = message.header("Running...")
                     try {
-                        val result = response.run()
+                        val result = response.result()
                         header?.clear()
                         message.header("Result")
                         message.add(result.resultValue, tag = "pre")
@@ -93,7 +93,7 @@ class CodingAgent(
                     formHandle?.clear()
                     playLink?.clear()
                     message.echo(MarkdownUtil.renderMarkdown(feedback))
-                    val revisedCode = actor.answer(userMessage, response.getCode(), feedback, api = api)
+                    val revisedCode = actor.answer(CodingActor.CodeRequest(listOf(userMessage, response.getCode(), feedback)), api = api)
                     displayCode(user, ui, message, revisedCode, userMessage, api)
                 } catch (e: Throwable) {
                     log.warn("Error", e)

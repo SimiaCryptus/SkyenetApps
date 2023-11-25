@@ -10,8 +10,8 @@ import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.util.TensorflowProjector
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.skyenet.webui.util.TensorflowProjector
 
 class DebateAgent(
     val api: API,
@@ -29,7 +29,7 @@ class DebateAgent(
     fun debate(userMessage: String) {
         val message = ui.newTask()
         message.echo(renderMarkdown(userMessage))
-        val moderatorResponse = this.moderator.answer(*this.moderator.chatMessages(userMessage), api = api)
+        val moderatorResponse = this.moderator.answer(listOf(userMessage), api = api)
         message.complete(renderMarkdown(moderatorResponse.getText()))
         message.verbose(toJson(moderatorResponse.getObj()))
 
@@ -40,7 +40,7 @@ class DebateAgent(
                     .map { actor -> answer(ui, actor, question) }.toList()
                 message.header("Summarizing: ${renderMarkdown(question.text ?: "")}")
                 val summarizorResponse =
-                    summarizor.answer(*(listOf((question.text ?: "").trim()) + answers).toTypedArray(), api = api)
+                    summarizor.answer((listOf((question.text ?: "").trim()) + answers), api = api)
                 message.complete(renderMarkdown(summarizorResponse))
                 summarizorResponse
             }.toList()
@@ -65,7 +65,7 @@ class DebateAgent(
 
         val conclusionMessage = ui.newTask()
         conclusionMessage.verbose(toJson(totalSummary))
-        val summarizorResponse = summarizor.answer(*totalSummary.toTypedArray(), api = api)
+        val summarizorResponse = summarizor.answer(totalSummary, api = api)
         conclusionMessage.verbose(toJson(summarizorResponse))
         conclusionMessage.complete(renderMarkdown(summarizorResponse))
     }
@@ -78,7 +78,7 @@ class DebateAgent(
         val message = session.newTask()
         message.add((actor.name?.trim() ?: "") + " - " + renderMarkdown(question.text ?: "").trim())
         val debator = getActorConfig(actor)
-        val response = debator.answer(*debator.chatMessages(question.text ?: ""), api = api)
+        val response = debator.answer(listOf(question.text ?: ""), api = api)
         message.complete(renderMarkdown(response.getText()))
         outlines[actor.name!! + ": " + question.text!!] = response.getObj()
         message.verbose(toJson(response.getObj()))

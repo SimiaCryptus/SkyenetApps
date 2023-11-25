@@ -20,6 +20,7 @@ import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
 
@@ -31,7 +32,7 @@ open class MetaAgentAgent(
     val ui: ApplicationInterface,
     val api: API,
     model: ChatModels = ChatModels.GPT35Turbo,
-    autoEvaluate: Boolean = true,
+    val autoEvaluate: Boolean = true,
     temperature: Double = 0.3,
 ) : ActorSystem<ActorType>(MetaAgentActors(
     symbols = mapOf(
@@ -42,7 +43,6 @@ open class MetaAgentAgent(
         "api" to api,
     ).filterValues { null != it }.mapValues { it.value!! },
     model = model,
-    autoEvaluate = autoEvaluate,
     temperature = temperature,
 ).actorMap, dataStorage, user, session
 ) {
@@ -59,7 +59,7 @@ open class MetaAgentAgent(
         val rootMessage = ui.newTask()
         val design = try {
             rootMessage.echo(renderMarkdown(userMessage))
-            val design = initialDesigner.answer(*initialDesigner.chatMessages(userMessage), api = api)
+            val design = initialDesigner.answer(listOf(userMessage), api = api)
             rootMessage.complete(renderMarkdown(design.getText()))
             rootMessage.verbose(JsonUtil.toJson(design.getObj()))
             rootMessage.complete()
@@ -235,6 +235,7 @@ open class MetaAgentAgent(
             throw e
         }
     }
+
     fun demo() {
         val task = ui.newTask()
         try {
@@ -260,17 +261,20 @@ open class MetaAgentAgent(
         val message = ui.newTask()
         try {
             message.header("Main Function")
-            val mainFunction = flowStepDesigner.answerWithPrefix(
-                codePrefix = (actorImpls.values + flowStepCode.values).joinToString(
-                    "\n\n"
-                ) { it.trimIndent() }.sortCode(), *flowStepDesigner.chatMessages(
+            val codeRequest = CodingActor.CodeRequest(
+                messages = listOf(
                     userMessage,
                     design.getText(),
                     "Implement `fun ${design.getObj().name?.camelCase()}(${
-                        listOf(design.getObj().mainInput!!).joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") }
+                        listOf(design.getObj().mainInput!!)
+                            .joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") }
                     })`"
-                ), api = api
-            ).getCode()
+                ),
+                codePrefix = (actorImpls.values + flowStepCode.values)
+                    .joinToString("\n\n") { it.trimIndent() }.sortCode(),
+                autoEvaluate = autoEvaluate
+            )
+            val mainFunction = flowStepDesigner.answer(codeRequest, api = api).getCode()
             message.complete(
                 renderMarkdown(
                     """
@@ -293,46 +297,58 @@ open class MetaAgentAgent(
     ) = design.getObj().actors?.map { actorDesign ->
         val message = ui.newTask()
         try {
-            //language=HTML
-            message.header("Actor: ${actorDesign.name}")
-            val type = actorDesign.type ?: ""
-            val messages = simpleActorDesigner.chatMessages(
-                userMessage,
-                design.getText(),
-                "Implement `val ${(actorDesign.name!!).camelCase()} : ${
-                    when (type) {
-                        "simple" -> "SimpleActor"
-                        "parsed" -> "ParsedActor" + if(actorDesign.resultType != null) "<${actorDesign.resultType}>" else ""
-                        "coding" -> "CodingActor"
-                        "image" -> "ImageActor"
-                        else -> throw IllegalArgumentException("Unknown actor type: $type")
-                    }
-                }`"
-            )
-            val response = when {
-                type == "simple" -> simpleActorDesigner.answer(*messages, api = api)
-                type == "parsed" -> parsedActorDesigner.answer(*messages, api = api)
-                type == "coding" -> codingActorDesigner.answer(*messages, api = api)
-                type == "image" -> imageActorDesigner.answer(*messages, api = api)
-                else -> throw IllegalArgumentException("Unknown actor type: $type")
-            }
-            val code = response.getCode()
-            //language=HTML
-            message.complete(
-                renderMarkdown(
-                    """
-                    |```kotlin
-                    |$code
-                    |```
-                    """.trimMargin()
-                )
-            )
-            actorDesign.name to code
+            implementActor(message, actorDesign, userMessage, design)
         } catch (e: Throwable) {
             message.error(e)
             throw e
         }
     }?.toMap() ?: mapOf()
+
+    private fun implementActor(
+        message: SessionTask,
+        actorDesign: MetaAgentActors.ActorDesign,
+        userMessage: String,
+        design: ParsedResponse<AgentDesign>
+    ): Pair<String, String> {
+        //language=HTML
+        message.header("Actor: ${actorDesign.name}")
+        val type = actorDesign.type ?: ""
+        val codeRequest = CodingActor.CodeRequest(
+            listOf(
+                userMessage,
+                design.getText(),
+                "Implement `val ${(actorDesign.name!!).camelCase()} : ${
+                    when (type) {
+                        "simple" -> "SimpleActor"
+                        "parsed" -> "ParsedActor" + if (actorDesign.resultType != null) "<${actorDesign.resultType}>" else ""
+                        "coding" -> "CodingActor"
+                        "image" -> "ImageActor"
+                        else -> throw IllegalArgumentException("Unknown actor type: $type")
+                    }
+                }`"
+            ),
+            autoEvaluate = autoEvaluate
+        )
+        val response = when {
+            type == "simple" -> simpleActorDesigner.answer(codeRequest, api = api)
+            type == "parsed" -> parsedActorDesigner.answer(codeRequest, api = api)
+            type == "coding" -> codingActorDesigner.answer(codeRequest, api = api)
+            type == "image" -> imageActorDesigner.answer(codeRequest, api = api)
+            else -> throw IllegalArgumentException("Unknown actor type: $type")
+        }
+        val code = response.getCode()
+        //language=HTML
+        message.complete(
+            renderMarkdown(
+                """
+                        |```kotlin
+                        |$code
+                        |```
+                        """.trimMargin()
+            )
+        )
+        return actorDesign.name to code
+    }
 
     private fun getFlowStepCode(
         userMessage: String,
@@ -343,11 +359,14 @@ open class MetaAgentAgent(
         try {
             message.header("Logic Flow: ${logicFlowItem.name}")
             val messages = flowStepDesigner.chatMessages(
-                userMessage,
-                design.getText(),
-                "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
-                    logicFlowItem.inputs?.joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
-                })`"
+                CodingActor.CodeRequest(
+                    listOf(userMessage,
+                        design.getText(),
+                        "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
+                            logicFlowItem.inputs?.joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
+                        })`"),
+                    autoEvaluate = autoEvaluate
+                ),
             )
             val codePrefix = logicFlowItem.actors?.mapNotNull { actorImpls[it] }?.joinToString("\n\n") ?: ""
             val response = flowStepDesigner.answerWithPrefix(codePrefix = codePrefix, *messages, api = api)

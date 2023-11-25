@@ -17,7 +17,6 @@ class MetaAgentActors(
     private val interpreterClass: KClass<out Interpreter> = KotlinInterpreter::class,
     val symbols: Map<String, Any> = mapOf(),
     val model: ChatModels = ChatModels.GPT4Turbo,
-    val autoEvaluate: Boolean = true,
     val temperature: Double = 0.3,
 ) {
 
@@ -30,7 +29,7 @@ class MetaAgentActors(
         FLOW_STEP,
     }
 
-    val actorMap: Map<ActorType, BaseActor<out Any>> = mapOf(
+    val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
         ActorType.INITIAL to initialDesigner(),
         ActorType.SIMPLE to simpleActorDesigner(),
         ActorType.IMAGE to imageActorDesigner(),
@@ -67,7 +66,7 @@ class MetaAgentActors(
         val description: String? = null,
         @Description("simple, parsed, image, or coding")
         val type: String? = null,
-        @Description("string, code, image, or the class name of the parsed object")
+        @Description("string, code, image, or the simple class name of the parsed object")
         val resultType: String? = null,
     ) : ValidatedObject {
         override fun validate() = when {
@@ -77,7 +76,15 @@ class MetaAgentActors(
             null == type -> false
             type.isEmpty() -> false
             type.notIn("simple", "parsed", "coding", "image") -> false
+            resultType?.isEmpty() != false -> false
+            resultType.notIn("string", "code", "image") && !validClassName(resultType) -> false
             else -> true
+        }
+
+        private fun validClassName(resultType: String) = when {
+            resultType.isEmpty() -> false
+            "[A-Z][a-zA-Z0-9_]{3,}".toRegex().matches(resultType) -> true
+            else -> false
         }
 
     }
@@ -168,7 +175,6 @@ class MetaAgentActors(
     fun simpleActorDesigner() = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
-        model = model,
         details = """
         |You are a software implementation assistant.
         |Your task is to implement a "simple" actor that takes part in a larger system.
@@ -206,7 +212,7 @@ class MetaAgentActors(
         |DO NOT subclass the SimpleActor class. Use the constructor directly within the function.
         |
         """.trimMargin().trim(),
-        autoEvaluate = autoEvaluate,
+        model = model,
         temperature = temperature,
     )
 
@@ -214,7 +220,6 @@ class MetaAgentActors(
     fun imageActorDesigner() = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
-        model = model,
         details = """
         |You are a software implementation assistant.
         |Your task is to implement a "image" actor that takes part in a larger system.
@@ -252,7 +257,7 @@ class MetaAgentActors(
         |DO NOT subclass the ImageActor class. Use the constructor directly within the function.
         |
         """.trimMargin().trim(),
-        autoEvaluate = autoEvaluate,
+        model = model,
         temperature = temperature,
     )
 
@@ -260,7 +265,6 @@ class MetaAgentActors(
     fun parsedActorDesigner() = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
-        model = model,
         details = """
         |
         |Your task is to design a system that uses gpt "actors" to form a "community" of actors interacting to solve problems.
@@ -317,7 +321,7 @@ class MetaAgentActors(
         |DO NOT subclass the ParsedActor class. Use the constructor directly within the function.
         |
         """.trimMargin().trim(),
-        autoEvaluate = autoEvaluate,
+        model = model,
         temperature = temperature,
     )
 
@@ -325,7 +329,6 @@ class MetaAgentActors(
     fun codingActorDesigner() = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
-        model = model,
         details = """
         |
         |Your task is to design a system that uses gpt "actors" to form a "community" of actors interacting to solve problems.
@@ -337,9 +340,9 @@ class MetaAgentActors(
         |package com.simiacryptus.skyenet.core.actors
         |
         |import com.simiacryptus.jopenai.models.ChatModels
+        |import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
+        |import com.simiacryptus.jopenai.describe.TypeDescriber
         |import com.simiacryptus.skyenet.core.Interpreter
-        |import com.simiacryptus.util.describe.AbbrevWhitelistYamlDescriber
-        |import com.simiacryptus.util.describe.TypeDescriber
         |import kotlin.reflect.KClass
         |
         |class CodingActor(
@@ -354,7 +357,6 @@ class MetaAgentActors(
         |    model: ChatModels = ChatModels.GPT35Turbo,
         |    val fallbackModel: ChatModels = ChatModels.GPT4Turbo,
         |    temperature: Double = 0.1,
-        |    val autoEvaluate: Boolean = false,
         |    private val fixIterations: Int = 3,
         |    private val fixRetries: Int = 2,
         |)
@@ -383,7 +385,7 @@ class MetaAgentActors(
         |DO NOT subclass the CodingActor class. Use the constructor directly within the function.
         |
         """.trimMargin().trim(),
-        autoEvaluate = autoEvaluate,
+        model = model,
         temperature = temperature,
     )
 
@@ -391,10 +393,6 @@ class MetaAgentActors(
     fun flowStepDesigner() = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
-        runtimeSymbols = mapOf(
-            "log" to log
-        ),
-        model = model,
         details = """
         |You are a software implementor.
         |
@@ -408,7 +406,7 @@ class MetaAgentActors(
         |Simple actors contain a system directive, and simply return the chat model's response to the user query.
         |```kotlin
         |fun useExampleSimpleActor(): String {
-        |    val answer = exampleSimpleActor().answer("This is an example question.", api = api)
+        |    val answer = exampleSimpleActor().answer(listOf("This is an example question."), api = api)
         |    log.info("Answer: " + answer)
         |    return answer
         |}
@@ -422,7 +420,7 @@ class MetaAgentActors(
         |import com.simiacryptus.skyenet.core.actors.CodingActor
         |
         |fun <T:Any> useExampleParsedActor(parsedActor: ParsedActor<T>): T {
-        |    val answer = parsedActor.answer("This is an example question.", api = api)
+        |    val answer = parsedActor.answer(listOf("This is an example question."), api = api)
         |    log.info("Natural Language Answer: " + answer.getText());
         |    log.info("Parsed Answer: " + JsonUtil.toJson(answer.getObj()));
         |    return answer.getObj()
@@ -432,9 +430,9 @@ class MetaAgentActors(
         |Coding actors combine ChatGPT-powered code generation with compilation and validation to produce quality code without having to run it.
         |```kotlin
         |fun useExampleCodingActor(): CodingActor.CodeResult {
-        |    val answer = exampleCodingActor().answer("This is an example question.", api = api)
+        |    val answer = exampleCodingActor().answer(CodingActor.CodeRequest(listOf("This is an example question.")), api = api)
         |    log.info("Answer: " + answer.getCode())
-        |    val executionResult = answer.run()
+        |    val executionResult = answer.result()
         |    log.info("Execution Log: " + executionResult.resultOutput)
         |    log.info("Execution Result: " + executionResult.resultValue)
         |    return answer
@@ -444,7 +442,7 @@ class MetaAgentActors(
         |Image actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
         |```kotlin
         |fun useExampleImageActor(): BufferedImage {
-        |    val answer = exampleImageActor().answer("Example image description", api = api)
+        |    val answer = exampleImageActor().answer(listOf("Example image description"), api = api)
         |    log.info("Rendering Prompt: " + answer.getText())
         |    return answer.getImage()
         |}
@@ -472,8 +470,11 @@ class MetaAgentActors(
         |```
         |
         |""".trimMargin().trim(),
-        autoEvaluate = autoEvaluate,
+        model = model,
         temperature = temperature,
+        runtimeSymbols = mapOf(
+            "log" to log
+        ),
     )
 
     companion object {

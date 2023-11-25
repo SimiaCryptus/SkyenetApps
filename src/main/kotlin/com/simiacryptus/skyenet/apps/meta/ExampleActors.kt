@@ -46,7 +46,7 @@ interface ExampleActors {
     )
 
     fun <T:Any> useExampleParsedActor(parsedActor: ParsedActor<T>): T {
-        val answer = parsedActor.answer("This is an example question.", api = api)
+        val answer = parsedActor.answer(listOf("This is an example question."), api = api)
         log.info("Natural Language Answer: " + answer.getText());
         log.info("Parsed Answer: " + JsonUtil.toJson(answer.getObj()));
         return answer.getObj()
@@ -68,7 +68,6 @@ interface ExampleActors {
             |Expected code structure:
             |* ...
             """.trimMargin().trim(),
-            autoEvaluate = true,
         )
 
         @Language("Markdown")fun exampleSimpleActor() = SimpleActor(
@@ -81,22 +80,22 @@ interface ExampleActors {
         @Language("Markdown")fun exampleImageActor() = ImageActor()
 
         fun useExampleImageActor(): BufferedImage {
-            val answer = exampleImageActor().answer("Example image description", api = api)
+            val answer = exampleImageActor().answer(listOf("Example image description"), api = api)
             log.info("Rendering Prompt: " + answer.getText())
             return answer.getImage()
         }
 
         fun useExampleCodingActor(): CodingActor.CodeResult {
-            val answer = exampleCodingActor().answer("This is an example question.", api = api)
+            val answer = exampleCodingActor().answer(CodingActor.CodeRequest(listOf("This is an example question.")), api = api)
             log.info("Answer: " + answer.getCode())
-            val executionResult = answer.run()
+            val executionResult = answer.result()
             log.info("Execution Log: " + executionResult.resultOutput)
             log.info("Execution Result: " + executionResult.resultValue)
             return answer
         }
 
         fun useExampleSimpleActor(): String {
-            val answer = exampleSimpleActor().answer("This is an example question.", api = api)
+            val answer = exampleSimpleActor().answer(listOf("This is an example question."), api = api)
             log.info("Answer: " + answer)
             return answer
         }
