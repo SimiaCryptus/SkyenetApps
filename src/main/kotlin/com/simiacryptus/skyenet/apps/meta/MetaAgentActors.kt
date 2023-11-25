@@ -50,13 +50,13 @@ class MetaAgentActors(
         val logicFlow: LogicFlow? = null,
         val actors: List<ActorDesign>? = null,
     ) : ValidatedObject {
-        override fun validate() = when {
-            null == logicFlow -> false
-            null == actors -> false
-            actors.isEmpty() -> false
-            !logicFlow.validate() -> false
-            !actors.all { it.validate() } -> false
-            else -> true
+        override fun validate(): String? = when {
+            null == logicFlow -> "logicFlow is required"
+            null == actors -> "actors is required"
+            actors.isEmpty() -> "actors is required"
+            null != logicFlow.validate() -> logicFlow.validate()
+            !actors.all { null == it.validate() } -> actors.map { it.validate() }.filter { null != it }.joinToString("\n")
+            else -> null
         }
     }
 
@@ -69,16 +69,16 @@ class MetaAgentActors(
         @Description("string, code, image, or the simple class name of the parsed object")
         val resultType: String? = null,
     ) : ValidatedObject {
-        override fun validate() = when {
-            null == name -> false
-            name.isEmpty() -> false
-            name.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> false
-            null == type -> false
-            type.isEmpty() -> false
-            type.notIn("simple", "parsed", "coding", "image") -> false
-            resultType?.isEmpty() != false -> false
-            resultType.notIn("string", "code", "image") && !validClassName(resultType) -> false
-            else -> true
+        override fun validate(): String? = when {
+            null == name -> "name is required"
+            name.isEmpty() -> "name is required"
+            name.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> "name must be a valid java identifier"
+            null == type -> "type is required"
+            type.isEmpty() -> "type is required"
+            type.notIn("simple", "parsed", "coding", "image") -> "type must be simple, parsed, coding, or image"
+            resultType?.isEmpty() != false -> "resultType is required"
+            resultType.notIn("string", "code", "image") && !validClassName(resultType) -> "resultType must be string, code, image, or a valid class name"
+            else -> null
         }
 
         private fun validClassName(resultType: String) = when {
@@ -92,7 +92,7 @@ class MetaAgentActors(
     data class LogicFlow(
         val items: List<LogicFlowItem>? = null,
     ) : ValidatedObject {
-        override fun validate() = items?.all { it.validate() } ?: false
+        override fun validate(): String? = items?.map { it.validate() }?.firstOrNull { !it.isNullOrBlank() }
     }
 
     data class LogicFlowItem(
@@ -104,11 +104,11 @@ class MetaAgentActors(
         @Description("description of the output of this step")
         val output: DataInfo? = null,
     ) : ValidatedObject {
-        override fun validate() = when {
-            null == name -> false
-            name.isEmpty() -> false
-            //inputs?.isEmpty() != false && inputs?.isEmpty() != false -> false
-            else -> true
+        override fun validate(): String? = when {
+            null == name -> "name is required"
+            name.isEmpty() -> "name is required"
+            //inputs?.isEmpty() != false && inputs?.isEmpty() != false -> "inputs is required"
+            else -> null
         }
     }
 
@@ -117,12 +117,12 @@ class MetaAgentActors(
         val description: String? = null,
         val type: String? = null,
     ) : ValidatedObject {
-        override fun validate() = when {
-            null == name -> false
-            name.isEmpty() -> false
-            null == type -> false
-            type.isEmpty() -> false
-            else -> true
+        override fun validate(): String? = when {
+            null == name -> "name is required"
+            name.isEmpty() -> "name is required"
+            null == type -> "type is required"
+            type.isEmpty() -> "type is required"
+            else -> null
         }
     }
 

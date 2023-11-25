@@ -7,7 +7,6 @@ import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.core.actors.CodingActor.CodeRequest
-import com.simiacryptus.skyenet.core.actors.CodingActor.CodeResult
 import com.simiacryptus.skyenet.core.actors.ImageActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
@@ -394,12 +393,12 @@ class SoftwareProjectGeneratorActors(
         @Description("Specific features or functionalities required.")
         val features: List<String>? = null
     ) : ValidatedObject {
-        override fun validate() = when {
-            softwareType.isNullOrBlank() -> false
-            targetPlatform.isNullOrBlank() -> false
-            programmingLanguage.isNullOrBlank() -> false
-            features.isNullOrEmpty() -> false
-            else -> true
+        override fun validate(): String? = when {
+            softwareType.isNullOrBlank() -> "software type is required"
+            targetPlatform.isNullOrBlank() -> "target platform is required"
+            programmingLanguage.isNullOrBlank() -> "programming language is required"
+            features.isNullOrEmpty() -> "features are required"
+            else -> null
         }
     }
 
@@ -479,9 +478,11 @@ class SoftwareProjectGeneratorActors(
         @Description("The configuration for the external services")
         val servicesConfig: String? = null
     ) : ValidatedObject {
-        override fun validate() = when {
-            databaseConfig.isNullOrBlank() && apiConfig.isNullOrBlank() && servicesConfig.isNullOrBlank() -> false
-            else -> true
+        override fun validate(): String? = when {
+            databaseConfig.isNullOrBlank() -> "database configuration is required"
+            apiConfig.isNullOrBlank() -> "api configuration is required"
+            servicesConfig.isNullOrBlank() -> "services configuration is required"
+            else -> null
         }
     }
 

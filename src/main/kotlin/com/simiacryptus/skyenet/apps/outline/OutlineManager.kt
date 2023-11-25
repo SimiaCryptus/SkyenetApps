@@ -8,11 +8,11 @@ open class OutlineManager(val rootNode: OutlinedText) {
     data class NodeList(
         val children: List<Node>? = null,
     ) : ValidatedObject {
-        override fun validate() = when {
-            children == null -> false
-            !children.all { it.validate() } -> false
-            children.size != children.map { it.name ?: "" }.distinct().size -> false
-            else -> true
+        override fun validate(): String? = when {
+            children == null -> "children is required"
+            !children.all { it.validate() == null } -> children.map { it.validate() }.filter { null != it }.joinToString("\n")
+            children.size != children.map { it.name ?: "" }.distinct().size -> "children must have unique names"
+            else -> null
         }
 
         fun deepClone(): NodeList =
@@ -48,10 +48,10 @@ open class OutlineManager(val rootNode: OutlinedText) {
         val children: NodeList? = null,
         val description: String? = null,
     ) : ValidatedObject {
-        override fun validate() = when {
-            null == name -> false
-            name.isEmpty() -> false
-            else -> true
+        override fun validate(): String? = when {
+            null == name -> "name is required"
+            name.isEmpty() -> "name is required"
+            else -> null
         }
 
         fun deepClone(): Node = Node(

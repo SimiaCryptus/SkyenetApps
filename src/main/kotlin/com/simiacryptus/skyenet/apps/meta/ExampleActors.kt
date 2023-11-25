@@ -31,9 +31,9 @@ interface ExampleActors {
     data class ExampleResult(
         val name: String? = null,
     ) : ValidatedObject {
-        override fun validate() = when {
-            name.isNullOrBlank() -> false
-            else -> true
+        override fun validate(): String? = when {
+            name.isNullOrBlank() -> "name is required"
+            else -> null
         }
     }
 

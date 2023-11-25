@@ -43,7 +43,10 @@ interface DebateActors {
     data class Outline(
         val arguments: List<Argument>? = null,
     ) : ValidatedObject {
-        override fun validate() = arguments?.all { it.validate() } ?: false
+        override fun validate(): String? {
+            val joinToString = arguments?.filter { it.validate() != null }?.map { it.validate() }?.joinToString("\n")
+            return if (joinToString.isNullOrBlank()) null else joinToString
+        }
 
     }
 
@@ -51,10 +54,10 @@ interface DebateActors {
         val point_name: String? = null,
         val text: String? = null,
     ) : ValidatedObject {
-        override fun validate() = when {
-            null == point_name -> false
-            point_name.isEmpty() -> false
-            else -> true
+        override fun validate(): String? = when {
+            null == point_name -> "point_name is required"
+            point_name.isEmpty() -> "point_name is required"
+            else -> null
         }
 
     }
