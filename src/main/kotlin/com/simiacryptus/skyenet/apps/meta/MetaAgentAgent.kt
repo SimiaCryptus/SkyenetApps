@@ -254,6 +254,7 @@ open class MetaAgentAgent(
             textInput = ui.textInput { userResponse ->
                 textInputHandle?.clear()
                 acceptHandle?.clear()
+                task.echo(renderMarkdown(userResponse))
                 design = initialDesigner.answer(
                     *(initialDesigner.chatMessages(listOf(userMessage)) +
                             listOf(
