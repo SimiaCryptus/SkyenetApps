@@ -285,6 +285,9 @@ open class MetaAgentAgent(
                 )
             )
             return mainFunction
+        } catch (e: CodingActor.FailedToImplementException) {
+            message.error(e)
+            return e.code ?: throw e
         } catch (e: Throwable) {
             message.error(e)
             throw e
@@ -358,18 +361,19 @@ open class MetaAgentAgent(
         val message = ui.newTask()
         try {
             message.header("Logic Flow: ${logicFlowItem.name}")
-            val messages = flowStepDesigner.chatMessages(
+            val response = flowStepDesigner.answer(
                 CodingActor.CodeRequest(
-                    listOf(userMessage,
+                    messages = listOf(
+                        userMessage,
                         design.getText(),
                         "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
                             logicFlowItem.inputs?.joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
-                        })`"),
-                    autoEvaluate = autoEvaluate
-                ),
+                        })`"
+                    ),
+                    autoEvaluate = autoEvaluate,
+                    codePrefix = logicFlowItem.actors?.mapNotNull { actorImpls[it] }?.joinToString("\n\n") ?: ""
+                ), api = api
             )
-            val codePrefix = logicFlowItem.actors?.mapNotNull { actorImpls[it] }?.joinToString("\n\n") ?: ""
-            val response = flowStepDesigner.answerWithPrefix(codePrefix = codePrefix, *messages, api = api)
             val code = response.getCode()
             //language=HTML
             message.complete(
