@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.meta
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.ApiModel
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.ActorType
@@ -23,6 +24,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
+import java.util.concurrent.Semaphore
 
 
 open class MetaAgentAgent(
@@ -56,26 +58,22 @@ open class MetaAgentAgent(
     private val flowStepDesigner by lazy { getActor(ActorType.FLOW_STEP) as CodingActor }
 
     fun buildAgent(userMessage: String) {
-        val rootMessage = ui.newTask()
-        val design = try {
-            rootMessage.echo(renderMarkdown(userMessage))
-            val design = initialDesigner.answer(listOf(userMessage), api = api)
-            rootMessage.complete(renderMarkdown(design.getText()))
-            rootMessage.verbose(JsonUtil.toJson(design.getObj()))
-            rootMessage.complete()
-            design
-        } catch (e: Throwable) {
-            rootMessage.error(e)
-            throw e
-        }
-
+        val design = initialDesign(userMessage)
         val actImpls = implementActors(userMessage, design)
         val flowImpl = getFlowStepCode(userMessage, design, actImpls)
         val mainImpl = getMainFunction(userMessage, design, actImpls, flowImpl)
+        buildFinalCode(actImpls, flowImpl, mainImpl, design)
+    }
 
-        val finalCodeMessage = ui.newTask()
+    private fun buildFinalCode(
+        actImpls: Map<String, String>,
+        flowImpl: Map<String, String>,
+        mainImpl: String,
+        design: ParsedResponse<AgentDesign>
+    ) {
+        val task = ui.newTask()
         try {
-            finalCodeMessage.header("Final Code")
+            task.header("Final Code")
 
             val imports =
                 (actImpls.values + flowImpl.values + listOf(mainImpl)).flatMap { it.imports() }
@@ -104,139 +102,197 @@ open class MetaAgentAgent(
             } ?: ""
 
             @Language("kotlin") val appCode = """
-            |import com.simiacryptus.jopenai.API
-            |import com.simiacryptus.jopenai.models.ChatModels
-            |import com.simiacryptus.skyenet.webui.application.ApplicationServer
-            |import com.simiacryptus.skyenet.core.platform.Session
-            |import com.simiacryptus.skyenet.core.platform.User
-            |import com.simiacryptus.skyenet.webui.session.*
-            |import org.slf4j.LoggerFactory
-            |
-            |open class ${classBaseName}App(
-            |    applicationName: String = "${design.getObj().name}",
-            |    temperature: Double = 0.1,
-            |) : ApplicationServer(
-            |    applicationName = applicationName,
-            |    temperature = temperature,
-            |) {
-            |
-            |    data class Settings(
-            |        val model: ChatModels = ChatModels.GPT35Turbo,
-            |        val temperature: Double = 0.1,
-            |    )
-            |    override val settingsClass: Class<*> get() = Settings::class.java
-            |    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
-            |
-            |    override fun newSession(
-            |        session: Session,
-            |        user: User?,
-            |        userMessage: String,
-            |        ui: ApplicationInterface,
-            |        api: API
-            |    ) {
-            |        try {
-            |            val settings = getSettings<Settings>(session, user)
-            |            ${classBaseName}Agent(
-            |                user = user,
-            |                session = session,
-            |                dataStorage = dataStorage,
-            |                api = api,
-            |                ui = ui,
-            |                model = settings?.model ?: ChatModels.GPT35Turbo,
-            |                temperature = settings?.temperature ?: 0.3,
-            |            ).${design.getObj().name?.camelCase()}(userMessage)
-            |        } catch (e: Throwable) {
-            |            log.warn("Error", e)
-            |        }
-            |    }
-            |
-            |    companion object {
-            |        private val log = LoggerFactory.getLogger(${classBaseName}App::class.java)
-            |    }
-            |
-            |}
-            """.trimMargin()
+                |import com.simiacryptus.jopenai.API
+                |import com.simiacryptus.jopenai.models.ChatModels
+                |import com.simiacryptus.skyenet.webui.application.ApplicationServer
+                |import com.simiacryptus.skyenet.core.platform.Session
+                |import com.simiacryptus.skyenet.core.platform.User
+                |import com.simiacryptus.skyenet.webui.session.*
+                |import org.slf4j.LoggerFactory
+                |
+                |open class ${classBaseName}App(
+                |    applicationName: String = "${design.getObj().name}",
+                |    temperature: Double = 0.1,
+                |) : ApplicationServer(
+                |    applicationName = applicationName,
+                |    temperature = temperature,
+                |) {
+                |
+                |    data class Settings(
+                |        val model: ChatModels = ChatModels.GPT35Turbo,
+                |        val temperature: Double = 0.1,
+                |    )
+                |    override val settingsClass: Class<*> get() = Settings::class.java
+                |    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
+                |
+                |    override fun newSession(
+                |        session: Session,
+                |        user: User?,
+                |        userMessage: String,
+                |        ui: ApplicationInterface,
+                |        api: API
+                |    ) {
+                |        try {
+                |            val settings = getSettings<Settings>(session, user)
+                |            ${classBaseName}Agent(
+                |                user = user,
+                |                session = session,
+                |                dataStorage = dataStorage,
+                |                api = api,
+                |                ui = ui,
+                |                model = settings?.model ?: ChatModels.GPT35Turbo,
+                |                temperature = settings?.temperature ?: 0.3,
+                |            ).${design.getObj().name?.camelCase()}(userMessage)
+                |        } catch (e: Throwable) {
+                |            log.warn("Error", e)
+                |        }
+                |    }
+                |
+                |    companion object {
+                |        private val log = LoggerFactory.getLogger(${classBaseName}App::class.java)
+                |    }
+                |
+                |}
+                """.trimMargin()
 
             @Language("kotlin") var agentCode = """
-            |import com.simiacryptus.jopenai.API
-            |import com.simiacryptus.jopenai.models.ChatModels
-            |import com.simiacryptus.skyenet.core.actors.ActorSystem
-            |import com.simiacryptus.skyenet.core.actors.CodingActor
-            |import com.simiacryptus.skyenet.core.actors.ParsedActor
-            |import com.simiacryptus.skyenet.core.actors.ImageActor
-            |import com.simiacryptus.skyenet.core.platform.DataStorage
-            |import com.simiacryptus.skyenet.core.platform.Session
-            |import com.simiacryptus.skyenet.core.platform.User
-            |import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-            |
-            |open class ${classBaseName}Agent(
-            |    user: User?,
-            |    session: Session,
-            |    dataStorage: DataStorage,
-            |    val ui: ApplicationInterface,
-            |    val api: API,
-            |    model: ChatModels = ChatModels.GPT35Turbo,
-            |    temperature: Double = 0.3,
-            |) : ActorSystem<${classBaseName}Actors.ActorType>(${classBaseName}Actors(
-            |    model = model,
-            |    temperature = temperature,
-            |).actorMap, dataStorage, user, session) {
-            |
-            |    @Suppress("UNCHECKED_CAST")
-            |    ${actorInits.indent("    ")}
-            |
-            |    ${mainImpl.trimIndent().stripImports().indent("    ")}
-            |
-            |    ${flowImpl.values.joinToString("\n\n") { flowStep -> flowStep.trimIndent() }.stripImports().indent("    ")}
-            |
-            |    companion object {
-            |        private val log = org.slf4j.LoggerFactory.getLogger(${classBaseName}Agent::class.java)
-            |
-            |    }
-            |}
-            """.trimMargin()
+                |import com.simiacryptus.jopenai.API
+                |import com.simiacryptus.jopenai.models.ChatModels
+                |import com.simiacryptus.skyenet.core.actors.ActorSystem
+                |import com.simiacryptus.skyenet.core.actors.CodingActor
+                |import com.simiacryptus.skyenet.core.actors.ParsedActor
+                |import com.simiacryptus.skyenet.core.actors.ImageActor
+                |import com.simiacryptus.skyenet.core.platform.DataStorage
+                |import com.simiacryptus.skyenet.core.platform.Session
+                |import com.simiacryptus.skyenet.core.platform.User
+                |import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+                |
+                |open class ${classBaseName}Agent(
+                |    user: User?,
+                |    session: Session,
+                |    dataStorage: DataStorage,
+                |    val ui: ApplicationInterface,
+                |    val api: API,
+                |    model: ChatModels = ChatModels.GPT35Turbo,
+                |    temperature: Double = 0.3,
+                |) : ActorSystem<${classBaseName}Actors.ActorType>(${classBaseName}Actors(
+                |    model = model,
+                |    temperature = temperature,
+                |).actorMap, dataStorage, user, session) {
+                |
+                |    @Suppress("UNCHECKED_CAST")
+                |    ${actorInits.indent("    ")}
+                |
+                |    ${mainImpl.trimIndent().stripImports().indent("    ")}
+                |
+                |    ${
+                flowImpl.values.joinToString("\n\n") { flowStep -> flowStep.trimIndent() }.stripImports().indent("    ")
+            }
+                |
+                |    companion object {
+                |        private val log = org.slf4j.LoggerFactory.getLogger(${classBaseName}Agent::class.java)
+                |
+                |    }
+                |}
+                """.trimMargin()
 
             agentCode = design.getObj().actors?.map { it.resultType }?.filterNotNull()?.fold(agentCode)
-                { code, type -> code.replace(type, "${classBaseName}Actors.$type") } ?: agentCode
+            { code, type -> code.replace(type, "${classBaseName}Actors.$type") } ?: agentCode
 
             @Language("kotlin") val agentsCode = """
-            |import com.simiacryptus.jopenai.models.ChatModels
-            |import com.simiacryptus.skyenet.core.actors.BaseActor
-            |
-            |class ${classBaseName}Actors(
-            |    val model: ChatModels = ChatModels.GPT4Turbo,
-            |    val temperature: Double = 0.3,
-            |) {
-            |
-            |    ${actImpls.values.joinToString("\n\n") { it.trimIndent() }.stripImports().indent("    ")}
-            |
-            |    enum class ActorType {
-            |        ${actorEnumDefs.indent("        ")}
-            |    }
-            |
-            |    val actorMap: Map<ActorType, BaseActor<out Any,out Any>> = mapOf(
-            |        ${actorMapEntries.indent("        ")}
-            |    )
-            |
-            |    companion object {
-            |        val log = org.slf4j.LoggerFactory.getLogger(${classBaseName}Actors::class.java)
-            |    }
-            |}
-            """.trimMargin()
+                |import com.simiacryptus.jopenai.models.ChatModels
+                |import com.simiacryptus.skyenet.core.actors.BaseActor
+                |
+                |class ${classBaseName}Actors(
+                |    val model: ChatModels = ChatModels.GPT4Turbo,
+                |    val temperature: Double = 0.3,
+                |) {
+                |
+                |    ${actImpls.values.joinToString("\n\n") { it.trimIndent() }.stripImports().indent("    ")}
+                |
+                |    enum class ActorType {
+                |        ${actorEnumDefs.indent("        ")}
+                |    }
+                |
+                |    val actorMap: Map<ActorType, BaseActor<out Any,out Any>> = mapOf(
+                |        ${actorMapEntries.indent("        ")}
+                |    )
+                |
+                |    companion object {
+                |        val log = org.slf4j.LoggerFactory.getLogger(${classBaseName}Actors::class.java)
+                |    }
+                |}
+                """.trimMargin()
 
             //language=MARKDOWN
             val code = """
-            |```kotlin
-            |${listOf(imports, appCode, agentCode, agentsCode).joinToString("\n\n") { it.trimIndent() }.sortCode()}
-            |```
-            |""".trimMargin()
+                |```kotlin
+                |${listOf(imports, appCode, agentCode, agentsCode).joinToString("\n\n") { it.trimIndent() }.sortCode()}
+                |```
+                |""".trimMargin()
 
             //language=HTML
-            finalCodeMessage.complete(renderMarkdown(code))
+            task.complete(renderMarkdown(code))
         } catch (e: Throwable) {
-            finalCodeMessage.error(e)
+            task.error(e)
             throw e
         }
+    }
+
+    private fun initialDesign(userMessage: String): ParsedResponse<AgentDesign> {
+        val task = ui.newTask()
+        val design = try {
+            task.echo(renderMarkdown(userMessage))
+            var design = initialDesigner.answer(listOf(userMessage), api = api)
+            task.add(renderMarkdown(design.getText()))
+            task.verbose(JsonUtil.toJson(design.getObj()))
+            var textInputHandle: StringBuilder? = null
+            var acceptHandle: StringBuilder? = null
+            val onAccept = Semaphore(0)
+            var textInput: String? = null
+            var acceptLink: String? = null
+            textInput = ui.textInput { userResponse ->
+                textInputHandle?.clear()
+                acceptHandle?.clear()
+                design = initialDesigner.answer(
+                    *(initialDesigner.chatMessages(listOf(userMessage)) +
+                            listOf(
+                                ApiModel.ChatMessage(
+                                    role = ApiModel.Role.assistant,
+                                    content = listOf(
+                                        ApiModel.ContentPart(design.getText())
+                                    )
+                                ),
+                                ApiModel.ChatMessage(
+                                    role = ApiModel.Role.user,
+                                    content = listOf(
+                                        ApiModel.ContentPart(userResponse)
+                                    )
+                                )
+                            )),
+                    input = listOf(userMessage),
+                    api = api
+                )
+                task.add(renderMarkdown(design.getText()))
+                task.verbose(JsonUtil.toJson(design.getObj()))
+                textInputHandle = task.add(textInput!!)
+                acceptHandle = task.add(acceptLink!!)
+            }
+            acceptLink = ui.hrefLink("Accept") {
+                textInputHandle?.clear()
+                acceptHandle?.clear()
+                onAccept.release()
+            }
+            textInputHandle = task.add(textInput)
+            acceptHandle = task.add(acceptLink)
+            onAccept.acquire()
+            task.complete()
+            design
+        } catch (e: Throwable) {
+            task.error(e)
+            throw e
+        }
+        return design
     }
 
     private fun getMainFunction(
@@ -245,9 +301,9 @@ open class MetaAgentAgent(
         actorImpls: Map<String, String>,
         flowStepCode: Map<String, String>
     ): String {
-        val message = ui.newTask()
+        val task = ui.newTask()
         try {
-            message.header("Main Function")
+            task.header("Main Function")
             val codeRequest = CodingActor.CodeRequest(
                 messages = listOf(
                     userMessage,
@@ -262,7 +318,7 @@ open class MetaAgentAgent(
                 autoEvaluate = autoEvaluate
             )
             val mainFunction = flowStepDesigner.answer(codeRequest, api = api).getCode()
-            message.verbose(
+            task.verbose(
                 renderMarkdown(
                     """
                         |```kotlin
@@ -271,13 +327,13 @@ open class MetaAgentAgent(
                         """.trimMargin()
                 ), tag = "div"
             )
-            message.complete()
+            task.complete()
             return mainFunction
         } catch (e: CodingActor.FailedToImplementException) {
-            message.error(e)
+            task.error(e)
             return e.code ?: throw e
         } catch (e: Throwable) {
-            message.error(e)
+            task.error(e)
             throw e
         }
     }
@@ -286,23 +342,23 @@ open class MetaAgentAgent(
         userMessage: String,
         design: ParsedResponse<AgentDesign>,
     ) = design.getObj().actors?.map { actorDesign ->
-        val message = ui.newTask()
+        val task = ui.newTask()
         try {
-            implementActor(message, actorDesign, userMessage, design)
+            implementActor(task, actorDesign, userMessage, design)
         } catch (e: Throwable) {
-            message.error(e)
+            task.error(e)
             throw e
         }
     }?.toMap() ?: mapOf()
 
     private fun implementActor(
-        message: SessionTask,
+        task: SessionTask,
         actorDesign: MetaAgentActors.ActorDesign,
         userMessage: String,
         design: ParsedResponse<AgentDesign>
     ): Pair<String, String> {
         //language=HTML
-        message.header("Actor: ${actorDesign.name}")
+        task.header("Actor: ${actorDesign.name}")
         val type = actorDesign.type ?: ""
         val codeRequest = CodingActor.CodeRequest(
             listOf(
@@ -329,7 +385,7 @@ open class MetaAgentAgent(
         }
         val code = response.getCode()
         //language=HTML
-        message.verbose(
+        task.verbose(
             renderMarkdown(
                 """
                         |```kotlin
@@ -338,7 +394,7 @@ open class MetaAgentAgent(
                         """.trimMargin()
             ), tag = "div"
         )
-        message.complete()
+        task.complete()
         return actorDesign.name to code
     }
 

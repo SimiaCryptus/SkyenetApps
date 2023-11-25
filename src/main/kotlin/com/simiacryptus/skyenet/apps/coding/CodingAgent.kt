@@ -47,13 +47,13 @@ class CodingAgent(
     private fun displayCode(
         user: User?,
         ui: ApplicationInterface,
-        message: SessionTask,
+        task: SessionTask,
         response: CodeResult,
         userMessage: String,
         api: API
     ) {
         try {
-            message.add(
+            task.add(
                 MarkdownUtil.renderMarkdown(
                     //language=Markdown
                     """
@@ -69,42 +69,42 @@ class CodingAgent(
                 user,
                 AuthorizationManager.OperationType.Execute
             )
-            val playLink = message.add(if (!canPlay) "" else {
+            val playLink = task.add(if (!canPlay) "" else {
                 ui.hrefLink("▶", "href-link play-button") {
-                    val header = message.header("Running...")
+                    val header = task.header("Running...")
                     try {
                         val result = response.result()
                         header?.clear()
-                        message.header("Result")
-                        message.add(result.resultValue, tag = "pre")
-                        message.header("Output")
-                        message.add(result.resultOutput, tag = "pre")
-                        message.complete()
+                        task.header("Result")
+                        task.add(result.resultValue, tag = "pre")
+                        task.header("Output")
+                        task.add(result.resultOutput, tag = "pre")
+                        task.complete()
                     } catch (e: Throwable) {
                         log.warn("Error", e)
-                        message.error(e)
+                        task.error(e)
                     }
                 }
             })
 
             var formHandle: StringBuilder? = null
-            formHandle = message.add(ui.textInput { feedback ->
+            formHandle = task.add(ui.textInput { feedback ->
                 try {
                     formHandle?.clear()
                     playLink?.clear()
-                    message.echo(MarkdownUtil.renderMarkdown(feedback))
+                    task.echo(MarkdownUtil.renderMarkdown(feedback))
                     val revisedCode = actor.answer(CodingActor.CodeRequest(listOf(userMessage, response.getCode(), feedback)), api = api)
-                    displayCode(user, ui, message, revisedCode, userMessage, api)
+                    displayCode(user, ui, task, revisedCode, userMessage, api)
                 } catch (e: Throwable) {
                     log.warn("Error", e)
-                    message.error(e)
+                    task.error(e)
                 }
             })
 
-            message.complete()
+            task.complete()
         } catch (e: Throwable) {
             log.warn("Error", e)
-            message.error(e)
+            task.error(e)
         }
     }
 

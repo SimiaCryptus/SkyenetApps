@@ -83,7 +83,7 @@ class MetaAgentActors(
 
         private fun validClassName(resultType: String) = when {
             resultType.isEmpty() -> false
-            "[A-Z][a-zA-Z0-9_]{3,}".toRegex().matches(resultType) -> true
+            "[A-Z][a-zA-Z0-9_<>]{3,}".toRegex().matches(resultType) -> true
             else -> false
         }
 
