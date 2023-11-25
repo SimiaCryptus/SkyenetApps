@@ -87,7 +87,7 @@ open class MetaAgentAgent(
                 """private val ${actor.name?.camelCase()} by lazy { getActor(${classBaseName}Actors.ActorType.${actor.name?.upperSnakeCase()}) as ${
                     when (actor.type) {
                         "simple" -> "SimpleActor"
-                        "parsed" -> "ParsedActor"
+                        "parsed" -> "ParsedActor<${actor.resultType}>"
                         "coding" -> "CodingActor"
                         "image" -> "ImageActor"
                         else -> throw IllegalArgumentException("Unknown actor type: ${actor.type}")
@@ -157,7 +157,7 @@ open class MetaAgentAgent(
             |}
             """.trimMargin()
 
-            @Language("kotlin") val agentCode = """
+            @Language("kotlin") var agentCode = """
             |import com.simiacryptus.jopenai.API
             |import com.simiacryptus.jopenai.models.ChatModels
             |import com.simiacryptus.skyenet.core.actors.ActorSystem
@@ -187,7 +187,7 @@ open class MetaAgentAgent(
             |
             |    ${mainImpl.trimIndent().stripImports().indent("    ")}
             |
-            |    ${flowImpl.values.joinToString("\n\n") { it.trimIndent() }.stripImports().indent("    ")}
+            |    ${flowImpl.values.joinToString("\n\n") { flowStep -> flowStep.trimIndent() }.stripImports().indent("    ")}
             |
             |    companion object {
             |        private val log = org.slf4j.LoggerFactory.getLogger(${classBaseName}Agent::class.java)
@@ -195,6 +195,9 @@ open class MetaAgentAgent(
             |    }
             |}
             """.trimMargin()
+
+            agentCode = design.getObj().actors?.map { it.resultType }?.filterNotNull()?.fold(agentCode)
+                { code, type -> code.replace(type, "${classBaseName}Actors.$type") } ?: agentCode
 
             @Language("kotlin") val agentsCode = """
             |import com.simiacryptus.jopenai.models.ChatModels
@@ -205,15 +208,15 @@ open class MetaAgentAgent(
             |    val temperature: Double = 0.3,
             |) {
             |
+            |    ${actImpls.values.joinToString("\n\n") { it.trimIndent() }.stripImports().indent("    ")}
+            |
             |    enum class ActorType {
             |        ${actorEnumDefs.indent("        ")}
             |    }
             |
-            |    val actorMap: Map<ActorType, BaseActor<out Any>> = mapOf(
+            |    val actorMap: Map<ActorType, BaseActor<out Any,out Any>> = mapOf(
             |        ${actorMapEntries.indent("        ")}
             |    )
-            |
-            |    ${actImpls.values.joinToString("\n\n") { it.trimIndent() }.stripImports().indent("    ")}
             |
             |    companion object {
             |        val log = org.slf4j.LoggerFactory.getLogger(${classBaseName}Actors::class.java)
@@ -232,22 +235,6 @@ open class MetaAgentAgent(
             finalCodeMessage.complete(renderMarkdown(code))
         } catch (e: Throwable) {
             finalCodeMessage.error(e)
-            throw e
-        }
-    }
-
-    fun demo() {
-        val task = ui.newTask()
-        try {
-            task.header("Main Function")
-            task.add("Normal message")
-            task.add(ui.textInput { log.info("Message Recieved: " + it) })
-            task.add(ui.hrefLink("Click Me!") { log.info("Link clicked") })
-            task.verbose("Verbose output - not shown by default")
-            task.complete()
-            return
-        } catch (e: Throwable) {
-            task.error(e)
             throw e
         }
     }
@@ -275,15 +262,16 @@ open class MetaAgentAgent(
                 autoEvaluate = autoEvaluate
             )
             val mainFunction = flowStepDesigner.answer(codeRequest, api = api).getCode()
-            message.complete(
+            message.verbose(
                 renderMarkdown(
                     """
                         |```kotlin
                         |$mainFunction
                         |```
                         """.trimMargin()
-                )
+                ), tag = "div"
             )
+            message.complete()
             return mainFunction
         } catch (e: CodingActor.FailedToImplementException) {
             message.error(e)
@@ -341,15 +329,16 @@ open class MetaAgentAgent(
         }
         val code = response.getCode()
         //language=HTML
-        message.complete(
+        message.verbose(
             renderMarkdown(
                 """
                         |```kotlin
                         |$code
                         |```
                         """.trimMargin()
-            )
+            ), tag = "div"
         )
+        message.complete()
         return actorDesign.name to code
     }
 
@@ -361,6 +350,9 @@ open class MetaAgentAgent(
         val message = ui.newTask()
         try {
             message.header("Logic Flow: ${logicFlowItem.name}")
+            // TODO: Fix logic-actor dependencies: Need to import data structures used by inputs
+            //val codePrefix = logicFlowItem.actors?.mapNotNull { actorImpls[it] }?.joinToString("\n\n") ?: ""
+            val codePrefix = (actorImpls.values).joinToString("\n\n") { it.trimIndent() }.sortCode()
             val response = flowStepDesigner.answer(
                 CodingActor.CodeRequest(
                     messages = listOf(
@@ -371,20 +363,21 @@ open class MetaAgentAgent(
                         })`"
                     ),
                     autoEvaluate = autoEvaluate,
-                    codePrefix = logicFlowItem.actors?.mapNotNull { actorImpls[it] }?.joinToString("\n\n") ?: ""
+                    codePrefix = codePrefix
                 ), api = api
             )
             val code = response.getCode()
             //language=HTML
-            message.complete(
+            message.verbose(
                 renderMarkdown(
                     """
                     |```kotlin
                     |$code
                     |```
                     """.trimMargin()
-                )
+                ), tag = "div"
             )
+            message.complete()
             logicFlowItem.name to code
         } catch (e: Throwable) {
             message.error(e)

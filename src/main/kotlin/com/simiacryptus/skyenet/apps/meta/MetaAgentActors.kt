@@ -66,7 +66,7 @@ class MetaAgentActors(
         val description: String? = null,
         @Description("simple, parsed, image, or coding")
         val type: String? = null,
-        @Description("string, code, image, or the simple class name of the parsed object")
+        @Description("string, code, image, or a simple java identifier (class name without package - no inner classes, no generics)")
         val resultType: String? = null,
     ) : ValidatedObject {
         override fun validate(): String? = when {

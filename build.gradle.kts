@@ -51,9 +51,8 @@ dependencies {
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
     implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
     implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version = "5.2.1")
+    implementation(group = "com.google.code.gson", name = "gson", version = "2.10.1")
 
-//    implementation(group = "org.apache.spark", name = "spark-core_2.13", version = spark_version)
-//    implementation(group = "org.apache.spark", name = "spark-sql_2.13", version = spark_version)
     implementation(group = "org.scala-lang", name = "scala-library", version = scala_version)
     implementation(group = "org.scala-lang", name = "scala-compiler", version = scala_version)
     implementation(group = "org.scala-lang", name = "scala-reflect", version = scala_version)
