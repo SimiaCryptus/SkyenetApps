@@ -5,7 +5,6 @@ import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.apps.debate.DebateActors.*
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
-import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
@@ -24,34 +23,29 @@ class DebateAgent(
     private val outlines = mutableMapOf<String, Outline>()
     @Suppress("UNCHECKED_CAST")
     private val moderator get() = getActor(ActorType.MODERATOR) as ParsedActor<DebateSetup>
-    private val summarizor get() = getActor(ActorType.SUMMARIZOR) as SimpleActor
 
     fun debate(userMessage: String) {
-        val message = ui.newTask()
-        message.echo(renderMarkdown(userMessage))
+        val moderatorTask = ui.newTask()
+        moderatorTask.echo(renderMarkdown(userMessage))
         val moderatorResponse = this.moderator.answer(listOf(userMessage), api = api)
-        message.complete(renderMarkdown(moderatorResponse.getText()))
-        message.verbose(toJson(moderatorResponse.getObj()))
+        moderatorTask.add(renderMarkdown(moderatorResponse.getText()))
+        moderatorTask.verbose(toJson(moderatorResponse.getObj()))
+        moderatorTask.complete()
 
+        val projectorTask = ui.newTask()
+        projectorTask.header("Embedding Projector")
         val totalSummary =
-            (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().map { question ->
-                val message = ui.newTask()
-                val answers = (moderatorResponse.getObj().debators?.list ?: emptyList()).parallelStream()
-                    .map { actor -> answer(ui, actor, question) }.toList()
-                message.header("Summarizing: ${renderMarkdown(question.text ?: "")}")
-                val summarizorResponse =
-                    summarizor.answer((listOf((question.text ?: "").trim()) + answers), api = api)
-                message.complete(renderMarkdown(summarizorResponse))
-                summarizorResponse
+            (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().flatMap { question ->
+                (moderatorResponse.getObj().debaters?.list ?: emptyList()).parallelStream()
+                    .map { actor -> answer(ui, actor, question) }
             }.toList()
-
-        val argumentList = outlines.values.flatMap {
-            it.arguments?.map { it.text ?: "" }?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
-        } +
-                (moderatorResponse.getObj().questions?.list?.map { it.text ?: "" }?.filter { it.isNotBlank() }?.toSet()
-                    ?: emptySet())
-        val projectorMessage = ui.newTask()
-        projectorMessage.header("Embedding Projector")
+        projectorTask.verbose(toJson(totalSummary))
+        val outlineStatements = outlines.values.flatMap {
+            it.arguments?.map { it.text ?: "" }?.filter { it.isNotBlank() } ?: emptyList()
+        }
+        val moderatorStatements = moderatorResponse.getObj().questions?.list?.map {
+            it.text ?: ""
+        }?.filter { it.isNotBlank() } ?: emptyList()
         val response = TensorflowProjector(
             api = api,
             dataStorage = dataStorage,
@@ -60,32 +54,25 @@ class DebateAgent(
             host = domainName,
             session = ui,
             userId = user,
-        ).writeTensorflowEmbeddingProjectorHtml(*argumentList.toTypedArray())
-        projectorMessage.complete(response)
-
-        val conclusionMessage = ui.newTask()
-        conclusionMessage.verbose(toJson(totalSummary))
-        val summarizorResponse = summarizor.answer(totalSummary, api = api)
-        conclusionMessage.verbose(toJson(summarizorResponse))
-        conclusionMessage.complete(renderMarkdown(summarizorResponse))
+        ).writeTensorflowEmbeddingProjectorHtml(*(outlineStatements + moderatorStatements).toTypedArray())
+        projectorTask.complete(response)
     }
 
     private fun answer(
-        session: ApplicationInterface,
-        actor: Debator,
-        question: Question
+            session: ApplicationInterface,
+            actor: Debater,
+            question: Question
     ): String {
-        val message = session.newTask()
-        message.add((actor.name?.trim() ?: "") + " - " + renderMarkdown(question.text ?: "").trim())
-        val debator = getActorConfig(actor)
-        val response = debator.answer(listOf(question.text ?: ""), api = api)
-        message.complete(renderMarkdown(response.getText()))
+        val task = session.newTask()
+        task.add((actor.name?.trim() ?: "") + " - " + renderMarkdown(question.text ?: "").trim())
+        val response = getActorConfig(actor).answer(listOf(question.text ?: ""), api = api)
         outlines[actor.name!! + ": " + question.text!!] = response.getObj()
-        message.verbose(toJson(response.getObj()))
+        task.verbose(toJson(response.getObj()))
+        task.complete(renderMarkdown(response.getText()))
         return response.getText()
     }
 
-    private fun getActorConfig(actor: Debator) =
+    private fun getActorConfig(actor: Debater) =
         DebateActors.getActorConfig(actor)
 
 }
