@@ -6,8 +6,10 @@ import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
 import com.simiacryptus.skyenet.apps.outline.OutlineApp
 import com.simiacryptus.skyenet.core.util.AwsUtil
+import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 
 
 open class AppServer(
@@ -29,7 +31,12 @@ open class AppServer(
         listOf(
             ChildWebApp("/meta_agent", MetaAgentApp()),
             ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName)),
-            ChildWebApp("/aws_coder", CodingApp("AWS Coding Assistant")),
+            ChildWebApp("/aws_coder", CodingApp(
+                    "AWS Coding Assistant",
+                    KotlinInterpreter::class,
+                    mapOf(
+                            "region" to DefaultAwsRegionProviderChain().getRegion(),
+                    ))),
             ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
         )
     }
