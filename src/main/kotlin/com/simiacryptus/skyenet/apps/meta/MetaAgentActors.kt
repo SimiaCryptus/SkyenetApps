@@ -133,7 +133,7 @@ class MetaAgentActors(
         prompt = """
             |You are a software architect.
             |
-            |Your task is to design a system that uses gpt "actors" to construct a model of a creative process.
+            |Your task is to design an "agent" system that uses gpt "actors" to construct a model of a creative process.
             |This "creative process" can be thought of as a cognitive process, an individual's work process, or an organizational process.
             |The idea is that the overall structure is procedural and can be modeled in code, but individual steps are creative and can be modeled with gpt.
             |
@@ -149,25 +149,31 @@ class MetaAgentActors(
             |   Supported languages are Scala, Kotlin, and Groovy.
             |4. "Image" actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
             |   This image prompt is then used to generate an image, which is returned to the user.
+            |   
+            |The system provides a web-based user interface composed of a series of "tasks" that contain messages.
+            |All agent applications are initialized with a single user prompt, which is used to generate the first task.
+            |Messages can be header, normal, verbose, image, error, or "complete". 
+            |Until the error or complete is called, a progress bar is displayed.
+            |Messages can contain interactive elements including text input and links which trigger server-side lambda functions.
+            |A single process can use multiple tasks in a single or multi-threaded manner.
             |
             |Some important design principles:
             |1. ChatGPT has an optimal token window of still around 4k to "logic" although it now can support 128k of input tokens.
             |2. The logic of each actor is specialized and focused on a single task.
             |   This both conserves the cognitive space of the model, and allows the system to be more easily understood and debugged.
             |
-            |Respond to the user's idea by breaking down the requested system into a component design including:
-            |1. Actors
+            |Respond to the user's idea by breaking down the requested system into a fully-detailed component design including:
+            |1. Logical Flow - how the actors interact with each other to produce the desired result
+            |    1. complete description of the flow and logic
+            |    2. inputs and outputs
+            |    3. actor(s) used
+            |2. Actors
             |    1. a description of the actor's purpose and how it is used
-            |    2. a description of the actor's input and output
-            |    3. a description of the actor's logic
-            |2. Logical Flow - how the actors interact with each other to produce the desired result
-            |    1. step description
-            |    2. input
-            |    3. output
-            |    4. actors used
+            |    2. if a coding actor, a description of the symbols used
+            |    3. if a parsed actor, a description of the data structure used
             |
-            |Unless otherwise stated, the input to the entire process being designed is a single "user prompt" string.""".trimMargin()
-            .trim(),
+            |Unless otherwise stated, the input to the entire process being designed is a single "user prompt" string.
+            |""".trimMargin().trim(),
         temperature = temperature,
     )
 
