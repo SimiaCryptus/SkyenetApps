@@ -5,6 +5,7 @@ import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import org.intellij.lang.annotations.Language
 
 open class OutlineApp(
     applicationName: String = "IdeaMapper",
@@ -14,6 +15,14 @@ open class OutlineApp(
     applicationName = applicationName,
     temperature = temperature,
 ) {
+    override val description: String
+        @Language("HTML")
+        get() = """
+            <div>
+            The outline app provides a recursive expansion method to expand a topic.
+            Produced statements are then used to generate a high-dimensional map of the topic space.
+            </div>
+        """.trimIndent()
 
     data class Settings(
         val depth: Int = 0,

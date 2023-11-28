@@ -1,5 +1,6 @@
 package com.simiacryptus.skyenet.apps.outline
 
+import com.google.common.util.concurrent.ListeningExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.GPT4Tokenizer
@@ -10,6 +11,8 @@ import com.simiacryptus.skyenet.apps.outline.OutlineManager.OutlinedText
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
 import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
@@ -18,6 +21,7 @@ import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.util.TensorflowProjector
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicInteger
 
 class OutlineAgent(
@@ -45,7 +49,7 @@ class OutlineAgent(
     @Suppress("UNCHECKED_CAST")
     private val expand get() = getActor(ActorType.EXPAND) as ParsedActor<NodeList>
     private val activeThreadCounter = AtomicInteger(0)
-    private val pool = MoreExecutors.listeningDecorator(java.util.concurrent.Executors.newCachedThreadPool())
+    private val pool get() = clientManager.getPool(session, user, dataStorage)
 
     fun buildMap() {
         val message = ui.newTask()

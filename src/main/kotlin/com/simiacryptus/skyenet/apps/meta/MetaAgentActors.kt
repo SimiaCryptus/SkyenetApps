@@ -62,12 +62,12 @@ class MetaAgentActors(
 
     data class ActorDesign(
         @Description("Java class name of the actor")
-        val name: String? = null,
+        val name: String = "",
         val description: String? = null,
         @Description("simple, parsed, image, or coding")
-        val type: String? = null,
+        val type: String = "",
         @Description("string, code, image, or a simple java identifier (class name without package - no inner classes, no generics)")
-        val resultType: String? = null,
+        val resultType: String = "",
     ) : ValidatedObject {
         override fun validate(): String? = when {
             null == name -> "name is required"
@@ -75,9 +75,9 @@ class MetaAgentActors(
             name.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> "name must be a valid java identifier"
             null == type -> "type is required"
             type.isEmpty() -> "type is required"
-            type.notIn("simple", "parsed", "coding", "image") -> "type must be simple, parsed, coding, or image"
+            type.lowercase().notIn("simple", "parsed", "coding", "image") -> "type must be simple, parsed, coding, or image"
             resultType?.isEmpty() != false -> "resultType is required"
-            resultType.notIn("string", "code", "image") && !validClassName(resultType) -> "resultType must be string, code, image, or a valid class name"
+            resultType.lowercase().notIn("string", "code", "image") && !validClassName(resultType) -> "resultType must be string, code, image, or a valid class name"
             else -> null
         }
 
@@ -157,17 +157,12 @@ class MetaAgentActors(
             |Messages can contain interactive elements including text input and links which trigger server-side lambda functions.
             |A single process can use multiple tasks in a single or multi-threaded manner.
             |
-            |Some important design principles:
-            |1. ChatGPT has an optimal token window of still around 4k to "logic" although it now can support 128k of input tokens.
-            |2. The logic of each actor is specialized and focused on a single task.
-            |   This both conserves the cognitive space of the model, and allows the system to be more easily understood and debugged.
-            |
             |Respond to the user's idea by breaking down the requested system into a fully-detailed component design including:
-            |1. Logical Flow - how the actors interact with each other to produce the desired result
-            |    1. complete description of the flow and logic
-            |    2. inputs and outputs
-            |    3. actor(s) used
-            |2. Actors
+            |1. Logic - how the actors interact with each other to produce the desired result, including:
+            |    1. complete description of the logic and flow
+            |    2. inputs and outputs for each step
+            |    3. actors used and where
+            |2. Actors - Each individual actor, including:
             |    1. a description of the actor's purpose and how it is used
             |    2. if a coding actor, a description of the symbols used
             |    3. if a parsed actor, a description of the data structure used

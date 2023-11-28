@@ -5,6 +5,7 @@ import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
 open class DebateApp(
@@ -15,6 +16,15 @@ open class DebateApp(
     applicationName = applicationName,
     temperature = temperature,
 ) {
+    override val description: String
+        @Language("HTML")
+        get() = """
+            <div>
+            The debate app simulates a debate in order to analyze a topic from a number of perspectives.
+            Produced statements are then used to generate a high-dimensional map of the topic space.
+            </div>
+        """.trimIndent()
+
 
     override fun newSession(
         session: Session,
