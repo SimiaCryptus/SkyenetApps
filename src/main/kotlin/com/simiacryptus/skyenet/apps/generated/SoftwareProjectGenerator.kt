@@ -18,7 +18,6 @@ import java.util.function.Function
 import org.slf4j.LoggerFactory
 
 
-
 open class SoftwareProjectGeneratorApp(
   applicationName: String = "SoftwareProjectGenerator",
   temperature: Double = 0.1,
@@ -31,8 +30,10 @@ open class SoftwareProjectGeneratorApp(
     val model: ChatModels = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
   )
+
   override val settingsClass: Class<*> get() = Settings::class.java
-  @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : Any> initSettings(session: Session): T? = Settings() as T
 
   override fun newSession(
     session: Session,
@@ -72,10 +73,12 @@ open class SoftwareProjectGeneratorAgent(
   val api: API,
   model: ChatModels = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
-) : ActorSystem<SoftwareProjectGeneratorActors.ActorType>(SoftwareProjectGeneratorActors(
-  model = model,
-  temperature = temperature,
-).actorMap, dataStorage, user, session) {
+) : ActorSystem<SoftwareProjectGeneratorActors.ActorType>(
+  SoftwareProjectGeneratorActors(
+    model = model,
+    temperature = temperature,
+  ).actorMap, dataStorage, user, session
+) {
 
   @Suppress("UNCHECKED_CAST")
   private val simpleActor by lazy { getActor(SoftwareProjectGeneratorActors.ActorType.SIMPLE_ACTOR) as SimpleActor }
@@ -93,7 +96,8 @@ open class SoftwareProjectGeneratorAgent(
 
       // Step 2: Code Generation for Project Scaffolding
       task.add("Generating project scaffolding based on the analyzed structure.")
-      val scaffoldingCode = simpleActor.answer(listOf("Generate project scaffolding for: ${projectStructure.getObj()}"), api = api)
+      val scaffoldingCode =
+        simpleActor.answer(listOf("Generate project scaffolding for: ${projectStructure.getObj()}"), api = api)
       task.add("Project scaffolding generated:\n$scaffoldingCode")
 
       // Step 3: Feature Development
@@ -111,7 +115,10 @@ open class SoftwareProjectGeneratorAgent(
 
       // Step 5: Finalization
       task.add("Finalizing the project with build scripts and documentation.")
-      val finalizationCode = simpleActor.answer(listOf("Finalize the project based on the following structure: ${projectStructure.getObj()}"), api = api)
+      val finalizationCode = simpleActor.answer(
+        listOf("Finalize the project based on the following structure: ${projectStructure.getObj()}"),
+        api = api
+      )
       task.add("Project finalization details:\n$finalizationCode")
 
       task.complete("Software project generation is complete.")
@@ -163,7 +170,8 @@ open class SoftwareProjectGeneratorAgent(
       task.add("Received project structure: $projectStructureJson")
 
       // Generate code using the simple actor
-      val codeGenerationPrompt = "Based on the following project structure, generate the necessary code and configuration files:\n$projectStructureJson"
+      val codeGenerationPrompt =
+        "Based on the following project structure, generate the necessary code and configuration files:\n$projectStructureJson"
       val generatedCode = simpleActor.answer(listOf(codeGenerationPrompt), api = api)
 
       // Display generated code to the user
@@ -310,7 +318,7 @@ class SoftwareProjectGeneratorActors(
     PARSED_ACTOR,
   }
 
-  val actorMap: Map<ActorType, BaseActor<out Any,out Any>> = mapOf(
+  val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
     ActorType.SIMPLE_ACTOR to simpleActor,
     ActorType.PARSED_ACTOR to parsedActor,
   )

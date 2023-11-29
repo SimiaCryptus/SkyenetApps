@@ -463,16 +463,14 @@ open class MetaAgentAgent(
       return design
     }
 
+    fun List<Pair<List<ApiModel.ContentPart>, Role>>.toMessageList(): Array<ApiModel.ChatMessage> =
+      this.map { (content, role) ->
+        ApiModel.ChatMessage(
+          role = role,
+          content = content
+        )
+      }.toTypedArray()
+
   }
 }
-
-fun List<Pair<List<ApiModel.ContentPart>, Role>>.toMessageList(): Array<ApiModel.ChatMessage> =
-  this.map { (content, role) ->
-    ApiModel.ChatMessage(
-      role = role,
-      content = content
-    )
-  }.toTypedArray()
-
-
 
