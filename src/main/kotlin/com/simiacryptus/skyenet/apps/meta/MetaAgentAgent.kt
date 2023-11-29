@@ -8,8 +8,7 @@ import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.ActorType
 import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.AgentDesign
-import com.simiacryptus.skyenet.core.actors.ActorSystem
-import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.camelCase
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.imports
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
@@ -18,8 +17,6 @@ import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.sortCode
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.stripImports
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.upperSnakeCase
 import com.simiacryptus.skyenet.core.actors.CodingActor.FailedToImplementException
-import com.simiacryptus.skyenet.core.actors.ParsedActor
-import com.simiacryptus.skyenet.core.actors.ParsedResponse
 import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
@@ -55,6 +52,8 @@ open class MetaAgentAgent(
 
   @Suppress("UNCHECKED_CAST")
   private val initialDesigner by lazy { getActor(ActorType.INITIAL) as ParsedActor<AgentDesign> }
+  private val highLevelDesigner by lazy { getActor(ActorType.HIGH_LEVEL) as SimpleActor }
+  private val detailDesigner by lazy { getActor(ActorType.DETAIL) as ParsedActor<AgentDesign> }
   private val simpleActorDesigner by lazy { getActor(ActorType.SIMPLE) as CodingActor }
   private val imageActorDesigner by lazy { getActor(ActorType.IMAGE) as CodingActor }
   private val parsedActorDesigner by lazy { getActor(ActorType.PARSED) as CodingActor }
@@ -241,22 +240,11 @@ open class MetaAgentAgent(
     }
   }
 
-  private fun initialDesign(userMessage: String): ParsedResponse<AgentDesign> = iterate(
-    ui = ui,
-    userMessage = userMessage,
-    initialResponse = { this.initialDesigner.answer(listOf(it), api = this.api) },
-    reviseResponse = { userMessage, design, userResponse ->
-      this.initialDesigner.answer(
-        *(this.initialDesigner.chatMessages(listOf(userMessage)) +
-            listOf(
-              design.getText().toContentList() to Role.assistant,
-              userResponse.toContentList() to Role.user
-            ).toMessageList()),
-        input = listOf(userMessage),
-        api = this.api
-      )
-    },
-  )
+  private fun initialDesign(input: String): ParsedResponse<AgentDesign> {
+    val highLevelDesign = iterate(input, highLevelDesigner, { listOf(it) }, api, ui)
+    return iterate(highLevelDesign, detailDesigner, { listOf(it) }, api, ui)
+    //return iterate(input, initialDesigner, { listOf(it) }, api, ui)
+  }
 
   private fun getMainFunction(
     userMessage: String,
@@ -417,14 +405,14 @@ open class MetaAgentAgent(
     fun <T : Any> iterate(
       ui: ApplicationInterface,
       userMessage: String,
-      initialResponse: (String) -> ParsedResponse<T>,
-      reviseResponse: (String, ParsedResponse<T>, String) -> ParsedResponse<T>,
-    ): ParsedResponse<T> {
+      initialResponse: (String) -> T,
+      reviseResponse: (String, T, String) -> T,
+    ): T {
       val task = ui.newTask()
       val design = try {
         task.echo(renderMarkdown(userMessage))
         var design = initialResponse(userMessage)
-        task.add(renderMarkdown(design.getText()))
+        task.add(renderMarkdown(design.toString()))
         var textInputHandle: StringBuilder? = null
         var acceptHandle: StringBuilder? = null
         val onAccept = Semaphore(0)
@@ -438,7 +426,7 @@ open class MetaAgentAgent(
           acceptHandle?.clear()
           task.echo(renderMarkdown(userResponse))
           design = reviseResponse(userMessage, design, userResponse)
-          task.add(renderMarkdown(design.getText()))
+          task.add(renderMarkdown(design.toString()))
           textInputHandle = task.add(textInput!!)
           acceptHandle = task.complete(acceptLink!!)
           feedbackGuard.set(false)
@@ -453,7 +441,8 @@ open class MetaAgentAgent(
         textInputHandle = task.add(textInput)
         acceptHandle = task.complete(acceptLink)
         onAccept.acquire()
-        task.verbose(JsonUtil.toJson(design.getObj()))
+        val d = design
+        if(d is ParsedResponse<*>) task.verbose(JsonUtil.toJson(d.getObj()!!))
         task.complete()
         design
       } catch (e: Throwable) {
@@ -470,6 +459,30 @@ open class MetaAgentAgent(
           content = content
         )
       }.toTypedArray()
+
+    fun <I:Any,T:Any> iterate(
+      input: String,
+      actor: BaseActor<I, T>,
+      toInput: (String) -> I,
+      api: API,
+      ui: ApplicationInterface,
+    ) = iterate(
+      ui = ui,
+      userMessage = input,
+      initialResponse = { actor.answer(toInput(it), api = api) },
+      reviseResponse = { userMessage : String, design : T, userResponse: String ->
+        val input = toInput(userMessage)
+        actor.answer(
+          messages = *actor.chatMessages(input) +
+              listOf(
+                design.toString().toContentList() to Role.assistant,
+                userResponse.toContentList() to Role.user
+              ).toMessageList(),
+          input = input,
+          api = api
+        )
+      },
+    )
 
   }
 }

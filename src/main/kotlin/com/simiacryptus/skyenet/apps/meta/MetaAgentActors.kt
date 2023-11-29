@@ -7,6 +7,7 @@ import com.simiacryptus.skyenet.core.Interpreter
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import org.intellij.lang.annotations.Language
 import java.util.function.Function
@@ -22,6 +23,8 @@ class MetaAgentActors(
 
     enum class ActorType {
         INITIAL,
+        HIGH_LEVEL,
+        DETAIL,
         SIMPLE,
         IMAGE,
         PARSED,
@@ -31,6 +34,8 @@ class MetaAgentActors(
 
     val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
         ActorType.INITIAL to initialDesigner(),
+        ActorType.HIGH_LEVEL to highLevelDesigner(),
+        ActorType.DETAIL to detailedDesigner(),
         ActorType.SIMPLE to simpleActorDesigner(),
         ActorType.IMAGE to imageActorDesigner(),
         ActorType.PARSED to parsedActorDesigner(),
@@ -125,6 +130,64 @@ class MetaAgentActors(
             else -> null
         }
     }
+
+    @Language("Markdown")
+    fun highLevelDesigner() = SimpleActor(
+        model = model,
+        prompt = """
+            You are a high-level software architect.
+        
+            Your task is to conceptualize the architecture of an "agent" system that uses gpt "actors" to model a creative process.
+            The system should be procedural in its overall structure, with creative steps modeled by gpt actors.
+        
+            The system will interact with users through a web-based interface, where users can initiate processes with a single prompt.
+        
+            Provide a high-level design that includes:
+            1. The types of actors needed and their high-level roles.
+            2. The user interface flow with types of tasks and messages.
+            3. The sequence of tasks contributing to the creative process.
+        
+            The input to your design process is a single "user prompt" string.
+    """.trimIndent().trim(),
+        temperature = temperature
+    )
+
+    @Language("Markdown")
+    fun detailedDesigner() = ParsedActor(
+        DesignParser::class.java,
+        model = model,
+        prompt = """
+            You are a detailed software designer.
+            
+            Your task is to expand on the high-level architecture provided by the High-Level Designer.
+            You need to detail the components, logic, data structures, and technical specifications for implementation.
+            
+            All actors process inputs in the form of ChatGPT messages (often a single string) but vary in their output.
+            There are three types of actors:
+            1. "Simple" actors contain a system directive, and simply return the chat model's response to the user query.
+            2. "Parsed" actors use a 2-stage system; first, queries are responded in the same manner as simple actors using a system prompt.
+               This natural-language response is then parsed into a typed object, which can be used in the application logic.
+            3. "Coding" actors combine ChatGPT-powered code generation with compilation and validation to produce quality code without having to run it.
+               The code environment can easily be augmented with symbols, which are described to the code generation model and are also available to the execution runtime.
+               This can be used for incremental code generation, where symbols defined by previous code generation actors can be used by later actors.
+               This can also be used to translate user requests into executed code, i.e. requested actions performed by the system.
+               Supported languages are Scala, Kotlin, and Groovy.
+            4. "Image" actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
+               This image prompt is then used to generate an image, which is returned to the user.
+            
+            The design should include:
+            1. Detailed logic and flow for each component.
+            2. Inputs and outputs for each step in the process.
+            3. Detailed descriptions of each actor, including purpose and usage.
+            4. For "Coding" actors, the symbols used for code generation and execution.
+            5. For "Parsed" actors, the data structures for parsing responses into typed objects.
+            6. Interactive elements in the user interface and their server-side functions.
+            
+            The input to your design process is the high-level design document from the High-Level Designer.
+    """.trimIndent().trim(),
+        temperature = temperature
+    )
+
 
     @Language("Markdown")
     fun initialDesigner() = ParsedActor(
