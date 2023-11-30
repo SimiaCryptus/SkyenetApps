@@ -56,10 +56,10 @@ class OutlineAgent(
         val outlineManager = try {
             message.echo(renderMarkdown(this.userMessage))
             val root = initial.answer(listOf(this.userMessage), api = api)
-            message.add(renderMarkdown(root.getText()))
-            message.verbose(toJson(root.getObj()))
+            message.add(renderMarkdown(root.text))
+            message.verbose(toJson(root.obj))
             message.complete()
-            OutlineManager(OutlinedText(root.getText(), root.getObj()))
+            OutlineManager(OutlinedText(root.text, root.obj))
         } catch (e: Exception) {
             message.error(e)
             throw e
@@ -181,9 +181,9 @@ class OutlineAgent(
         }
         message.header("Expand $sectionName")
         val answer = expand.answer(listOf(this.userMessage, parent.text, sectionName), api = api)
-        message.add(renderMarkdown(answer.getText()))
-        message.verbose(toJson(answer.getObj()))
-        val newNode = OutlinedText(answer.getText(), answer.getObj())
+        message.add(renderMarkdown(answer.text))
+        message.verbose(toJson(answer.obj))
+        val newNode = OutlinedText(answer.text, answer.obj)
         outlineManager.nodes.add(newNode)
         return newNode
     }

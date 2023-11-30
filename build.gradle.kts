@@ -24,7 +24,9 @@ repositories {
 }
 
 kotlin {
-//    jvmToolchain(11)
+    compilerOptions {
+        javaParameters = true
+    }
     jvmToolchain(17)
 }
 
@@ -34,7 +36,7 @@ val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 val jackson_version = "2.15.3"
 dependencies {
-    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.38")
+    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.39")
 
     implementation(group = "com.simiacryptus.skyenet", name = "core", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "groovy", version = skyenet_version)
@@ -76,12 +78,12 @@ tasks.withType(ShadowJar::class.java).configureEach {
 
 tasks {
     compileKotlin {
-        kotlinOptions {
+        compilerOptions {
             javaParameters = true
         }
     }
     compileTestKotlin {
-        kotlinOptions {
+        compilerOptions {
             javaParameters = true
         }
     }

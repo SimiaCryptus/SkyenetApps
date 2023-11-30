@@ -77,18 +77,20 @@ interface DebateActors {
       )
 
     fun getActorConfig(actor: Debater) = ParsedActor(
-        parserClass = OutlineParser::class.java,
-        prompt = """You are a debater: ${actor.name}.
-                                |You will provide a well-reasoned and supported argument for your position.
-                                |Details about you: ${actor.description}
-                                """.trimMargin(),
-        model = ChatModels.GPT4,
+      parserClass = OutlineParser::class.java,
+      prompt = """You are a debater: ${actor.name}.
+                              |You will provide a well-reasoned and supported argument for your position.
+                              |Details about you: ${actor.description}
+                              """.trimMargin(),
+      model = ChatModels.GPT4,
+      parsingModel = ChatModels.GPT35Turbo,
     )
 
     private fun moderator() = ParsedActor(
-        DebateParser::class.java,
-        prompt = """You will take a user request, and plan a debate. You will introduce the debaters, and then provide a list of questions to ask.""",
-        model = ChatModels.GPT4,
+      DebateParser::class.java,
+      prompt = """You will take a user request, and plan a debate. You will introduce the debaters, and then provide a list of questions to ask.""",
+      model = ChatModels.GPT4,
+      parsingModel = ChatModels.GPT35Turbo,
     )
 
     private fun summarizor() = SimpleActor(

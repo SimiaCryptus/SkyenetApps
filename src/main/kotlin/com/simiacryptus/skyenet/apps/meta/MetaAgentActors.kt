@@ -22,7 +22,6 @@ class MetaAgentActors(
 ) {
 
     enum class ActorType {
-        INITIAL,
         HIGH_LEVEL,
         DETAIL,
         SIMPLE,
@@ -30,12 +29,13 @@ class MetaAgentActors(
         PARSED,
         CODING,
         FLOW_STEP,
+        ACTORS,
     }
 
     val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
-        ActorType.INITIAL to initialDesigner(),
         ActorType.HIGH_LEVEL to highLevelDesigner(),
         ActorType.DETAIL to detailedDesigner(),
+        ActorType.ACTORS to actorDesigner(),
         ActorType.SIMPLE to simpleActorDesigner(),
         ActorType.IMAGE to imageActorDesigner(),
         ActorType.PARSED to parsedActorDesigner(),
@@ -46,6 +46,24 @@ class MetaAgentActors(
     interface DesignParser : Function<String, AgentDesign> {
         @Description("Break down the text into a data structure.")
         override fun apply(text: String): AgentDesign
+    }
+
+    interface FlowParser : Function<String, AgentFlowDesign> {
+        @Description("Break down the text into a data structure.")
+        override fun apply(text: String): AgentFlowDesign
+    }
+
+    data class AgentFlowDesign(
+        val name: String? = null,
+        val description: String? = null,
+        val mainInput: DataInfo? = null,
+        val logicFlow: LogicFlow? = null,
+    ) : ValidatedObject {
+        override fun validate(): String? = when {
+            null == logicFlow -> "logicFlow is required"
+            null != logicFlow.validate() -> logicFlow.validate()
+            else -> null
+        }
     }
 
     data class AgentDesign(
@@ -65,6 +83,22 @@ class MetaAgentActors(
         }
     }
 
+    interface ActorParser : Function<String, AgentActorDesign> {
+        @Description("Break down the text into a data structure.")
+        override fun apply(text: String): AgentActorDesign
+    }
+
+    data class AgentActorDesign(
+        val actors: List<ActorDesign>? = null,
+    ) : ValidatedObject {
+        override fun validate(): String? = when {
+            null == actors -> "actors is required"
+            actors.isEmpty() -> "actors is required"
+            !actors.all { null == it.validate() } -> actors.map { it.validate() }.filter { null != it }.joinToString("\n")
+            else -> null
+        }
+    }
+
     data class ActorDesign(
         @Description("Java class name of the actor")
         val name: String = "",
@@ -75,13 +109,12 @@ class MetaAgentActors(
         val resultType: String = "",
     ) : ValidatedObject {
         override fun validate(): String? = when {
-            null == name -> "name is required"
             name.isEmpty() -> "name is required"
             name.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> "name must be a valid java identifier"
             null == type -> "type is required"
             type.isEmpty() -> "type is required"
             type.lowercase().notIn("simple", "parsed", "coding", "image") -> "type must be simple, parsed, coding, or image"
-            resultType?.isEmpty() != false -> "resultType is required"
+            resultType.isEmpty() -> "resultType is required"
             resultType.lowercase().notIn("string", "code", "image") && !validClassName(resultType) -> "resultType must be string, code, image, or a valid class name"
             else -> null
         }
@@ -136,103 +169,64 @@ class MetaAgentActors(
         model = model,
         prompt = """
             You are a high-level software architect.
-        
-            Your task is to conceptualize the architecture of an "agent" system that uses gpt "actors" to model a creative process.
-            The system should be procedural in its overall structure, with creative steps modeled by gpt actors.
-        
-            The system will interact with users through a web-based interface, where users can initiate processes with a single prompt.
-        
-            Provide a high-level design that includes:
-            1. The types of actors needed and their high-level roles.
-            2. The user interface flow with types of tasks and messages.
-            3. The sequence of tasks contributing to the creative process.
-        
-            The input to your design process is a single "user prompt" string.
-    """.trimIndent().trim(),
+            
+            Your task is to gather requirements and detail the idea provided by the user query.
+            You will propose detailed requirements for inputs, outputs, and logic.
+            Your proposed design can be reviewed by the user, who may request changes.
+            The system in general will be an AI-based automated assistant using an interactive web-based interface.
+        """.trimIndent().trim(),
         temperature = temperature
     )
 
     @Language("Markdown")
     fun detailedDesigner() = ParsedActor(
-        DesignParser::class.java,
-        model = model,
+        FlowParser::class.java,
         prompt = """
             You are a detailed software designer.
             
-            Your task is to expand on the high-level architecture provided by the High-Level Designer.
-            You need to detail the components, logic, data structures, and technical specifications for implementation.
+            Your task is to expand on the high-level architecture and conceptualize the architecture of an "agent" system that uses gpt "actors" to model a creative process.
+            The system should be procedural in its overall structure, with creative steps modeled by gpt actors.
             
-            All actors process inputs in the form of ChatGPT messages (often a single string) but vary in their output.
-            There are three types of actors:
-            1. "Simple" actors contain a system directive, and simply return the chat model's response to the user query.
-            2. "Parsed" actors use a 2-stage system; first, queries are responded in the same manner as simple actors using a system prompt.
-               This natural-language response is then parsed into a typed object, which can be used in the application logic.
-            3. "Coding" actors combine ChatGPT-powered code generation with compilation and validation to produce quality code without having to run it.
-               The code environment can easily be augmented with symbols, which are described to the code generation model and are also available to the execution runtime.
-               This can be used for incremental code generation, where symbols defined by previous code generation actors can be used by later actors.
-               This can also be used to translate user requests into executed code, i.e. requested actions performed by the system.
-               Supported languages are Scala, Kotlin, and Groovy.
-            4. "Image" actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
-               This image prompt is then used to generate an image, which is returned to the user.
+            User and system interactions can include:
+            1. Threading operations
+            2. Message output (html+images) sent to the web interface
+            3. User input via text input or link clicks
+            4. File storage and retrieval
+            5. Additional tools as specified by the user
             
             The design should include:
-            1. Detailed logic and flow for each component.
-            2. Inputs and outputs for each step in the process.
-            3. Detailed descriptions of each actor, including purpose and usage.
-            4. For "Coding" actors, the symbols used for code generation and execution.
-            5. For "Parsed" actors, the data structures for parsing responses into typed objects.
-            6. Interactive elements in the user interface and their server-side functions.
-            
-            The input to your design process is the high-level design document from the High-Level Designer.
-    """.trimIndent().trim(),
-        temperature = temperature
+            1. Details on each individual actor including purpose and description
+            2. Pseudocode for the overall logic flow, including threads, loops, and conditionals
+        """.trimIndent().trim(),
+        model = model,
+        temperature = temperature,
+        parsingModel = ChatModels.GPT4Turbo
     )
 
 
     @Language("Markdown")
-    fun initialDesigner() = ParsedActor(
-        DesignParser::class.java,
-        model = model,
+    fun actorDesigner() = ParsedActor(
+        ActorParser::class.java,
         prompt = """
-            |You are a software architect.
-            |
-            |Your task is to design an "agent" system that uses gpt "actors" to construct a model of a creative process.
-            |This "creative process" can be thought of as a cognitive process, an individual's work process, or an organizational process.
-            |The idea is that the overall structure is procedural and can be modeled in code, but individual steps are creative and can be modeled with gpt.
-            |
-            |All actors process inputs in the form of ChatGPT messages (often a single string) but vary in their output.
-            |There are three types of actors:
-            |1. "Simple" actors contain a system directive, and simply return the chat model's response to the user query.
-            |2. "Parsed" actors use a 2-stage system; first, queries are responded in the same manner as simple actors using a system prompt.
-            |   This natural-language response is then parsed into a typed object, which can be used in the application logic.
-            |3. "Coding" actors combine ChatGPT-powered code generation with compilation and validation to produce quality code without having to run it.
-            |   The code environment can easily be augmented with symbols, which are described to the code generation model and are also available to the execution runtime.
-            |   This can be used for incremental code generation, where symbols defined by previous code generation actors can be used by later actors.
-            |   This can also be used to translate user requests into executed code, i.e. requested actions performed by the system.
-            |   Supported languages are Scala, Kotlin, and Groovy.
-            |4. "Image" actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
-            |   This image prompt is then used to generate an image, which is returned to the user.
-            |   
-            |The system provides a web-based user interface composed of a series of "tasks" that contain messages.
-            |All agent applications are initialized with a single user prompt, which is used to generate the first task.
-            |Messages can be header, normal, verbose, image, error, or "complete". 
-            |Until the error or complete is called, a progress bar is displayed.
-            |Messages can contain interactive elements including text input and links which trigger server-side lambda functions.
-            |A single process can use multiple tasks in a single or multi-threaded manner.
-            |
-            |Respond to the user's idea by breaking down the requested system into a fully-detailed component design including:
-            |1. Logic - how the actors interact with each other to produce the desired result, including:
-            |    1. complete description of the logic and flow
-            |    2. inputs and outputs for each step
-            |    3. actors used and where
-            |2. Actors - Each individual actor, including:
-            |    1. a description of the actor's purpose and how it is used
-            |    2. if a coding actor, a description of the symbols used
-            |    3. if a parsed actor, a description of the data structure used
-            |
-            |Unless otherwise stated, the input to the entire process being designed is a single "user prompt" string.
-            |""".trimMargin().trim(),
+            You are an AI agent designer.
+            
+            Your task is to expand on a high-level design with requirements for each actor.
+            
+            For each actor in the given design, detail:
+            1. The purpose of the actor
+            2. Actor Type, which can be one of:
+                1. "Simple" actors work like a chatbot, and simply return the chat model's response to the system and user prompts
+                2. "Parsed" actors produce data structures as output, which can be used in the application logic
+                3. "Coding" actors are used to invoke tools via dynamically compiled scripts
+                4. "Image" actors produce images from a user (and system) prompt.
+            3. Required details for each actor type:
+                1. Simple and Image actors require a system prompt
+                2. Parsed actors require a system prompt and an output data structure
+                3. Coding actors require an environment definition (defined symbols, functions, and libraries)
+        """.trimIndent().trim(),
+        model = model,
         temperature = temperature,
+        parsingModel = ChatModels.GPT35Turbo
     )
 
     @Language("Markdown")

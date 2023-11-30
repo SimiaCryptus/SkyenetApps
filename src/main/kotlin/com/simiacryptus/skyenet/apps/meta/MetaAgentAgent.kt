@@ -6,8 +6,7 @@ import com.simiacryptus.jopenai.ApiModel.Role
 import com.simiacryptus.jopenai.ClientUtil.toContentList
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil
-import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.ActorType
-import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.AgentDesign
+import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.camelCase
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.imports
@@ -50,10 +49,11 @@ open class MetaAgentAgent(
 ).actorMap, dataStorage, user, session
 ) {
 
-  @Suppress("UNCHECKED_CAST")
-  private val initialDesigner by lazy { getActor(ActorType.INITIAL) as ParsedActor<AgentDesign> }
   private val highLevelDesigner by lazy { getActor(ActorType.HIGH_LEVEL) as SimpleActor }
-  private val detailDesigner by lazy { getActor(ActorType.DETAIL) as ParsedActor<AgentDesign> }
+  @Suppress("UNCHECKED_CAST")
+  private val detailDesigner by lazy { getActor(ActorType.DETAIL) as ParsedActor<AgentFlowDesign> }
+  @Suppress("UNCHECKED_CAST")
+  private val actorDesigner by lazy { getActor(ActorType.ACTORS) as ParsedActor<AgentActorDesign> }
   private val simpleActorDesigner by lazy { getActor(ActorType.SIMPLE) as CodingActor }
   private val imageActorDesigner by lazy { getActor(ActorType.IMAGE) as CodingActor }
   private val parsedActorDesigner by lazy { getActor(ActorType.PARSED) as CodingActor }
@@ -82,11 +82,11 @@ open class MetaAgentAgent(
         (actImpls.values + flowImpl.values + listOf(mainImpl)).flatMap { it.imports() }
           .toSortedSet().joinToString("\n")
 
-      val classBaseName = design.getObj().name?.pascalCase() ?: "MyAgent"
+      val classBaseName = design.obj.name?.pascalCase() ?: "MyAgent"
 
-      val actorInits = design.getObj().actors?.joinToString("\n") { actor ->
-        """private val ${actor.name?.camelCase()} by lazy { getActor(${classBaseName}Actors.ActorType.${actor.name?.upperSnakeCase()}) as ${
-          when (actor.type) {
+      val actorInits = design.obj.actors?.joinToString("\n") { actor ->
+        """private val ${actor.name.camelCase()} by lazy { getActor(${classBaseName}Actors.ActorType.${actor.name.upperSnakeCase()}) as ${
+          when (actor.type.lowercase()) {
             "simple" -> "SimpleActor"
             "parsed" -> "ParsedActor<${actor.resultType}>"
             "coding" -> "CodingActor"
@@ -96,11 +96,11 @@ open class MetaAgentAgent(
         } }"""
       } ?: ""
 
-      val actorMapEntries = design.getObj().actors?.joinToString("\n") { actor ->
+      val actorMapEntries = design.obj.actors?.joinToString("\n") { actor ->
         """ActorType.${actor.name?.upperSnakeCase()} to ${actor.name?.camelCase()},"""
       } ?: ""
 
-      val actorEnumDefs = design.getObj().actors?.joinToString("\n") { actor ->
+      val actorEnumDefs = design.obj.actors?.joinToString("\n") { actor ->
         """${actor.name?.upperSnakeCase()},"""
       } ?: ""
 
@@ -114,7 +114,7 @@ open class MetaAgentAgent(
         |import org.slf4j.LoggerFactory
         |
         |open class ${classBaseName}App(
-        |    applicationName: String = "${design.getObj().name}",
+        |    applicationName: String = "${design.obj.name}",
         |    temperature: Double = 0.1,
         |) : ApplicationServer(
         |    applicationName = applicationName,
@@ -145,7 +145,7 @@ open class MetaAgentAgent(
         |                ui = ui,
         |                model = settings?.model ?: ChatModels.GPT35Turbo,
         |                temperature = settings?.temperature ?: 0.3,
-        |            ).${design.getObj().name?.camelCase()}(userMessage)
+        |            ).${design.obj.name?.camelCase()}(userMessage)
         |        } catch (e: Throwable) {
         |            log.warn("Error", e)
         |        }
@@ -197,7 +197,7 @@ open class MetaAgentAgent(
         |}
         """.trimMargin()
 
-      agentCode = design.getObj().actors?.map { it.resultType }?.filterNotNull()?.fold(agentCode)
+      agentCode = design.obj.actors?.map { it.resultType }?.filterNotNull()?.fold(agentCode)
       { code, type -> code.replace(type, "${classBaseName}Actors.$type") } ?: agentCode
 
       @Language("kotlin") val agentsCode = """
@@ -242,8 +242,18 @@ open class MetaAgentAgent(
 
   private fun initialDesign(input: String): ParsedResponse<AgentDesign> {
     val highLevelDesign = iterate(input, highLevelDesigner, { listOf(it) }, api, ui)
-    return iterate(highLevelDesign, detailDesigner, { listOf(it) }, api, ui)
-    //return iterate(input, initialDesigner, { listOf(it) }, api, ui)
+    val flowDesign = iterate(highLevelDesign, detailDesigner, { listOf(it) }, api, ui)
+    val actorDesignParsedResponse: ParsedResponse<AgentActorDesign> = iterate(flowDesign.text, actorDesigner, { listOf(it) }, api, ui)
+    return object : ParsedResponse<AgentDesign>(AgentDesign::class.java) {
+      override val text: String = flowDesign.text  + "\n" + actorDesignParsedResponse.text
+      override fun getObj(clazz: Class<AgentDesign>): AgentDesign = AgentDesign(
+        name = flowDesign.obj.name,
+        description = flowDesign.obj.description,
+        mainInput = flowDesign.obj.mainInput,
+        logicFlow = flowDesign.obj.logicFlow,
+        actors = actorDesignParsedResponse.obj.actors,
+      )
+    }
   }
 
   private fun getMainFunction(
@@ -258,9 +268,9 @@ open class MetaAgentAgent(
       val codeRequest = CodingActor.CodeRequest(
         messages = listOf(
           userMessage,
-          design.getText(),
-          "Implement `fun ${design.getObj().name?.camelCase()}(${
-            listOf(design.getObj().mainInput!!)
+          design.text,
+          "Implement `fun ${design.obj.name?.camelCase()}(${
+            listOf(design.obj.mainInput!!)
               .joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") }
           })`"
         ),
@@ -292,7 +302,7 @@ open class MetaAgentAgent(
   private fun implementActors(
     userMessage: String,
     design: ParsedResponse<AgentDesign>,
-  ) = design.getObj().actors?.map { actorDesign ->
+  ) = design.obj.actors?.map { actorDesign ->
     val task = ui.newTask()
     try {
       implementActor(task, actorDesign, userMessage, design)
@@ -314,7 +324,7 @@ open class MetaAgentAgent(
     val codeRequest = CodingActor.CodeRequest(
       listOf(
         userMessage,
-        design.getText(),
+        design.text,
         "Implement `val ${(actorDesign.name!!).camelCase()} : ${
           when (type.lowercase()) {
             "simple" -> "SimpleActor"
@@ -353,7 +363,7 @@ open class MetaAgentAgent(
     userMessage: String,
     design: ParsedResponse<AgentDesign>,
     actorImpls: Map<String, String>,
-  ): Map<String, String> = design.getObj().logicFlow?.items?.map { logicFlowItem ->
+  ): Map<String, String> = design.obj.logicFlow?.items?.map { logicFlowItem ->
     val message = ui.newTask()
     try {
       message.header("Logic Flow: ${logicFlowItem.name}")
@@ -364,7 +374,7 @@ open class MetaAgentAgent(
         CodingActor.CodeRequest(
           messages = listOf(
             userMessage,
-            design.getText(),
+            design.text,
             "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
               logicFlowItem.inputs?.joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
             })`"
@@ -442,7 +452,7 @@ open class MetaAgentAgent(
         acceptHandle = task.complete(acceptLink)
         onAccept.acquire()
         val d = design
-        if(d is ParsedResponse<*>) task.verbose(JsonUtil.toJson(d.getObj()!!))
+        if(d is ParsedResponse<*>) task.verbose(JsonUtil.toJson(d.obj!!))
         task.complete()
         design
       } catch (e: Throwable) {

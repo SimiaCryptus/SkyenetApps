@@ -31,18 +31,20 @@ interface OutlineActors {
         )
 
         private fun initialAuthor(temperature: Double) = ParsedActor(
-            OutlineParser::class.java,
-            prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
-            model = ChatModels.GPT4Turbo,
-            temperature = temperature,
+          OutlineParser::class.java,
+          prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
+          model = ChatModels.GPT4Turbo,
+          temperature = temperature,
+          parsingModel = ChatModels.GPT35Turbo,
         )
 
         private fun expansionAuthor(temperature: Double): ParsedActor<NodeList> = ParsedActor(
-            parserClass = OutlineParser::class.java,
-            name = "Expand",
-            prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
-            model = ChatModels.GPT35Turbo,
-            temperature = temperature,
+          parserClass = OutlineParser::class.java,
+          prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
+          name = "Expand",
+          model = ChatModels.GPT35Turbo,
+          temperature = temperature,
+          parsingModel = ChatModels.GPT35Turbo,
         )
 
         private fun finalWriter(temperature: Double) = SimpleActor(

@@ -29,22 +29,22 @@ class DebateAgent(
     val moderatorTask = ui.newTask()
     moderatorTask.echo(renderMarkdown(userMessage))
     val moderatorResponse = this.moderator.answer(listOf(userMessage), api = api)
-    moderatorTask.add(renderMarkdown(moderatorResponse.getText()))
-    moderatorTask.verbose(toJson(moderatorResponse.getObj()))
+    moderatorTask.add(renderMarkdown(moderatorResponse.text))
+    moderatorTask.verbose(toJson(moderatorResponse.obj))
     moderatorTask.complete()
 
     val projectorTask = ui.newTask()
     projectorTask.header("Embedding Projector")
     val totalSummary =
-      (moderatorResponse.getObj().questions?.list ?: emptyList()).parallelStream().flatMap { question ->
-        (moderatorResponse.getObj().debaters?.list ?: emptyList()).parallelStream()
+      (moderatorResponse.obj.questions?.list ?: emptyList()).parallelStream().flatMap { question ->
+        (moderatorResponse.obj.debaters?.list ?: emptyList()).parallelStream()
           .map { actor -> answer(ui, actor, question) }
       }.toList()
     projectorTask.verbose(toJson(totalSummary))
     val outlineStatements = outlines.values.flatMap {
       it.arguments?.map { it.text ?: "" }?.filter { it.isNotBlank() } ?: emptyList()
     }
-    val moderatorStatements = moderatorResponse.getObj().questions?.list?.map {
+    val moderatorStatements = moderatorResponse.obj.questions?.list?.map {
       it.text ?: ""
     }?.filter { it.isNotBlank() } ?: emptyList()
     val response = TensorflowProjector(
@@ -68,11 +68,11 @@ class DebateAgent(
     try {
       task.header((actor.name?.trim() ?: "") + " - " + renderMarkdown(question.text ?: "").trim())
       val response = getActorConfig(actor).answer(listOf(question.text ?: ""), api = api)
-      outlines[actor.name!! + ": " + question.text!!] = response.getObj()
-      task.add(renderMarkdown(response.getText()))
-      task.verbose(toJson(response.getObj()))
+      outlines[actor.name!! + ": " + question.text!!] = response.obj
+      task.add(renderMarkdown(response.text))
+      task.verbose(toJson(response.obj))
       task.complete()
-      return response.getText()
+      return response.text
     } catch (e: Exception) {
       task.error(e)
       throw e

@@ -38,18 +38,19 @@ interface ExampleActors {
     }
 
     fun exampleParsedActor() = ParsedActor(
-        ExampleParser::class.java,
-        model = ChatModels.GPT4Turbo,
-        prompt = """
-                |You are a question answering assistant.
-                |""".trimMargin().trim(),
+      ExampleParser::class.java,
+      prompt = """
+              |You are a question answering assistant.
+              |""".trimMargin().trim(),
+      model = ChatModels.GPT4Turbo,
+      parsingModel = ChatModels.GPT35Turbo,
     )
 
     fun <T:Any> useExampleParsedActor(parsedActor: ParsedActor<T>): T {
         val answer = parsedActor.answer(listOf("This is an example question."), api = api)
-        log.info("Natural Language Answer: " + answer.getText());
-        log.info("Parsed Answer: " + JsonUtil.toJson(answer.getObj()));
-        return answer.getObj()
+        log.info("Natural Language Answer: " + answer.text);
+        log.info("Parsed Answer: " + JsonUtil.toJson(answer.obj));
+        return answer.obj
     }
 
     companion object {

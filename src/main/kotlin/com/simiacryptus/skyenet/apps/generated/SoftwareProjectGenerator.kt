@@ -2,8 +2,6 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
-import com.simiacryptus.skyenet.core.actors.CodingActor
-import com.simiacryptus.skyenet.core.actors.ImageActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.DataStorage
@@ -11,8 +9,6 @@ import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.session.*
-import com.simiacryptus.skyenet.webui.session.SessionTask
 import java.util.function.Consumer
 import java.util.function.Function
 import org.slf4j.LoggerFactory
@@ -92,18 +88,18 @@ open class SoftwareProjectGeneratorAgent(
       // Step 1: Project Structure Analysis
       task.add("Analyzing project requirements based on your description.")
       val projectStructure = parsedActor.answer(listOf(userPrompt), api = api)
-      task.add("Project structure analysis complete: ${projectStructure.getObj()}")
+      task.add("Project structure analysis complete: ${projectStructure.obj}")
 
       // Step 2: Code Generation for Project Scaffolding
       task.add("Generating project scaffolding based on the analyzed structure.")
       val scaffoldingCode =
-        simpleActor.answer(listOf("Generate project scaffolding for: ${projectStructure.getObj()}"), api = api)
+        simpleActor.answer(listOf("Generate project scaffolding for: ${projectStructure.obj}"), api = api)
       task.add("Project scaffolding generated:\n$scaffoldingCode")
 
       // Step 3: Feature Development
       task.add("Developing features based on the project requirements.")
       // Assuming projectStructure contains a list of features, iterate and generate code for each
-      val features = (projectStructure.getObj() as? Map<String, Any>)?.get("features") as? List<String>
+      val features = (projectStructure.obj as? Map<String, Any>)?.get("features") as? List<String>
         ?: throw IllegalArgumentException("Invalid project structure: cannot find features list")
       features.forEach { feature ->
         val featureCode = simpleActor.answer(listOf("Generate code for feature: $feature"), api = api)
@@ -116,7 +112,7 @@ open class SoftwareProjectGeneratorAgent(
       // Step 5: Finalization
       task.add("Finalizing the project with build scripts and documentation.")
       val finalizationCode = simpleActor.answer(
-        listOf("Finalize the project based on the following structure: ${projectStructure.getObj()}"),
+        listOf("Finalize the project based on the following structure: ${projectStructure.obj}"),
         api = api
       )
       task.add("Project finalization details:\n$finalizationCode")
@@ -147,7 +143,7 @@ open class SoftwareProjectGeneratorAgent(
         task.add("Project structure analysis complete.")
 
         // Log the structured project requirements (for demonstration purposes)
-        task.verbose("Structured Project Requirements: ${projectStructure.getObj()}")
+        task.verbose("Structured Project Requirements: ${projectStructure.obj}")
 
         // Continue with the next steps of the project generation process
         // ...
@@ -224,7 +220,7 @@ open class SoftwareProjectGeneratorAgent(
         task.add(ui.textInput(Consumer { userInput ->
           // Process the user input using the parsedActor
           val refinementResponse = parsedActor.answer(listOf(userInput), api = api)
-          task.add("Refinement processed: ${refinementResponse.getText()}")
+          task.add("Refinement processed: ${refinementResponse.text}")
 
           // Update the project structure with the new refinement
           // Assuming projectStructure can be updated with the response from parsedActor
@@ -310,7 +306,8 @@ class SoftwareProjectGeneratorActors(
     parserClass = IdentityParser::class.java,
     prompt = "You are a sophisticated AI capable of understanding and generating text based on input.",
     model = ChatModels.GPT35Turbo,
-    temperature = 0.3
+    temperature = 0.3,
+    parsingModel = ChatModels.GPT35Turbo
   )
 
   enum class ActorType {
