@@ -361,8 +361,8 @@ class MetaAgentActors(
         |    val name: String? = null,
         |) : ValidatedObject {
         |    override fun validate() = when {
-        |        name.isNullOrBlank() -> false
-        |        else -> true
+        |        name.isNullOrBlank() -> "name is required"
+        |        else -> null
         |    }
         |}
         |

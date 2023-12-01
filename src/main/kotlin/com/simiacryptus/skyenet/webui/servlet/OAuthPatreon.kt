@@ -2,7 +2,7 @@ package com.simiacryptus.skyenet.webui.servlet
 
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
-import com.simiacryptus.skyenet.core.platform.AuthenticationManager
+import com.simiacryptus.skyenet.core.platform.AuthenticationInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.servlet.OAuthGoogle.Companion.urlDecode
 import jakarta.servlet.*
@@ -69,7 +69,7 @@ open class OAuthPatreon(
                 val accessToken = UUID.randomUUID().toString()
                 ApplicationServices.authenticationManager.putUser(accessToken = accessToken, user = user)
                 log.info("User $user logged in with session $accessToken")
-                val sessionCookie = Cookie(AuthenticationManager.AUTH_COOKIE, accessToken)
+                val sessionCookie = Cookie(AuthenticationInterface.AUTH_COOKIE, accessToken)
                 sessionCookie.path = "/"
                 sessionCookie.isHttpOnly = true
                 sessionCookie.secure = true

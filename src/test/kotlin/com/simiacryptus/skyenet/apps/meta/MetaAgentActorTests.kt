@@ -7,8 +7,9 @@ import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization
 import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization.Companion.toChatMessage
 import com.simiacryptus.skyenet.core.actors.opt.Expectation
 import com.simiacryptus.skyenet.core.actors.test.CodingActorTestBase
-import com.simiacryptus.skyenet.core.platform.DataStorage
+import com.simiacryptus.skyenet.core.platform.file.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -120,7 +121,7 @@ class MetaAgentActorTests {
 
         private fun symbols(): Map<String, Any> {
             val user = User("user@test")
-            val session = DataStorage.newGlobalID()
+            val session = StorageInterface.newGlobalID()
             val dataStorage = DataStorage(File("."))
             val socketManager = object : ApplicationSocketManager(session, user, dataStorage, this::class.java) {
                 override fun newSession(

@@ -16,8 +16,8 @@ import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.sortCode
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.stripImports
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.upperSnakeCase
 import com.simiacryptus.skyenet.core.actors.CodingActor.FailedToImplementException
-import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 open class MetaAgentAgent(
   user: User?,
   session: Session,
-  dataStorage: DataStorage,
+  dataStorage: StorageInterface,
   val ui: ApplicationInterface,
   val api: API,
   model: ChatModels = ChatModels.GPT35Turbo,
@@ -165,7 +165,7 @@ open class MetaAgentAgent(
         |import com.simiacryptus.skyenet.core.actors.CodingActor
         |import com.simiacryptus.skyenet.core.actors.ParsedActor
         |import com.simiacryptus.skyenet.core.actors.ImageActor
-        |import com.simiacryptus.skyenet.core.platform.DataStorage
+        |import com.simiacryptus.skyenet.core.platform.file.DataStorage
         |import com.simiacryptus.skyenet.core.platform.Session
         |import com.simiacryptus.skyenet.core.platform.User
         |import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -245,8 +245,8 @@ open class MetaAgentAgent(
     val flowDesign = iterate(highLevelDesign, detailDesigner, { listOf(it) }, api, ui)
     val actorDesignParsedResponse: ParsedResponse<AgentActorDesign> = iterate(flowDesign.text, actorDesigner, { listOf(it) }, api, ui)
     return object : ParsedResponse<AgentDesign>(AgentDesign::class.java) {
-      override val text: String = flowDesign.text  + "\n" + actorDesignParsedResponse.text
-      override fun getObj(clazz: Class<AgentDesign>): AgentDesign = AgentDesign(
+      override val text get() = flowDesign.text  + "\n" + actorDesignParsedResponse.text
+      override val obj get() = AgentDesign(
         name = flowDesign.obj.name,
         description = flowDesign.obj.description,
         mainInput = flowDesign.obj.mainInput,

@@ -1,10 +1,9 @@
 package com.simiacryptus.skyenet.apps
 
 import com.simiacryptus.skyenet.AppServer
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
-import com.simiacryptus.skyenet.core.platform.AuthenticationManager
-import com.simiacryptus.skyenet.core.platform.AuthorizationManager
-import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.*
+import com.simiacryptus.skyenet.core.platform.AuthorizationInterface.OperationType
+import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import kotlin.random.Random
 
 object TestAppServer : AppServer(
@@ -21,10 +20,11 @@ object TestAppServer : AppServer(
             "Test User",
             ""
         )
-        ApplicationServices.authenticationManager = object : AuthenticationManager() {
+        ApplicationServices.authenticationManager = object : AuthenticationInterface {
             override fun getUser(accessToken: String?) = mockUser
             override fun containsUser(value: String) = true
             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
+            override fun logout(accessToken: String, user: User) {}
         }
         ApplicationServices.authorizationManager = object : AuthorizationManager() {
             override fun isAuthorized(

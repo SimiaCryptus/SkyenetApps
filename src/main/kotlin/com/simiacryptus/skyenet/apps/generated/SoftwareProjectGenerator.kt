@@ -4,8 +4,8 @@ import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
@@ -64,7 +64,7 @@ open class SoftwareProjectGeneratorApp(
 open class SoftwareProjectGeneratorAgent(
   user: User?,
   session: Session,
-  dataStorage: DataStorage,
+  dataStorage: StorageInterface,
   val ui: ApplicationInterface,
   val api: API,
   model: ChatModels = ChatModels.GPT35Turbo,

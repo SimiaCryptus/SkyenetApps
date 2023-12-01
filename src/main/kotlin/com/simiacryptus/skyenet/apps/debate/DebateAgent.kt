@@ -5,8 +5,8 @@ import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.apps.debate.DebateActors.*
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
-import com.simiacryptus.skyenet.core.platform.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
@@ -14,7 +14,7 @@ import com.simiacryptus.skyenet.webui.util.TensorflowProjector
 
 class DebateAgent(
   val api: API,
-  dataStorage: DataStorage,
+  dataStorage: StorageInterface,
   userId: User?,
   session: Session,
   val ui: ApplicationInterface,
