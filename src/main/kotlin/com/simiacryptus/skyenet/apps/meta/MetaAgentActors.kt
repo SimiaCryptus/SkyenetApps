@@ -462,6 +462,7 @@ class MetaAgentActors(
         |Usage examples of each actor type follows:
         |
         |Simple actors contain a system directive, and simply return the chat model's response to the user query.
+        |Simple actors answer queries consisting of a list of strings representing a conversation thread, and respond with a string.
         |```kotlin
         |fun useExampleSimpleActor(): String {
         |    val answer = exampleSimpleActor().answer(listOf("This is an example question."), api = api)
@@ -472,6 +473,7 @@ class MetaAgentActors(
         |
         |Parsed actors use a 2-stage system; first, queries are responded in the same manner as simple actors using a system prompt. 
         |This natural-language response is then parsed into a typed object, which can be used in the application logic.
+        |Parsed actors answer queries consisting of a list of strings representing a conversation thread, and responds with an object containing text and a parsed object.
         |```kotlin
         |import com.simiacryptus.jopenai.util.JsonUtil
         |import com.simiacryptus.skyenet.core.actors.ParsedActor
@@ -486,6 +488,7 @@ class MetaAgentActors(
         |```
         |
         |Coding actors combine ChatGPT-powered code generation with compilation and validation to produce quality code without having to run it.
+        |Coding actors answer queries expressed using CodeRequest, and responds with an object that defines a code block and an execution method.
         |```kotlin
         |fun useExampleCodingActor(): CodingActor.CodeResult {
         |    val answer = exampleCodingActor().answer(CodingActor.CodeRequest(listOf("This is an example question.")), api = api)
@@ -498,6 +501,7 @@ class MetaAgentActors(
         |```
         |
         |Image actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
+        |Image actors answer queries consisting of a list of strings representing a conversation thread, and respond with an image.
         |```kotlin
         |fun useExampleImageActor(): BufferedImage {
         |    val answer = exampleImageActor().answer(listOf("Example image description"), api = api)
