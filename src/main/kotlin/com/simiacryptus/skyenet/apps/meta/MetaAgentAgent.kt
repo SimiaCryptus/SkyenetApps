@@ -34,7 +34,7 @@ open class MetaAgentAgent(
   val ui: ApplicationInterface,
   val api: API,
   model: ChatModels = ChatModels.GPT35Turbo,
-  val autoEvaluate: Boolean = true,
+  var autoEvaluate: Boolean = true,
   temperature: Double = 0.3,
 ) : ActorSystem<ActorType>(MetaAgentActors(
   symbols = mapOf(
@@ -367,31 +367,35 @@ open class MetaAgentAgent(
     val message = ui.newTask()
     try {
       message.header("Logic Flow: ${logicFlowItem.name}")
-      // TODO: Fix logic-actor dependencies: Need to import data structures used by inputs
-      //val codePrefix = logicFlowItem.actors?.mapNotNull { actorImpls[it] }?.joinToString("\n\n") ?: ""
       val codePrefix = (actorImpls.values).joinToString("\n\n") { it.trimIndent() }.sortCode()
-      val response = flowStepDesigner.answer(
-        CodingActor.CodeRequest(
-          messages = listOf(
-            userMessage,
-            design.text,
-            "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
-              logicFlowItem.inputs?.joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
-            })`"
-          ),
-          autoEvaluate = autoEvaluate,
-          codePrefix = codePrefix
-        ), api = api
-      )
-      val code = response.getCode()
+      val code = try {
+        val response = flowStepDesigner.answer(
+          CodingActor.CodeRequest(
+            messages = listOf(
+              userMessage,
+              design.text,
+              "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
+                logicFlowItem.inputs?.joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
+              })`"
+            ),
+            autoEvaluate = autoEvaluate,
+            codePrefix = codePrefix
+          ), api = api
+        )
+        response.getCode()
+      } catch (e : FailedToImplementException) {
+        message.error(e)
+        autoEvaluate = false
+        e.code
+      }
       //language=HTML
       message.verbose(
         renderMarkdown(
           """
-                    |```kotlin
-                    |$code
-                    |```
-                    """.trimMargin()
+          |```kotlin
+          |$code
+          |```
+          """.trimMargin()
         ), tag = "div"
       )
       message.complete()
