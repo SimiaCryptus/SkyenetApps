@@ -363,55 +363,51 @@ open class MetaAgentAgent(
     userMessage: String,
     design: ParsedResponse<AgentDesign>,
     actorImpls: Map<String, String>,
-  ): Map<String, String> = design.obj.logicFlow?.items?.map { logicFlowItem ->
-    val message = ui.newTask()
-    try {
-      message.header("Logic Flow: ${logicFlowItem.name}")
-      val codePrefix = (actorImpls.values).joinToString("\n\n") { it.trimIndent() }.sortCode()
-      val code = try {
-        val response = flowStepDesigner.answer(
-          CodingActor.CodeRequest(
-            messages = listOf(
-              userMessage,
-              design.text,
-              "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
-                logicFlowItem.inputs?.joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
-              })`"
-            ),
-            autoEvaluate = autoEvaluate,
-            codePrefix = codePrefix
-          ), api = api
+  ): Map<String, String> {
+    val flowImpls = HashMap<String, String>()
+    design.obj.logicFlow?.items?.forEach { logicFlowItem ->
+      val message = ui.newTask()
+      try {
+        message.header("Logic Flow: ${logicFlowItem.name}")
+        val code = try {
+          flowStepDesigner.answer(
+            CodingActor.CodeRequest(
+              messages = listOf<String>(
+                userMessage,
+                design.text,
+                "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
+                  logicFlowItem.inputs?.joinToString<DataInfo>(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
+                })`"
+              ),
+              autoEvaluate = autoEvaluate,
+              codePrefix = (actorImpls.values + flowImpls.values)
+                .joinToString("\n\n") { it.trimIndent() }.sortCode()
+            ), api = api
+          ).getCode()
+        } catch (e: FailedToImplementException) {
+          message.error(e)
+          autoEvaluate = false
+          e.code
+        }
+        //language=HTML
+        message.verbose(
+          renderMarkdown(
+            """
+            |```kotlin
+            |$code
+            |```
+            """.trimMargin()
+          ), tag = "div"
         )
-        response.getCode()
-      } catch (e : FailedToImplementException) {
+        message.complete()
+        flowImpls[logicFlowItem.name!!] = code!!
+      } catch (e: Throwable) {
         message.error(e)
-        autoEvaluate = false
-        e.code
-      }
-      //language=HTML
-      message.verbose(
-        renderMarkdown(
-          """
-          |```kotlin
-          |$code
-          |```
-          """.trimMargin()
-        ), tag = "div"
-      )
-      message.complete()
-      logicFlowItem.name!! to code!!
-    } catch (e: FailedToImplementException) {
-      message.error(e)
-      if (autoEvaluate) {
-        message.error("Cannot proceed with code generation")
         throw e
       }
-      logicFlowItem.name!! to e.code!!
-    } catch (e: Throwable) {
-      message.error(e)
-      throw e
     }
-  }?.toMap() ?: mapOf()
+    return flowImpls
+  }
 
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(MetaAgentAgent::class.java)
