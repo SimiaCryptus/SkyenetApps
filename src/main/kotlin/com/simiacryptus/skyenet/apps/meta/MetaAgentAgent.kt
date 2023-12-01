@@ -197,8 +197,8 @@ open class MetaAgentAgent(
         |}
         """.trimMargin()
 
-      agentCode = design.obj.actors?.map { it.resultType }?.filterNotNull()?.fold(agentCode)
-      { code, type -> code.replace(type, "${classBaseName}Actors.$type") } ?: agentCode
+      agentCode = design.obj.actors?.map { it.resultType }?.fold(agentCode)
+      { code, type -> code.replace("(?<![\\w.])$type(?![\\w])".toRegex(), "${classBaseName}Actors.$type") } ?: agentCode
 
       @Language("kotlin") val agentsCode = """
         |import com.simiacryptus.jopenai.models.ChatModels
@@ -372,7 +372,7 @@ open class MetaAgentAgent(
         val code = try {
           flowStepDesigner.answer(
             CodingActor.CodeRequest(
-              messages = listOf<String>(
+              messages = listOf(
                 userMessage,
                 design.text,
                 "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
