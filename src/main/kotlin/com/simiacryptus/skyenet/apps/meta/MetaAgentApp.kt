@@ -6,7 +6,6 @@ import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
 
@@ -46,8 +45,8 @@ open class MetaAgentApp(
 
     data class Settings(
         val model: ChatModels = ChatModels.GPT4Turbo,
-        val validateCode: Boolean = false,
-        val temperature: Double = 0.1,
+        val validateCode: Boolean = true,
+        val temperature: Double = 0.2,
     )
     override val settingsClass: Class<*> get() = Settings::class.java
     @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
