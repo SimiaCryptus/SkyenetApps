@@ -108,6 +108,7 @@ class MetaAgentActors(
         @Description("Simple actors: string; Image actors: image; Coding actors: code; Parsed actors: a simple java class name for the data structure")
         val resultClass: String = "",
     ) : ValidatedObject {
+        val simpleClassName : String get() = resultClass.split(".").last()
         override fun validate(): String? = when {
             name.isEmpty() -> "name is required"
             name.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> "name must be a valid java identifier"
