@@ -5,7 +5,7 @@ import com.simiacryptus.jopenai.ApiModel
 import com.simiacryptus.jopenai.ApiModel.Role
 import com.simiacryptus.jopenai.ClientUtil.toContentList
 import com.simiacryptus.jopenai.models.ChatModels
-import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.camelCase
@@ -173,7 +173,7 @@ open class MetaAgentAgent(
         |open class ${classBaseName}Agent(
         |    user: User?,
         |    session: Session,
-        |    dataStorage: DataStorage,
+        |    dataStorage: StorageInterface,
         |    val ui: ApplicationInterface,
         |    val api: API,
         |    model: ChatModels = ChatModels.GPT35Turbo,
@@ -241,9 +241,34 @@ open class MetaAgentAgent(
   }
 
   private fun initialDesign(input: String): ParsedResponse<AgentDesign> {
-    val highLevelDesign = iterate(input, highLevelDesigner, { listOf(it) }, api, ui)
-    val flowDesign = iterate(highLevelDesign, detailDesigner, { listOf(it) }, api, ui)
-    val actorDesignParsedResponse: ParsedResponse<AgentActorDesign> = iterate(flowDesign.text, actorDesigner, { listOf(it) }, api, ui)
+    val highLevelDesign = iterate(
+      input = input,
+      actor = highLevelDesigner,
+      toInput = { listOf(it) },
+      api = api,
+      ui = ui
+    )
+    val flowDesign = iterate(
+      input = highLevelDesign,
+      actor = detailDesigner,
+      toInput = { listOf(it) },
+      api = api,
+      ui = ui,
+      outputFn = { task, design ->
+        task.add(renderMarkdown(design.toString()))
+        task.verbose(toJson(design.obj))
+      }
+    )
+    val actorDesignParsedResponse: ParsedResponse<AgentActorDesign> = iterate(
+      input = flowDesign.text,
+      actor = actorDesigner, toInput = { listOf(it) },
+      api = api,
+      ui = ui,
+      outputFn = { task, design ->
+        task.add(renderMarkdown(design.toString()))
+        task.verbose(toJson(design.obj))
+      }
+    )
     return object : ParsedResponse<AgentDesign>(AgentDesign::class.java) {
       override val text get() = flowDesign.text  + "\n" + actorDesignParsedResponse.text
       override val obj get() = AgentDesign(
@@ -291,6 +316,7 @@ open class MetaAgentAgent(
       task.complete()
       return mainFunction
     } catch (e: FailedToImplementException) {
+      task.verbose(e.code ?: throw e)
       task.error(e)
       return e.code ?: throw e
     } catch (e: Throwable) {
@@ -417,12 +443,13 @@ open class MetaAgentAgent(
       userMessage: String,
       initialResponse: (String) -> T,
       reviseResponse: (String, T, String) -> T,
+      outputFn: (SessionTask, T) -> Unit = { task, design -> task.add(renderMarkdown(design.toString())) }
     ): T {
       val task = ui.newTask()
       val design = try {
         task.echo(renderMarkdown(userMessage))
         var design = initialResponse(userMessage)
-        task.add(renderMarkdown(design.toString()))
+        outputFn(task, design)
         var textInputHandle: StringBuilder? = null
         var acceptHandle: StringBuilder? = null
         val onAccept = Semaphore(0)
@@ -436,7 +463,7 @@ open class MetaAgentAgent(
           acceptHandle?.clear()
           task.echo(renderMarkdown(userResponse))
           design = reviseResponse(userMessage, design, userResponse)
-          task.add(renderMarkdown(design.toString()))
+          outputFn(task, design)
           textInputHandle = task.add(textInput!!)
           acceptHandle = task.complete(acceptLink!!)
           feedbackGuard.set(false)
@@ -452,7 +479,7 @@ open class MetaAgentAgent(
         acceptHandle = task.complete(acceptLink)
         onAccept.acquire()
         val d = design
-        if(d is ParsedResponse<*>) task.verbose(JsonUtil.toJson(d.obj!!))
+        if(d is ParsedResponse<*>) task.verbose(toJson(d.obj!!))
         task.complete()
         design
       } catch (e: Throwable) {
@@ -476,6 +503,7 @@ open class MetaAgentAgent(
       toInput: (String) -> I,
       api: API,
       ui: ApplicationInterface,
+      outputFn: (SessionTask, T) -> Unit = { task, design -> task.add(renderMarkdown(design.toString())) }
     ) = iterate(
       ui = ui,
       userMessage = input,
@@ -492,6 +520,7 @@ open class MetaAgentAgent(
           api = api
         )
       },
+      outputFn = outputFn
     )
 
   }
