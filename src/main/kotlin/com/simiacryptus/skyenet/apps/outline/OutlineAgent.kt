@@ -134,7 +134,7 @@ class OutlineAgent(
         if (terminalNodeMap.isEmpty()) {
             val errorMessage = "No terminal nodes: ${node.text}"
             log.warn(errorMessage)
-            ui.newTask().error(errorMessage)
+            ui.newTask().error(RuntimeException(errorMessage))
             return
         }
         for ((item, childNode) in terminalNodeMap) {
@@ -150,7 +150,7 @@ class OutlineAgent(
                             val existingNode = manager.expansionMap[childNode]!!
                             val errorMessage = "Conflict: ${existingNode} vs ${newNode}"
                             log.warn(errorMessage)
-                            ui.newTask().error(errorMessage)
+                            ui.newTask().error(RuntimeException(errorMessage))
                         }
                     }
                     message.complete()
