@@ -480,7 +480,7 @@ class MetaAgentActors(
         |Simple actors answer queries consisting of a list of strings representing a conversation thread, and respond with a string.
         |```kotlin
         |val actor : com.simiacryptus.skyenet.core.actors.SimpleActor
-        |val answer : String = actor.answer(listOf("This is an example question."), api = api)
+        |val answer : String = actor.answer(listOf("This is an example question"), api = api)
         |log.info("Answer: " + answer)
         |```
         |
@@ -489,7 +489,7 @@ class MetaAgentActors(
         |Parsed actors answer queries consisting of a list of strings representing a conversation thread, and responds with an object containing text and a parsed object.
         |```kotlin
         |val actor : com.simiacryptus.skyenet.core.actors.ParsedActor<T>
-        |val answer : com.simiacryptus.skyenet.core.actors.ParsedResponse<T> = actor.answer(listOf("This is an example question."), api = api)
+        |val answer : com.simiacryptus.skyenet.core.actors.ParsedResponse<T> = actor.answer(listOf("This is some example data"), api = api)
         |log.info("Natural Language Answer: " + answer.text)
         |log.info("Parsed Answer: " + com.simiacryptus.jopenai.util.JsonUtil.toJson(answer.obj))
         |```
@@ -498,7 +498,7 @@ class MetaAgentActors(
         |Coding actors answer queries expressed using CodeRequest, and responds with an object that defines a code block and an execution method.
         |```kotlin
         |val actor : com.simiacryptus.skyenet.core.actors.CodingActor
-        |val answer : com.simiacryptus.skyenet.core.actors.CodingActor.CodeResult = actor.answer(listOf("This is an example question."), api = api)
+        |val answer : com.simiacryptus.skyenet.core.actors.CodingActor.CodeResult = actor.answer(listOf("Do an example task"), api = api)
         |log.info("Implemented Code: " + answer.code)
         |val executionResult : com.simiacryptus.skyenet.core.actors.CodingActor.ExecutionResult = answer.result
         |log.info("Execution Log: " + executionResult.resultOutput)
@@ -509,23 +509,20 @@ class MetaAgentActors(
         |Image actors answer queries consisting of a list of strings representing a conversation thread, and respond with an image.
         |```kotlin
         |val actor : com.simiacryptus.skyenet.core.actors.ImageActor
-        |val answer : com.simiacryptus.skyenet.core.actors.ImageResponse = actor.answer(listOf("This is an example question."), api = api)
+        |val answer : com.simiacryptus.skyenet.core.actors.ImageResponse = actor.answer(listOf("Draw an example image"), api = api)
         |log.info("Image description: " + answer.text)
         |val image : BufferedImage = answer.image
         |```
         |
-        |**IMPORTANT**: Do not define new actors. Use the provided actors specified in the preceding messages.
-        |
         |While implementing logic, the progress should be displayed to the user using the `ui` object.
         |The UI display generally follows a pattern similar to:
-        |
         |```kotlin
         |val task = ui.newTask()
         |try {
         |  task.header("Main Function")
         |  task.add("Normal message")
         |  task.verbose("Verbose output - not shown by default")
-        |  task.add(ui.textInput { log.info("Message Recieved: " + it) })
+        |  task.add(ui.textInput { log.info("Message Received: " + it) })
         |  task.add(ui.hrefLink("Click Me!") { log.info("Link clicked") })
         |  task.complete()
         |} catch (e: Throwable) {
@@ -533,6 +530,9 @@ class MetaAgentActors(
         |  throw e
         |}
         |```
+        |
+        |**IMPORTANT**: Do not redefine any symbol defined in the preceding code messages.
+        |
         |""".trimMargin().trim(),
         model = model,
         temperature = temperature,

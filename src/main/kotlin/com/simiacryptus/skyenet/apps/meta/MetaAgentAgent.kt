@@ -65,6 +65,25 @@ open class MetaAgentAgent(
   private val codingActorDesigner by lazy { getActor(ActorType.CODING) as CodingActor }
   private val flowStepDesigner by lazy { getActor(ActorType.FLOW_STEP) as CodingActor }
 
+
+  @Language("kotlin") val standardImports = """
+        |import com.simiacryptus.jopenai.API
+        |import com.simiacryptus.jopenai.models.ChatModels
+        |import com.simiacryptus.skyenet.core.actors.BaseActor
+        |import com.simiacryptus.skyenet.core.actors.ActorSystem
+        |import com.simiacryptus.skyenet.core.actors.CodingActor
+        |import com.simiacryptus.skyenet.core.actors.ParsedActor
+        |import com.simiacryptus.skyenet.core.actors.ImageActor
+        |import com.simiacryptus.skyenet.core.platform.file.DataStorage
+        |import com.simiacryptus.skyenet.core.platform.Session
+        |import com.simiacryptus.skyenet.core.platform.User
+        |import com.simiacryptus.skyenet.webui.application.ApplicationServer
+        |import com.simiacryptus.skyenet.webui.session.*
+        |import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+        |import java.awt.image.BufferedImage
+        |import org.slf4j.LoggerFactory
+        |""".trimMargin()
+
   fun buildAgent(userMessage: String) {
     val design = initialDesign(userMessage)
     val actImpls = implementActors(userMessage, design)
@@ -110,13 +129,7 @@ open class MetaAgentAgent(
       } ?: ""
 
       @Language("kotlin") val appCode = """
-        |import com.simiacryptus.jopenai.API
-        |import com.simiacryptus.jopenai.models.ChatModels
-        |import com.simiacryptus.skyenet.webui.application.ApplicationServer
-        |import com.simiacryptus.skyenet.core.platform.Session
-        |import com.simiacryptus.skyenet.core.platform.User
-        |import com.simiacryptus.skyenet.webui.session.*
-        |import org.slf4j.LoggerFactory
+        |$standardImports
         |
         |open class ${classBaseName}App(
         |    applicationName: String = "${design.obj.name}",
@@ -164,16 +177,7 @@ open class MetaAgentAgent(
         """.trimMargin()
 
       @Language("kotlin") var agentCode = """
-        |import com.simiacryptus.jopenai.API
-        |import com.simiacryptus.jopenai.models.ChatModels
-        |import com.simiacryptus.skyenet.core.actors.ActorSystem
-        |import com.simiacryptus.skyenet.core.actors.CodingActor
-        |import com.simiacryptus.skyenet.core.actors.ParsedActor
-        |import com.simiacryptus.skyenet.core.actors.ImageActor
-        |import com.simiacryptus.skyenet.core.platform.file.DataStorage
-        |import com.simiacryptus.skyenet.core.platform.Session
-        |import com.simiacryptus.skyenet.core.platform.User
-        |import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+        |$standardImports
         |
         |open class ${classBaseName}Agent(
         |    user: User?,
@@ -206,8 +210,7 @@ open class MetaAgentAgent(
       { code, type -> code.replace("(?<![\\w.])$type(?![\\w])".toRegex(), "${classBaseName}Actors.$type") } ?: agentCode
 
       @Language("kotlin") val agentsCode = """
-        |import com.simiacryptus.jopenai.models.ChatModels
-        |import com.simiacryptus.skyenet.core.actors.BaseActor
+        |$standardImports
         |
         |class ${classBaseName}Actors(
         |    val model: ChatModels = ChatModels.GPT4Turbo,
@@ -287,8 +290,7 @@ open class MetaAgentAgent(
     )
     return object : ParsedResponse<AgentDesign>(AgentDesign::class.java) {
       override val text get() = flowDesign.text + "\n" + actorDesignParsedResponse.text
-      override val obj
-        get() = AgentDesign(
+      override val obj get() = AgentDesign(
           name = flowDesign.obj.name,
           description = flowDesign.obj.description,
           mainInput = flowDesign.obj.mainInput,
@@ -316,8 +318,8 @@ open class MetaAgentAgent(
               .joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") }
           })`"
         ),
-        codePrefix = (actorImpls.values + flowStepCode.values)
-          .joinToString("\n\n") { it.trimIndent() }.sortCode(),
+        codePrefix = (standardImports + (actorImpls.values + flowStepCode.values)
+          .joinToString("\n\n") { it.trimIndent() }).sortCode(),
         autoEvaluate = autoEvaluate
       )
       val mainFunction = flowStepDesigner.answer(codeRequest, api = api).code
@@ -346,18 +348,20 @@ open class MetaAgentAgent(
     userMessage: String,
     design: ParsedResponse<AgentDesign>,
   ) = design.obj.actors?.map { actorDesign ->
-    val task = ui.newTask()
-    try {
-      implementActor(task, actorDesign, userMessage, design)
-    } catch (e: Throwable) {
-      task.error(e)
-      throw e
+    pool.submit<Pair<String, String>> {
+      val task = ui.newTask()
+      try {
+        implementActor(task, actorDesign, userMessage, design)
+      } catch (e: Throwable) {
+        task.error(e)
+        throw e
+      }
     }
-  }?.toMap() ?: mapOf()
+  }?.toTypedArray()?.associate { it.get() } ?: mapOf()
 
   private fun implementActor(
     task: SessionTask,
-    actorDesign: MetaAgentActors.ActorDesign,
+    actorDesign: ActorDesign,
     userMessage: String,
     design: ParsedResponse<AgentDesign>
   ): Pair<String, String> {

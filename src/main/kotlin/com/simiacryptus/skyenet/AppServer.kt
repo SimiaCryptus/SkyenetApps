@@ -29,15 +29,15 @@ open class AppServer(
     override val childWebApps by lazy {
 
         listOf(
-            ChildWebApp("/meta_agent", MetaAgentApp()),
             ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName)),
+            ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
+            ChildWebApp("/meta_agent", MetaAgentApp()),
             ChildWebApp("/aws_coder", CodingApp(
                     "AWS Coding Assistant",
                     KotlinInterpreter::class,
                     mapOf(
                             "region" to DefaultAwsRegionProviderChain().getRegion(),
                     ))),
-            ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
         )
     }
 
