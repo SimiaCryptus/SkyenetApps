@@ -45,8 +45,7 @@ class OutlineAgent(
     @Suppress("UNCHECKED_CAST")
     private val expand get() = getActor(ActorType.EXPAND) as ParsedActor<NodeList>
     private val activeThreadCounter = AtomicInteger(0)
-    private val pool get() = clientManager.getPool(session, user, dataStorage)
-
+    
     fun buildMap() {
         val message = ui.newTask()
         val outlineManager = try {

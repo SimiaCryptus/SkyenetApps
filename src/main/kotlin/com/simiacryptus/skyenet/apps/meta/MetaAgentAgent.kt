@@ -16,6 +16,7 @@ import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.sortCode
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.stripImports
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.upperSnakeCase
 import com.simiacryptus.skyenet.core.actors.CodingActor.FailedToImplementException
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
@@ -44,6 +45,7 @@ open class MetaAgentAgent(
       //"dataStorage" to dataStorage,
       "ui" to ui,
       "api" to API(),
+      "pool" to ApplicationServices.clientManager.getPool(session, user, dataStorage),
     ),
     model = model,
     temperature = temperature,

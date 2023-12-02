@@ -111,7 +111,6 @@ class MetaAgentActors(
         override fun validate(): String? = when {
             name.isEmpty() -> "name is required"
             name.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> "name must be a valid java identifier"
-            null == type -> "type is required"
             type.isEmpty() -> "type is required"
             type.lowercase().notIn("simple", "parsed", "coding", "image") -> "type must be simple, parsed, coding, or image"
             resultClass.isEmpty() -> "resultType is required"
@@ -119,10 +118,16 @@ class MetaAgentActors(
             else -> null
         }
 
-        private fun validClassName(resultType: String) = when {
-            resultType.isEmpty() -> false
-            "[A-Z][a-zA-Z0-9_<>]{3,}".toRegex().matches(resultType) -> true
-            else -> false
+        private fun validClassName(resultType: String): Boolean {
+            return when {
+                resultType.isEmpty() -> false
+                validClassNamePattern.matches(resultType) -> true
+                else -> false
+            }
+        }
+
+        companion object {
+            val validClassNamePattern = "[A-Za-z][a-zA-Z0-9_<>.]{3,}".toRegex()
         }
 
     }
