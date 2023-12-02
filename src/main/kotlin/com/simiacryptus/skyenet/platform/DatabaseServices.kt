@@ -8,7 +8,7 @@ import java.sql.DriverManager
 import java.util.*
 
 open class DatabaseServices(
-  private val jdbcUrl: String = "jdbc:h2:mem:skyenet;DB_CLOSE_DELAY=-1",
+  private val jdbcUrl: String,
   private val username: String = "sa",
   private val password: String = ""
 ) {
@@ -315,7 +315,7 @@ open class DatabaseServices(
   companion object {
     @JvmStatic
     fun main(args: Array<String>) {
-      val databaseServices = DatabaseServices()
+      val databaseServices = DatabaseServices("jdbc:h2:file:skyenet;DB_CLOSE_DELAY=-1")
       databaseServices.initializeSchema()
       println("Database schema initialized successfully.")
     }

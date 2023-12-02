@@ -36,22 +36,25 @@ open class MetaAgentAgent(
   model: ChatModels = ChatModels.GPT35Turbo,
   var autoEvaluate: Boolean = true,
   temperature: Double = 0.3,
-) : ActorSystem<ActorType>(MetaAgentActors(
-  symbols = mapOf(
-    "user" to user,
-    "session" to session,
-    "dataStorage" to dataStorage,
-    "ui" to ui,
-    "api" to api,
-  ).filterValues { null != it }.mapValues { it.value!! },
-  model = model,
-  temperature = temperature,
-).actorMap, dataStorage, user, session
+) : ActorSystem<ActorType>(
+  MetaAgentActors(
+    symbols = mapOf(
+      //"user" to user,
+      //"session" to session,
+      //"dataStorage" to dataStorage,
+      "ui" to ui,
+      "api" to API(),
+    ),
+    model = model,
+    temperature = temperature,
+  ).actorMap, dataStorage, user, session
 ) {
 
   private val highLevelDesigner by lazy { getActor(ActorType.HIGH_LEVEL) as SimpleActor }
+
   @Suppress("UNCHECKED_CAST")
   private val detailDesigner by lazy { getActor(ActorType.DETAIL) as ParsedActor<AgentFlowDesign> }
+
   @Suppress("UNCHECKED_CAST")
   private val actorDesigner by lazy { getActor(ActorType.ACTORS) as ParsedActor<AgentActorDesign> }
   private val simpleActorDesigner by lazy { getActor(ActorType.SIMPLE) as CodingActor }
@@ -250,34 +253,46 @@ open class MetaAgentAgent(
     )
     val flowDesign = iterate(
       input = highLevelDesign,
+      heading = "Flow Design",
       actor = detailDesigner,
       toInput = { listOf(it) },
       api = api,
       ui = ui,
       outputFn = { task, design ->
         task.add(renderMarkdown(design.toString()))
-        task.verbose(toJson(design.obj))
+        try {
+          task.verbose(toJson(design.obj))
+        } catch (e: Throwable) {
+          task.error(e)
+        }
       }
     )
     val actorDesignParsedResponse: ParsedResponse<AgentActorDesign> = iterate(
       input = flowDesign.text,
-      actor = actorDesigner, toInput = { listOf(it) },
+      heading = "Actor Design",
+      actor = actorDesigner,
+      toInput = { listOf(it) },
       api = api,
       ui = ui,
       outputFn = { task, design ->
         task.add(renderMarkdown(design.toString()))
-        task.verbose(toJson(design.obj))
+        try {
+          task.verbose(toJson(design.obj))
+        } catch (e: Throwable) {
+          task.error(e)
+        }
       }
     )
     return object : ParsedResponse<AgentDesign>(AgentDesign::class.java) {
-      override val text get() = flowDesign.text  + "\n" + actorDesignParsedResponse.text
-      override val obj get() = AgentDesign(
-        name = flowDesign.obj.name,
-        description = flowDesign.obj.description,
-        mainInput = flowDesign.obj.mainInput,
-        logicFlow = flowDesign.obj.logicFlow,
-        actors = actorDesignParsedResponse.obj.actors,
-      )
+      override val text get() = flowDesign.text + "\n" + actorDesignParsedResponse.text
+      override val obj
+        get() = AgentDesign(
+          name = flowDesign.obj.name,
+          description = flowDesign.obj.description,
+          mainInput = flowDesign.obj.mainInput,
+          logicFlow = flowDesign.obj.logicFlow,
+          actors = actorDesignParsedResponse.obj.actors,
+        )
     }
   }
 
@@ -441,13 +456,14 @@ open class MetaAgentAgent(
     fun <T : Any> iterate(
       ui: ApplicationInterface,
       userMessage: String,
+      heading: String = renderMarkdown(userMessage),
       initialResponse: (String) -> T,
       reviseResponse: (String, T, String) -> T,
-      outputFn: (SessionTask, T) -> Unit = { task, design -> task.add(renderMarkdown(design.toString())) }
+      outputFn: (SessionTask, T) -> Unit = { task, design -> task.add(renderMarkdown(design.toString())) },
     ): T {
       val task = ui.newTask()
       val design = try {
-        task.echo(renderMarkdown(userMessage))
+        task.echo(heading)
         var design = initialResponse(userMessage)
         outputFn(task, design)
         var textInputHandle: StringBuilder? = null
@@ -479,7 +495,7 @@ open class MetaAgentAgent(
         acceptHandle = task.complete(acceptLink)
         onAccept.acquire()
         val d = design
-        if(d is ParsedResponse<*>) task.verbose(toJson(d.obj!!))
+        if (d is ParsedResponse<*>) task.verbose(toJson(d.obj!!))
         task.complete()
         design
       } catch (e: Throwable) {
@@ -497,8 +513,9 @@ open class MetaAgentAgent(
         )
       }.toTypedArray()
 
-    fun <I:Any,T:Any> iterate(
+    fun <I : Any, T : Any> iterate(
       input: String,
+      heading: String = renderMarkdown(input),
       actor: BaseActor<I, T>,
       toInput: (String) -> I,
       api: API,
@@ -507,8 +524,9 @@ open class MetaAgentAgent(
     ) = iterate(
       ui = ui,
       userMessage = input,
+      heading = heading,
       initialResponse = { actor.answer(toInput(it), api = api) },
-      reviseResponse = { userMessage : String, design : T, userResponse: String ->
+      reviseResponse = { userMessage: String, design: T, userResponse: String ->
         val input = toInput(userMessage)
         actor.answer(
           messages = *actor.chatMessages(input) +
