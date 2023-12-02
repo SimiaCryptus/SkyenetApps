@@ -318,7 +318,7 @@ open class MetaAgentAgent(
           .joinToString("\n\n") { it.trimIndent() }.sortCode(),
         autoEvaluate = autoEvaluate
       )
-      val mainFunction = flowStepDesigner.answer(codeRequest, api = api).getCode()
+      val mainFunction = flowStepDesigner.answer(codeRequest, api = api).code
       task.verbose(
         renderMarkdown(
           """
@@ -385,7 +385,7 @@ open class MetaAgentAgent(
       "image" -> imageActorDesigner.answer(codeRequest, api = api)
       else -> throw IllegalArgumentException("Unknown actor type: $type")
     }
-    val code = response.getCode()
+    val code = response.code
     //language=HTML
     task.verbose(
       renderMarkdown(
@@ -424,7 +424,7 @@ open class MetaAgentAgent(
               codePrefix = (actorImpls.values + flowImpls.values)
                 .joinToString("\n\n") { it.trimIndent() }.sortCode()
             ), api = api
-          ).getCode()
+          ).code
         } catch (e: FailedToImplementException) {
           message.error(e)
           autoEvaluate = false
@@ -488,15 +488,12 @@ open class MetaAgentAgent(
           if (acceptGuard.getAndSet(true)) return@hrefLink
           textInputHandle?.clear()
           acceptHandle?.clear()
-          task.add("")
+          task.complete()
           onAccept.release()
         }
         textInputHandle = task.add(textInput)
         acceptHandle = task.complete(acceptLink)
         onAccept.acquire()
-        val d = design
-        if (d is ParsedResponse<*>) task.verbose(toJson(d.obj!!))
-        task.complete()
         design
       } catch (e: Throwable) {
         task.error(e)
@@ -505,7 +502,7 @@ open class MetaAgentAgent(
       return design
     }
 
-    fun List<Pair<List<ApiModel.ContentPart>, Role>>.toMessageList(): Array<ApiModel.ChatMessage> =
+    private fun List<Pair<List<ApiModel.ContentPart>, Role>>.toMessageList(): Array<ApiModel.ChatMessage> =
       this.map { (content, role) ->
         ApiModel.ChatMessage(
           role = role,

@@ -105,7 +105,7 @@ class MetaAgentActors(
         val description: String? = null,
         @Description("simple, parsed, image, or coding")
         val type: String = "",
-        @Description("string, code, image, or a simple java identifier (class name without package - no inner classes, no generics)")
+        @Description("Simple actors: string; Image actors: image; Coding actors: code; Parsed actors: data structure class name")
         val resultType: String = "",
     ) : ValidatedObject {
         override fun validate(): String? = when {
@@ -217,7 +217,8 @@ class MetaAgentActors(
             1. The purpose of the actor
             2. Actor Type, which can be one of:
                 1. "Simple" actors work like a chatbot, and simply return the chat model's response to the system and user prompts
-                2. "Parsed" actors produce data structures as output, which can be used in the application logic
+                2. "Parsed" actors produce complex data structures as output, which can be used in the application logic
+                    * **IMPORTANT**: If the output is a string, use a "simple" actor instead
                 3. "Coding" actors are used to invoke tools via dynamically compiled scripts
                 4. "Image" actors produce images from a user (and system) prompt.
             3. Required details for each actor type:
@@ -227,7 +228,8 @@ class MetaAgentActors(
                     1. system prompt
                     2. output data structure
                 3. Coding actors
-                    1. environment definition (defined symbols, functions, and libraries)
+                    1. defined symbols and functions
+                    2. libraries used
         """.trimIndent().trim(),
         model = model,
         temperature = temperature,
@@ -463,56 +465,45 @@ class MetaAgentActors(
         |This "creative process" can be thought of as a cognitive process, an individual's work process, or an organizational process.
         |The idea is that the overall structure is procedural and can be modeled in code, but individual steps are creative and can be modeled with gpt.
         |
-        |Actors process inputs in the form of ChatGPT messages (often a single string) but vary in their output. 
+        |Actors process inputs in the form of ChatGPT messages (often a single string) but vary in their output.
         |Usage examples of each actor type follows:
         |
         |Simple actors contain a system directive, and simply return the chat model's response to the user query.
         |Simple actors answer queries consisting of a list of strings representing a conversation thread, and respond with a string.
         |```kotlin
-        |fun useExampleSimpleActor(): String {
-        |    val answer = exampleSimpleActor().answer(listOf("This is an example question."), api = api)
-        |    log.info("Answer: " + answer)
-        |    return answer
-        |}
+        |val actor : com.simiacryptus.skyenet.core.actors.SimpleActor
+        |val answer : String = actor.answer(listOf("This is an example question."), api = api)
+        |log.info("Answer: " + answer)
         |```
         |
-        |Parsed actors use a 2-stage system; first, queries are responded in the same manner as simple actors using a system prompt. 
+        |Parsed actors use a 2-stage system; first, queries are responded in the same manner as simple actors using a system prompt.
         |This natural-language response is then parsed into a typed object, which can be used in the application logic.
         |Parsed actors answer queries consisting of a list of strings representing a conversation thread, and responds with an object containing text and a parsed object.
         |```kotlin
-        |import com.simiacryptus.jopenai.util.JsonUtil
-        |import com.simiacryptus.skyenet.core.actors.ParsedActor
-        |import com.simiacryptus.skyenet.core.actors.CodingActor
-        |
-        |fun <T:Any> useExampleParsedActor(parsedActor: ParsedActor<T>): T {
-        |    val answer = parsedActor.answer(listOf("This is an example question."), api = api)
-        |    log.info("Natural Language Answer: " + answer.getText());
-        |    log.info("Parsed Answer: " + JsonUtil.toJson(answer.getObj()));
-        |    return answer.getObj()
-        |}
+        |val actor : com.simiacryptus.skyenet.core.actors.ParsedActor<T>
+        |val answer : com.simiacryptus.skyenet.core.actors.ParsedResponse<T> = actor.answer(listOf("This is an example question."), api = api)
+        |log.info("Natural Language Answer: " + answer.text)
+        |log.info("Parsed Answer: " + com.simiacryptus.jopenai.util.JsonUtil.toJson(answer.obj))
         |```
         |
         |Coding actors combine ChatGPT-powered code generation with compilation and validation to produce quality code without having to run it.
         |Coding actors answer queries expressed using CodeRequest, and responds with an object that defines a code block and an execution method.
         |```kotlin
-        |fun useExampleCodingActor(): CodingActor.CodeResult {
-        |    val answer = exampleCodingActor().answer(CodingActor.CodeRequest(listOf("This is an example question.")), api = api)
-        |    log.info("Answer: " + answer.getCode())
-        |    val executionResult = answer.result()
-        |    log.info("Execution Log: " + executionResult.resultOutput)
-        |    log.info("Execution Result: " + executionResult.resultValue)
-        |    return answer
-        |}
+        |val actor : com.simiacryptus.skyenet.core.actors.CodingActor
+        |val answer : com.simiacryptus.skyenet.core.actors.CodingActor.CodeResult = actor.answer(listOf("This is an example question."), api = api)
+        |log.info("Implemented Code: " + answer.code)
+        |val executionResult : com.simiacryptus.skyenet.core.actors.CodingActor.ExecutionResult = answer.result
+        |log.info("Execution Log: " + executionResult.resultOutput)
+        |log.info("Execution Result: " + executionResult.resultValue)
         |```
         |
         |Image actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
         |Image actors answer queries consisting of a list of strings representing a conversation thread, and respond with an image.
         |```kotlin
-        |fun useExampleImageActor(): BufferedImage {
-        |    val answer = exampleImageActor().answer(listOf("Example image description"), api = api)
-        |    log.info("Rendering Prompt: " + answer.getText())
-        |    return answer.getImage()
-        |}
+        |val actor : com.simiacryptus.skyenet.core.actors.ImageActor
+        |val answer : com.simiacryptus.skyenet.core.actors.ImageResponse = actor.answer(listOf("This is an example question."), api = api)
+        |log.info("Image description: " + answer.text)
+        |val image : BufferedImage = answer.image
         |```
         |
         |**IMPORTANT**: Do not define new actors. Use the provided actors specified in the preceding messages.
@@ -523,19 +514,17 @@ class MetaAgentActors(
         |```kotlin
         |val task = ui.newTask()
         |try {
-        |    task.header("Main Function")
-        |    task.add("Normal message")
-        |    task.verbose("Verbose output - not shown by default")
-        |    task.add(ui.textInput { log.info("Message Recieved: " + it) })
-        |    task.add(ui.hrefLink("Click Me!") { log.info("Link clicked") })
-        |    task.complete()
-        |    return
+        |  task.header("Main Function")
+        |  task.add("Normal message")
+        |  task.verbose("Verbose output - not shown by default")
+        |  task.add(ui.textInput { log.info("Message Recieved: " + it) })
+        |  task.add(ui.hrefLink("Click Me!") { log.info("Link clicked") })
+        |  task.complete()
         |} catch (e: Throwable) {
-        |    task.error(e)
-        |    throw e
+        |  task.error(e)
+        |  throw e
         |}
         |```
-        |
         |""".trimMargin().trim(),
         model = model,
         temperature = temperature,
