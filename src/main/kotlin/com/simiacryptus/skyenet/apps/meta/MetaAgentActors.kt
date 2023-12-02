@@ -232,14 +232,16 @@ class MetaAgentActors(
                     1. System prompt
                 2. Parsed actors
                     1. system prompt
-                    2. output data structure
+                    2. output data structure 
+                        1. java class name
+                        2. definition
                 3. Coding actors
                     1. defined symbols and functions
                     2. libraries used
         """.trimIndent().trim(),
         model = model,
         temperature = temperature,
-        parsingModel = ChatModels.GPT4Turbo
+        parsingModel = ChatModels.GPT35Turbo
     )
 
     @Language("Markdown")
