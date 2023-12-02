@@ -91,7 +91,7 @@ open class MetaAgentAgent(
         """private val ${actor.name.camelCase()} by lazy { getActor(${classBaseName}Actors.ActorType.${actor.name.upperSnakeCase()}) as ${
           when (actor.type.lowercase()) {
             "simple" -> "SimpleActor"
-            "parsed" -> "ParsedActor<${actor.resultType}>"
+            "parsed" -> "ParsedActor<${actor.resultClass}>"
             "coding" -> "CodingActor"
             "image" -> "ImageActor"
             else -> throw IllegalArgumentException("Unknown actor type: ${actor.type}")
@@ -200,7 +200,7 @@ open class MetaAgentAgent(
         |}
         """.trimMargin()
 
-      agentCode = design.obj.actors?.map { it.resultType }?.fold(agentCode)
+      agentCode = design.obj.actors?.map { it.resultClass }?.fold(agentCode)
       { code, type -> code.replace("(?<![\\w.])$type(?![\\w])".toRegex(), "${classBaseName}Actors.$type") } ?: agentCode
 
       @Language("kotlin") val agentsCode = """
@@ -369,7 +369,7 @@ open class MetaAgentAgent(
         "Implement `val ${(actorDesign.name!!).camelCase()} : ${
           when (type.lowercase()) {
             "simple" -> "SimpleActor"
-            "parsed" -> "ParsedActor" + if (actorDesign.resultType != null) "<${actorDesign.resultType}>" else ""
+            "parsed" -> "ParsedActor" + if (actorDesign.resultClass != null) "<${actorDesign.resultClass}>" else ""
             "coding" -> "CodingActor"
             "image" -> "ImageActor"
             else -> throw IllegalArgumentException("Unknown actor type: $type")

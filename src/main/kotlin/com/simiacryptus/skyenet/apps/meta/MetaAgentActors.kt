@@ -105,8 +105,8 @@ class MetaAgentActors(
         val description: String? = null,
         @Description("simple, parsed, image, or coding")
         val type: String = "",
-        @Description("Simple actors: string; Image actors: image; Coding actors: code; Parsed actors: data structure class name")
-        val resultType: String = "",
+        @Description("Simple actors: string; Image actors: image; Coding actors: code; Parsed actors: a simple java class name for the data structure")
+        val resultClass: String = "",
     ) : ValidatedObject {
         override fun validate(): String? = when {
             name.isEmpty() -> "name is required"
@@ -114,8 +114,8 @@ class MetaAgentActors(
             null == type -> "type is required"
             type.isEmpty() -> "type is required"
             type.lowercase().notIn("simple", "parsed", "coding", "image") -> "type must be simple, parsed, coding, or image"
-            resultType.isEmpty() -> "resultType is required"
-            resultType.lowercase().notIn("string", "code", "image") && !validClassName(resultType) -> "resultType must be string, code, image, or a valid class name"
+            resultClass.isEmpty() -> "resultType is required"
+            resultClass.lowercase().notIn("string", "code", "image") && !validClassName(resultClass) -> "resultType must be string, code, image, or a valid class name"
             else -> null
         }
 
