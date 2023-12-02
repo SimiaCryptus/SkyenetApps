@@ -7,7 +7,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.util.*
 
-class DatabaseServices(
+open class DatabaseServices(
   private val jdbcUrl: String = "jdbc:h2:mem:skyenet;DB_CLOSE_DELAY=-1",
   private val username: String = "sa",
   private val password: String = ""
@@ -119,10 +119,6 @@ class DatabaseServices(
       TODO("Not yet implemented")
     }
 
-    override fun containsUser(value: String): Boolean {
-      TODO("Not yet implemented")
-    }
-
     override fun putUser(accessToken: String, user: User): User {
       TODO("Not yet implemented")
     }
@@ -176,10 +172,15 @@ class DatabaseServices(
       TODO("Not yet implemented")
     }
   } }
+
+  companion object  {
+    @JvmStatic
+    fun main() {
+      val databaseServices = DatabaseServices()
+      databaseServices.initializeSchema()
+      println("Database schema initialized successfully.")
+    }
+
+  }
 }
 
-fun main() {
-  val databaseServices = DatabaseServices()
-  databaseServices.initializeSchema()
-  println("Database schema initialized successfully.")
-}
