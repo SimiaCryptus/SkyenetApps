@@ -44,17 +44,17 @@ open class OAuthPatreon(
   private inner class LoginServlet : HttpServlet() {
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
       resp.sendRedirect(
-        "$patreonAuthorizationUrl?" + mapOf(
+        patreonAuthorizationUrl + "?" + mapOf(
+          "state" to req.getParameter("redirect"),
+          "client_id" to config.clientId,
+          "redirect_uri" to redirectUri,
           "response_type" to "code",
-          "client_id" to config.clientId?.urlEncode,
-          "redirect_uri" to redirectUri.urlEncode,
           "scope" to listOf(
-            "users",
-            "pledges-to-me",
-            "my-campaign"
-          ).joinToString(" ").urlEncode,
-          "state" to (req.getParameter("redirect")?.urlEncode ?: "")
-        ).toList().joinToString("&") { "${it.first}=${it.second}" })
+            "identity",
+            "identity[email]",
+            "identity.memberships",
+          ).joinToString(" "),
+        ).toList().joinToString("&") { it.first + "=" + (it.second?.urlEncode ?: "") })
     }
   }
 
