@@ -5,19 +5,23 @@ import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.AuthenticationInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.servlet.OAuthGoogle.Companion.urlDecode
-import jakarta.servlet.*
-import jakarta.servlet.http.*
+import jakarta.servlet.DispatcherType
+import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.apache.hc.client5.http.fluent.Request
-import org.apache.hc.core5.http.Method
 import org.apache.hc.core5.http.ContentType
+import org.apache.hc.core5.http.Method
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
+import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.*
-import java.net.URI
 import java.util.concurrent.TimeUnit
+
 
 open class OAuthPatreon(
     redirectUri: String,
@@ -39,26 +43,23 @@ open class OAuthPatreon(
 
     private inner class LoginServlet : HttpServlet() {
         override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-            val redirect = req.getParameter("redirect") ?: ""
-            val state = URLEncoder.encode(redirect, StandardCharsets.UTF_8.toString())
-            val authorizationUrl = "$patreonAuthorizationUrl?response_type=code&client_id=${config.clientId}&redirect_uri=$redirectUri&state=$state"
-            resp.sendRedirect(authorizationUrl)
+            resp.sendRedirect("$patreonAuthorizationUrl?response_type=code&client_id=${config.clientId?.urlEncode}&redirect_uri=${redirectUri.urlEncode}&state=${req.getParameter("redirect")?.urlEncode ?: ""}")
         }
     }
 
     private inner class CallbackServlet : HttpServlet() {
         override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-            val code = req.getParameter("code")
+            val code = req.getParameter("code")?.urlEncode
             if (code != null) {
                 val tokenResponse = Request.create(Method.POST, URI(patreonTokenUrl))
                     .bodyString(
-                        "code=$code&grant_type=authorization_code&client_id=${config.clientId}&client_secret=${config.clientSecret}&redirect_uri=$redirectUri",
+                        "code=$code&grant_type=authorization_code&client_id=${config.clientId?.urlEncode}&client_secret=${config.clientSecret?.urlEncode}&redirect_uri=${redirectUri.urlEncode}",
                         ContentType.APPLICATION_FORM_URLENCODED
                     ).execute().returnContent().asString()
                 if (tokenResponse == null) throw RuntimeException("Token response is null")
                 log.info("Token response: $tokenResponse")
                 val tokenData = JsonUtil.fromJson<TokenResponse>(tokenResponse, TokenResponse::class.java)
-                val userInfo = getUserInfo(tokenData.access_token!!)
+                val userInfo = getUserInfo(tokenData.access_token)
                 log.info("User data: ${JsonUtil.toJson(userInfo)}")
                 val attributes = userInfo.data?.attributes
                 val user = User(
@@ -242,6 +243,10 @@ open class OAuthPatreon(
 
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(OAuthPatreon::class.java)
+        val String.urlEncode: String get() {
+            return URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
+        }
+
     }
 
 }
