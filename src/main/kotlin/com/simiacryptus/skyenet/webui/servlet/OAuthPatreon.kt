@@ -49,14 +49,15 @@ open class OAuthPatreon(
 
     private inner class CallbackServlet : HttpServlet() {
         override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+            log.info("OAuth Callback: \n${req.parameterMap.toList().joinToString("\n") { "\t${it.first} = ${it.second.joinToString()}" }}")
             val code = req.getParameter("code")?.urlEncode
-            log.info("OAuth Code: $code")
             if (code != null) {
+                val body =
+                    "code=$code&grant_type=authorization_code&client_id=${config.clientId?.urlEncode}&client_secret=${config.clientSecret?.urlEncode}&redirect_uri=${redirectUri.urlEncode}"
+                log.info("Body: $body")
                 val tokenResponse = Request.create(Method.POST, URI(patreonTokenUrl))
-                    .bodyString(
-                        "code=$code&grant_type=authorization_code&client_id=${config.clientId?.urlEncode}&client_secret=${config.clientSecret?.urlEncode}&redirect_uri=${redirectUri.urlEncode}",
-                        ContentType.APPLICATION_FORM_URLENCODED
-                    ).execute().returnContent().asString()
+                    .bodyString(body, ContentType.APPLICATION_FORM_URLENCODED)
+                    .execute().returnContent().asString()
                 if (tokenResponse == null) throw RuntimeException("Token response is null")
                 log.info("Token response: $tokenResponse")
                 val tokenData = JsonUtil.fromJson<TokenResponse>(tokenResponse, TokenResponse::class.java)
