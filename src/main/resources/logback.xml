@@ -6,9 +6,9 @@
         </encoder>
     </appender>
 
-    <logger name="com.simiacryptus" level="info" />
+    <logger name="com.simiacryptus" level="INFO" />
 
-    <root level="warn">
+    <root level="WARN">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

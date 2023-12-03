@@ -50,6 +50,7 @@ open class OAuthPatreon(
     private inner class CallbackServlet : HttpServlet() {
         override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
             val code = req.getParameter("code")?.urlEncode
+            log.info("OAuth Code: $code")
             if (code != null) {
                 val tokenResponse = Request.create(Method.POST, URI(patreonTokenUrl))
                     .bodyString(
@@ -243,9 +244,7 @@ open class OAuthPatreon(
 
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(OAuthPatreon::class.java)
-        val String.urlEncode: String get() {
-            return URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
-        }
+        val String.urlEncode: String get() = URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
 
     }
 
