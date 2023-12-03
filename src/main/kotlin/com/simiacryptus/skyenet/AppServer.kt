@@ -5,6 +5,9 @@ import com.simiacryptus.skyenet.apps.coding.CodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
 import com.simiacryptus.skyenet.apps.outline.OutlineApp
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.core.util.AwsUtil
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
@@ -27,7 +30,6 @@ open class AppServer(
 
     //    private val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
     override val childWebApps by lazy {
-
         listOf(
             ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName)),
             ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
@@ -48,5 +50,17 @@ open class AppServer(
             OAuthPatreon.PatreonOAuthInfo::class.java
         )
     )
+
+    override fun setupPlatform() {
+        ApplicationServices.authorizationManager = object : AuthorizationManager() {
+            override fun matches(user: User?, line: String): Boolean {
+                if(line == "patreon") {
+                    return OAuthPatreon.users[user?.email]?.data?.relationships?.pledges?.data?.isNotEmpty() ?: false
+                }
+                return super.matches(user, line)
+            }
+        }
+
+    }
 }
 

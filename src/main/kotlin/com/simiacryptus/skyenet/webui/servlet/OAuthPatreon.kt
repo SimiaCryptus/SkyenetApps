@@ -28,6 +28,7 @@ open class OAuthPatreon(
   val config: PatreonOAuthInfo,
 ) : OAuthBase(redirectUri) {
 
+
   override fun configure(context: WebAppContext, addFilter: Boolean): WebAppContext {
     context.addServlet(ServletHolder("patreonLogin", LoginServlet()), "/login")
     context.addServlet(ServletHolder("patreonLogin", LoginServlet()), "/patreonLogin")
@@ -76,11 +77,13 @@ open class OAuthPatreon(
         if (tokenResponse == null) throw RuntimeException("Token response is null")
         log.info("Token response: $tokenResponse")
         val tokenData = JsonUtil.fromJson<TokenResponse>(tokenResponse, TokenResponse::class.java)
-        val userInfo = getUserInfo(tokenData.access_token)
+        val userInfo: PatreonUserInfo = getUserInfo(tokenData.access_token)
         log.info("User data: ${JsonUtil.toJson(userInfo)}")
         val attributes = userInfo.data?.attributes
+        val email = attributes?.email!!
+        _users[email] = userInfo
         val user = User(
-          email = attributes?.email!!,
+          email = email,
           name = attributes.full_name,
           picture = attributes.image_url,
         )
@@ -132,7 +135,7 @@ open class OAuthPatreon(
   data class PatreonUserInfo(
     val data: Data? = null,
     val included: List<Included>? = null,
-    val links: Links? = null
+    val links: Map<String,String>? = null
   )
 
   data class Data(
@@ -255,13 +258,11 @@ open class OAuthPatreon(
     val related: String? = null
   )
 
-  data class Links(
-    val self: String? = null
-  )
-
   companion object {
     val log = org.slf4j.LoggerFactory.getLogger(OAuthPatreon::class.java)
     val String.urlEncode: String get() = URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
+    private val _users = HashMap<String, PatreonUserInfo>()
+    val users get() = _users.toList().toTypedArray().toMap()
 
   }
 

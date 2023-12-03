@@ -1,8 +1,10 @@
 package com.simiacryptus.skyenet.apps
 
 import com.simiacryptus.skyenet.AppServer
-import com.simiacryptus.skyenet.core.platform.*
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.skyenet.core.platform.AuthenticationInterface
 import com.simiacryptus.skyenet.core.platform.AuthorizationInterface.OperationType
+import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import kotlin.random.Random
 
@@ -13,7 +15,10 @@ object TestAppServer : AppServer(
 ) {
     @JvmStatic
     fun main(args: Array<String>) {
-        AppServer(localName = "localhost","localhost", 8081).init(false)
+        super._main(args)
+    }
+
+    override fun setupPlatform() {
         val mockUser = User(
             "1",
             "user@mock.test",
@@ -32,7 +37,6 @@ object TestAppServer : AppServer(
                 operationType: OperationType
             ): Boolean = true
         }
-        super._main(args)
     }
 
 
