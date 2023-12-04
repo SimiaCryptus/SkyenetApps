@@ -1,18 +1,18 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
-fun properties(key: String) = project.findProperty(key).toString()
-group = properties("libraryGroup")
-version = properties("libraryVersion")
-
 plugins {
     java
     `java-library`
     `maven-publish`
     id("signing")
     id("com.github.johnrengelman.shadow") version "7.1.2"
-    id("org.jetbrains.kotlin.jvm") version "1.9.20"
+    id("org.jetbrains.kotlin.jvm") version "1.9.21"
 }
+
+fun properties(key: String) = project.findProperty(key).toString()
+group = properties("libraryGroup")
+version = properties("libraryVersion")
 
 repositories {
     mavenCentral {
@@ -31,7 +31,7 @@ kotlin {
 }
 
 val jetty_version = "11.0.18"
-val skyenet_version = "1.0.42"
+val skyenet_version = "1.0.43"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 val jackson_version = "2.15.3"
@@ -48,6 +48,7 @@ dependencies {
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
     implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jackson_version)
 
+    implementation(kotlin("stdlib"))
     implementation(group = "com.google.guava", name = "guava", version = "32.1.3-jre")
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
@@ -69,12 +70,6 @@ dependencies {
     implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.9")
     implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.4.11")
     implementation(group = "ch.qos.logback", name = "logback-core", version = "1.4.11")
-}
-
-tasks.withType(ShadowJar::class.java).configureEach {
-    archiveClassifier.set("")
-    mergeServiceFiles()
-    append("META-INF/kotlin_module")
 }
 
 tasks {
@@ -108,6 +103,9 @@ tasks {
 }
 
 tasks.withType(ShadowJar::class.java).configureEach {
+    archiveClassifier.set("")
+    mergeServiceFiles()
+    append("META-INF/kotlin_module")
     isZip64 = true
 
     archiveClassifier.set("")
