@@ -1,12 +1,15 @@
 package com.simiacryptus.skyenet.apps.generated
 
+
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
+import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureActors.Activity
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
@@ -16,8 +19,9 @@ import org.slf4j.LoggerFactory
 import java.util.function.Function
 
 
-open class AutomatedLessonPlannerApp(
+open class AutomatedLessonPlannerArchitectureApp(
   applicationName: String = "Automated Lesson Planner",
+  domainName: String,
 ) : ApplicationServer(
   applicationName = applicationName,
 ) {
@@ -26,8 +30,10 @@ open class AutomatedLessonPlannerApp(
     val model: ChatModels = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
   )
+
   override val settingsClass: Class<*> get() = Settings::class.java
-  @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : Any> initSettings(session: Session): T? = Settings() as T
 
   override fun newSession(
     session: Session,
@@ -38,7 +44,7 @@ open class AutomatedLessonPlannerApp(
   ) {
     try {
       val settings = getSettings<Settings>(session, user)
-      AutomatedLessonPlannerAgent(
+      AutomatedLessonPlannerArchitectureAgent(
         user = user,
         session = session,
         dataStorage = dataStorage,
@@ -46,21 +52,20 @@ open class AutomatedLessonPlannerApp(
         ui = ui,
         model = settings?.model ?: ChatModels.GPT35Turbo,
         temperature = settings?.temperature ?: 0.3,
-      ).automatedLessonPlanner(userMessage as Map<String, Any>)
+      ).automatedLessonPlannerArchitecture(userMessage)
     } catch (e: Throwable) {
       log.warn("Error", e)
     }
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(AutomatedLessonPlannerApp::class.java)
+    private val log = LoggerFactory.getLogger(AutomatedLessonPlannerArchitectureApp::class.java)
   }
 
 }
 
 
-
-open class AutomatedLessonPlannerAgent(
+open class AutomatedLessonPlannerArchitectureAgent(
   user: User?,
   session: Session,
   dataStorage: StorageInterface,
@@ -68,409 +73,545 @@ open class AutomatedLessonPlannerAgent(
   val api: API,
   model: ChatModels = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
-) : ActorSystem<AutomatedLessonPlannerActors.ActorType>(AutomatedLessonPlannerActors(
-  model = model,
-  temperature = temperature,
-).actorMap, dataStorage, user, session) {
+) : ActorSystem<AutomatedLessonPlannerArchitectureActors.ActorType>(
+  AutomatedLessonPlannerArchitectureActors(
+    model = model,
+    temperature = temperature,
+  ).actorMap, dataStorage, user, session
+) {
 
   @Suppress("UNCHECKED_CAST")
-  private val curriculumMapperActor by lazy { getActor(AutomatedLessonPlannerActors.ActorType.CURRICULUM_MAPPER_ACTOR) as ParsedActor<AutomatedLessonPlannerActors.CurriculumMapping> }
-  private val personalizationActor by lazy { getActor(AutomatedLessonPlannerActors.ActorType.PERSONALIZATION_ACTOR) as ParsedActor<AutomatedLessonPlannerActors.PersonalizedPlan> }
-  private val resourceAllocatorActor by lazy { getActor(AutomatedLessonPlannerActors.ActorType.RESOURCE_ALLOCATOR_ACTOR) as ParsedActor<AutomatedLessonPlannerActors.ResourceAllocation> }
-  private val timeManagerActor by lazy { getActor(AutomatedLessonPlannerActors.ActorType.TIME_MANAGER_ACTOR) as ParsedActor<AutomatedLessonPlannerActors.TimeAllocation> }
-  private val continuityActor by lazy { getActor(AutomatedLessonPlannerActors.ActorType.CONTINUITY_ACTOR) as ParsedActor<AutomatedLessonPlannerActors.LessonContinuity> }
-  private val assessmentIntegratorActor by lazy { getActor(AutomatedLessonPlannerActors.ActorType.ASSESSMENT_INTEGRATOR_ACTOR) as ParsedActor<AutomatedLessonPlannerActors.AssessmentIntegration> }
-  private val adaptationActor by lazy { getActor(AutomatedLessonPlannerActors.ActorType.ADAPTATION_ACTOR) as ParsedActor<AutomatedLessonPlannerActors.LearningAdaptations> }
+  private val curriculumMapperActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.CURRICULUM_MAPPER_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.CurriculumMapping> }
 
-  fun automatedLessonPlanner(userInputs: Map<String, Any>) {
+  @Suppress("UNCHECKED_CAST")
+  private val resourceAllocatorActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.RESOURCE_ALLOCATOR_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.ResourceAllocation> }
+
+  @Suppress("UNCHECKED_CAST")
+  private val timeManagerActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.TIME_MANAGER_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.LessonTimeline> }
+
+  @Suppress("UNCHECKED_CAST")
+  private val assessmentPlannerActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.ASSESSMENT_PLANNER_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.AssessmentPlan> }
+  private val customizationActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.CUSTOMIZATION_ACTOR) as SimpleActor }
+
+  @Suppress("UNCHECKED_CAST")
+  private val feedbackAnalyzerActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.FEEDBACK_ANALYZER_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.FeedbackAnalysis> }
+
+  fun automatedLessonPlannerArchitecture(requirements: String) {
+    // Create a new task in the UI to show progress
     val task = ui.newTask()
     try {
+      // Add a header to the task output to indicate the start of the automated lesson planner
       task.header("Automated Lesson Planner")
 
-      // Extract user inputs
-      val curriculumData = userInputs["curriculumData"] as? Map<String, Any> ?: throw IllegalArgumentException("Curriculum data is required")
-      val studentData = userInputs["studentData"] as? Map<String, Any> ?: throw IllegalArgumentException("Student data is required")
-      val resourcesData = userInputs["resourcesData"] as? Map<String, Any> ?: throw IllegalArgumentException("Resources data is required")
-      val timeData = userInputs["timeData"] as? Map<String, Any> ?: throw IllegalArgumentException("Time data is required")
-      val continuityData = userInputs["continuityData"] as? Map<String, Any> ?: throw IllegalArgumentException("Continuity data is required")
-      val assessmentData = userInputs["assessmentData"] as? Map<String, Any> ?: throw IllegalArgumentException("Assessment data is required")
-      val adaptationsData = userInputs["adaptationsData"] as? Map<String, Any> ?: throw IllegalArgumentException("Adaptations data is required")
+      // Add a message to the task output to show the requirements
+      task.add("Received the following requirements for the automated lesson planner:")
+      task.add(requirements, tag = "pre") // Display the requirements in a preformatted text block
 
-      // Use the actors to process the inputs
-      val curriculumMapping = curriculumMapperActor(curriculumData, curriculumData)
-      task.add("Curriculum Mapping: ${curriculumMapping.standards}")
+      // Step 1: Map learning objectives to curriculum standards
+      task.add("Step 1: Mapping learning objectives to curriculum standards.")
+      // Normally, we would collect learning objectives from the user, but for this example, we'll use a predefined list
+      val learningObjectives = listOf("Understand the concept of photosynthesis", "Solve basic algebraic equations")
+      mapLearningObjectivesToStandards(learningObjectives)
 
-      val personalizedPlan = personalizationActor(userInputs, studentData)
-      task.add("Personalized Plan: ${personalizedPlan.studentPreferences}")
+      // Step 2: Suggest activities based on available resources
+      task.add("Step 2: Suggesting activities based on available resources.")
+      // Normally, we would collect available resources from the user, but for this example, we'll use a predefined list
+      val availableResources = listOf("Whiteboard", "Projector", "Lab equipment")
+      suggestActivities(availableResources)
 
-      val resourceAllocation = resourceAllocatorActor(userInputs, resourcesData)
-      task.add("Resource Allocation: ${resourceAllocation.requiredMaterials}")
+      // Step 3: Create a lesson timeline
+      task.add("Step 3: Creating a lesson timeline.")
+      // Normally, we would collect activities and time constraints from the user, but for this example, we'll use predefined data
+      val activities = listOf(
+        Activity(name = "Introduction to Photosynthesis", description = "Lecture with slides"),
+        Activity(name = "Photosynthesis Lab", description = "Hands-on experiment")
+      )
+      val totalLessonTime = 90 // 90 minutes
+      createLessonTimeline(activities, totalLessonTime)
 
-      val timeAllocation = timeManagerActor(userInputs, timeData["lessonDuration"] as? Int ?: throw IllegalArgumentException("Lesson duration is required"))
-      task.add("Time Allocation: ${timeAllocation.activityDurations}")
+      // Step 4: Suggest assessment methods
+      task.add("Step 4: Suggesting assessment methods.")
+      suggestAssessmentMethods(learningObjectives)
 
-      val lessonContinuity = continuityActor(userInputs, continuityData)
-      task.add("Lesson Continuity: Previous Lesson - ${lessonContinuity.previousLessonSummary}")
+      // Step 5: Allow teachers to customize the generated lesson plan
+      task.add("Step 5: Customizing the lesson plan.")
+      // Normally, we would present the draft lesson plan to the user and allow them to customize it
+      // For this example, we'll use a placeholder AutomatedLessonPlannerArchitectureActors.string as the initial lesson plan
+      val initialLessonPlan = "Placeholder lesson plan content"
+      customizeLessonPlan(initialLessonPlan)
 
-      val assessmentIntegration = assessmentIntegratorActor(userInputs, assessmentData)
-      task.add("Assessment Integration: Formative - ${assessmentIntegration.formativeAssessments}")
+      // Step 6: Analyze teacher feedback for continuous improvement
+      task.add("Step 6: Analyzing teacher feedback.")
+      // Normally, we would collect feedback from the user, but for this example, we'll use a predefined feedback AutomatedLessonPlannerArchitectureActors.string
+      val feedback = "The lesson plan was well-structured, but the lab activity required too much time."
+      analyzeFeedback(feedback)
 
-      val learningAdaptations = adaptationActor(userInputs, adaptationsData)
-      task.add("Learning Adaptations: ${learningAdaptations.adaptations}")
-
-      // Compile all outputs into a Lesson Plan Document
-      val lessonPlanDocument = "Lesson Plan Document Content Here..."
-      // Save Lesson Plan Document to file storage (pseudo-code)
-      // val documentLink = fileStorage.save(lessonPlanDocument)
-
-      // Send message output to web interface with document link
-      task.complete("Lesson plan created successfully. You can download it from the link provided.")
-      // task.add(ui.hrefLink("Download Lesson Plan", documentLink) { log.info("Lesson plan downloaded") })
-
+      // Complete the task with a final message
+      task.complete("Automated lesson planner process completed.")
     } catch (e: Throwable) {
+      // If an error occurs, display it in the task output
       task.error(e)
       throw e
     }
   }
 
-  // This is a placeholder for the actual call to the function with user inputs
-  val userInputs = mapOf<String, Any>(
-    // Populate the map with user input data
-  )
-  // automatedLessonPlanner(userInputs) // Uncomment this line to call the function with actual user inputs
+  // Function to allow teachers to customize the generated lesson plan
+  fun customizeLessonPlan(initialLessonPlan: String) {
+    // Create a new task in the UI to show progress
+    val task = ui.newTask()
+    try {
+      // Add a header to the task output to indicate the start of the customization process
+      task.header("Customizing Lesson Plan")
 
-  fun curriculumMapperActor(inputData: Map<String, Any>, curriculumStandards: Map<String, Any>): AutomatedLessonPlannerActors.CurriculumMapping {
-    // Convert the inputData and curriculumStandards to a conversation thread list
-    val conversationThread = listOf(
-      "Subject: ${inputData["subject"]}, Grade: ${inputData["grade"]}, Topics: ${inputData["topics"]}",
-      "Curriculum Standards: ${curriculumStandards["standards"]}"
-    )
+      // Add a message to the task output to show the initial lesson plan
+      task.add("Initial Lesson Plan:")
+      task.add(initialLessonPlan, tag = "pre") // Display the initial plan in a preformatted text block
 
-    // Use the curriculumMapperActor to process the input and get the response
-    val response = curriculumMapperActor.answer(conversationThread, api = api)
+      // Provide a text input form for the teacher to enter customization requests
+      task.add(ui.textInput { customizationRequest ->
+        // Log the received customization request
+        task.echo("Received customization request: $customizationRequest")
 
-    // Return the parsed AutomatedLessonPlannerActors.CurriculumMapping object from the response
-    return response.obj
+        // Use the customizationActor to process the customization request
+        val response = customizationActor.answer(listOf(customizationRequest), api = api)
+
+        // Display the customized lesson plan
+        task.add("Customized Lesson Plan:")
+        task.add(response, tag = "pre") // Display the customized plan in a preformatted text block
+
+        // Complete the task with a final message
+        task.complete("Lesson plan customization process completed.")
+      })
+
+      // Add instructions for the user
+      task.add("Please enter your customization requests for the lesson plan in the text box above and submit.")
+    } catch (e: Throwable) {
+      // If an error occurs, display it in the task output
+      task.error(e)
+      throw e
+    }
   }
 
-  fun adaptationActor(lessonPlan: Map<String, Any>, learningStyleAdaptations: Map<String, Any>): AutomatedLessonPlannerActors.LearningAdaptations {
-    // Convert the lesson plan and learning style adaptations to a conversation thread list
-    val conversationThread = listOf(
-      "Lesson Plan: Title - ${lessonPlan["title"]}, Objectives - ${lessonPlan["objectives"]}",
-      "Learning Style Adaptations: ${learningStyleAdaptations["adaptations"]}"
-    )
+  // Function to analyze teacher feedback for continuous improvement
+  fun analyzeFeedback(feedback: String) {
+    // Create a new task in the UI to show progress
+    val task = ui.newTask()
+    try {
+      // Add a header to the task output to indicate the start of the feedback analysis process
+      task.header("Analyzing Feedback")
 
-    // Use the adaptationActor to process the input and get the response
-    val response = adaptationActor.answer(conversationThread, api = api)
+      // Add a message to the task output to show the feedback being processed
+      task.add("Processing the following feedback: $feedback")
 
-    // Return the parsed AutomatedLessonPlannerActors.LearningAdaptations object from the response
-    return response.obj
+      // Use the feedbackAnalyzerActor to analyze the feedback and provide suggestions for improvement
+      val response = feedbackAnalyzerActor.answer(listOf(feedback), api = api)
+
+      // Check if the response is valid
+      val feedbackAnalysis = response.obj
+      val validationResult = feedbackAnalysis.validate()
+      if (validationResult != null) {
+        // If the response is not valid, display an error message
+        task.error(Exception(validationResult))
+      } else {
+        // If the response is valid, display the suggestions for improvement
+        task.add("Feedback analysis completed successfully. Suggestions for improvement:")
+        feedbackAnalysis.improvementSuggestions.forEach { suggestion ->
+          task.add("Suggestion: \"$suggestion\"")
+        }
+      }
+
+      // Complete the task with a final message
+      task.complete("Feedback analysis process completed.")
+    } catch (e: Throwable) {
+      // If an error occurs, display it in the task output
+      task.error(e)
+      throw e
+    }
   }
 
-  fun continuityActor(lessonPlan: Map<String, Any>, previousLessons: Map<String, Any>): AutomatedLessonPlannerActors.LessonContinuity {
-    // Convert the lesson plan and previous lessons to a conversation thread list
-    val conversationThread = listOf(
-      "Lesson Plan: Title - ${lessonPlan["title"]}, Objectives - ${lessonPlan["objectives"]}",
-      "Previous Lessons: ${previousLessons["summaries"]}"
-    )
+  // Function to map learning objectives to curriculum standards
+  fun mapLearningObjectivesToStandards(learningObjectives: List<String>) {
+    // Create a new task in the UI to show progress
+    val task = ui.newTask()
+    try {
+      // Add a header to the task output to indicate the start of the process
+      task.header("Mapping Learning Objectives to Curriculum Standards")
 
-    // Use the continuityActor to process the input and get the response
-    val response = continuityActor.answer(conversationThread, api = api)
+      // Add a message to the task output to show the learning objectives being processed
+      task.add("Processing the following learning objectives: ${learningObjectives.joinToString(", ")}")
 
-    // Return the parsed AutomatedLessonPlannerActors.LessonContinuity object from the response
-    return response.obj
+      // Use the curriculumMapperActor to get the curriculum mapping
+      val response = curriculumMapperActor.answer(learningObjectives, api = api)
+
+      // Check if the response is valid
+      val mapping = response.obj
+      val validationResult = mapping.validate()
+      if (validationResult != null) {
+        // If the response is not valid, display an error message
+        task.error(Exception(validationResult))
+      } else {
+        // If the response is valid, display the curriculum mapping
+        task.add("Curriculum mapping completed successfully.")
+        mapping.standardMappings.forEach { (objective, standard) ->
+          task.add("Learning Objective: \"$objective\" maps to Curriculum Standard: \"$standard\"")
+        }
+      }
+
+      // Complete the task with a final message
+      task.complete("Curriculum mapping process completed.")
+    } catch (e: Throwable) {
+      // If an error occurs, display it in the task output
+      task.error(e)
+      throw e
+    }
   }
 
-  fun resourceAllocatorActor(lessonPlan: Map<String, Any>, availableResources: Map<String, Any>): AutomatedLessonPlannerActors.ResourceAllocation {
-    // Convert the lesson plan and available resources to a conversation thread list
-    val conversationThread = listOf(
-      "Lesson Plan: ${lessonPlan["title"]} - Objectives: ${lessonPlan["objectives"]}",
-      "Available Resources: ${availableResources["resources"]}"
-    )
+  // Function to create a lesson timeline based on activities and time constraints
+  fun createLessonTimeline(activities: List<Activity>, totalLessonTime: Int) {
+    // Create a new task in the UI to show progress
+    val task = ui.newTask()
+    try {
+      // Add a header to the task output to indicate the start of the process
+      task.header("Creating Lesson Timeline")
 
-    // Use the resourceAllocatorActor to process the input and get the response
-    val response = resourceAllocatorActor.answer(conversationThread, api = api)
+      // Add a message to the task output to show the activities being processed
+      task.add("Organizing the following activities within a $totalLessonTime-minute lesson:")
+      activities.forEach { activity ->
+        task.add("Activity: \"${activity.name}\" - ${activity.description}")
+      }
 
-    // Return the parsed AutomatedLessonPlannerActors.ResourceAllocation object from the response
-    return response.obj
+      // Use the timeManagerActor to get the lesson timeline
+      val response = timeManagerActor.answer(activities.map { it.name ?: "" }, api = api)
+
+      // Check if the response is valid
+      val timeline = response.obj
+      val validationResult = timeline.validate()
+      if (validationResult != null) {
+        // If the response is not valid, display an error message
+        task.error(Exception(validationResult))
+      } else {
+        // If the response is valid, display the lesson timeline
+        task.add("Lesson timeline created successfully.")
+        timeline.activityTiming?.forEach { (activity, timeBlock) ->
+          task.add("Activity: \"${activity.name}\" - Start: ${timeBlock.startTime}, End: ${timeBlock.endTime}")
+        }
+      }
+
+      // Complete the task with a final message
+      task.complete("Lesson timeline creation process completed.")
+    } catch (e: Throwable) {
+      // If an error occurs, display it in the task output
+      task.error(e)
+      throw e
+    }
   }
 
-  fun personalizationActor(lessonPlan: Map<String, Any>, studentData: Map<String, Any>): AutomatedLessonPlannerActors.PersonalizedPlan {
-    // Convert the lesson plan and student data to a conversation thread list
-    val conversationThread = listOf(
-      "Lesson Plan: ${lessonPlan["title"]} - ${lessonPlan["objectives"]}",
-      "Student Data: Preferences - ${studentData["preferences"]}, Performance - ${studentData["performance"]}"
-    )
+  // Function to suggest assessment methods based on learning objectives
+  fun suggestAssessmentMethods(learningObjectives: List<String>) {
+    // Create a new task in the UI to show progress
+    val task = ui.newTask()
+    try {
+      // Add a header to the task output to indicate the start of the process
+      task.header("Suggesting Assessment Methods")
 
-    // Use the personalizationActor to process the input and get the response
-    val response = personalizationActor.answer(conversationThread, api = api)
+      // Add a message to the task output to show the learning objectives being processed
+      task.add("Processing the following learning objectives for assessment methods: ${learningObjectives.joinToString(", ")}")
 
-    // Return the parsed AutomatedLessonPlannerActors.PersonalizedPlan object from the response
-    return response.obj
+      // Use the assessmentPlannerActor to get the suggested assessment methods
+      val response = assessmentPlannerActor.answer(learningObjectives, api = api)
+
+      // Check if the response is valid
+      val assessmentPlan = response.obj
+      val validationResult = assessmentPlan.validate()
+      if (validationResult != null) {
+        // If the response is not valid, display an error message
+        task.error(Exception(validationResult))
+      } else {
+        // If the response is valid, display the suggested assessment methods
+        task.add("Assessment methods suggested successfully.")
+        assessmentPlan.assessmentMethods.forEach { method ->
+          task.add("Assessment Method: \"${method.type}\" - ${method.description}")
+        }
+      }
+
+      // Complete the task with a final message
+      task.complete("Assessment methods suggestion process completed.")
+    } catch (e: Throwable) {
+      // If an error occurs, display it in the task output
+      task.error(e)
+      throw e
+    }
   }
 
-  fun timeManagerActor(lessonPlan: Map<String, Any>, lessonDuration: Int): AutomatedLessonPlannerActors.TimeAllocation {
-    // Convert the lesson plan and duration to a conversation thread list
-    val conversationThread = listOf(
-      "Lesson Plan: ${lessonPlan["title"]} - Activities: ${lessonPlan["activities"]}",
-      "Total Lesson Duration: $lessonDuration minutes"
-    )
+  // Function to suggest activities based on available resources
+  fun suggestActivities(availableResources: List<String>) {
+    // Create a new task in the UI to show progress
+    val task = ui.newTask()
+    try {
+      // Add a header to the task output to indicate the start of the process
+      task.header("Suggesting Activities Based on Available Resources")
 
-    // Use the timeManagerActor to process the input and get the response
-    val response = timeManagerActor.answer(conversationThread, api = api)
+      // Add a message to the task output to show the resources being processed
+      task.add("Processing the following available resources: ${availableResources.joinToString(", ")}")
 
-    // Return the parsed AutomatedLessonPlannerActors.TimeAllocation object from the response
-    return response.obj
-  }
+      // Use the resourceAllocatorActor to get the suggested activities
+      val response = resourceAllocatorActor.answer(availableResources, api = api)
 
-  fun assessmentIntegratorActor(lessonPlan: Map<String, Any>, assessmentMethods: Map<String, Any>): AutomatedLessonPlannerActors.AssessmentIntegration {
-    // Convert the lesson plan and assessment methods to a conversation thread list
-    val conversationThread = listOf(
-      "Lesson Plan: Title - ${lessonPlan["title"]}, Objectives - ${lessonPlan["objectives"]}",
-      "Assessment Methods: Formative - ${assessmentMethods["formative"]}, Summative - ${assessmentMethods["summative"]}"
-    )
+      // Check if the response is valid
+      val allocation = response.obj
+      val validationResult = allocation.validate()
+      if (validationResult != null) {
+        // If the response is not valid, display an error message
+        task.error(Exception(validationResult))
+      } else {
+        // If the response is valid, display the suggested activities
+        task.add("Suggested activities based on the available resources:")
+        allocation.suggestedActivities.forEach { activity ->
+          task.add("Activity: \"$activity\"")
+        }
+      }
 
-    // Use the assessmentIntegratorActor to process the input and get the response
-    val response = assessmentIntegratorActor.answer(conversationThread, api = api)
-
-    // Return the parsed AutomatedLessonPlannerActors.AssessmentIntegration object from the response
-    return response.obj
+      // Complete the task with a final message
+      task.complete("Activity suggestion process completed.")
+    } catch (e: Throwable) {
+      // If an error occurs, display it in the task output
+      task.error(e)
+      throw e
+    }
   }
 
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(AutomatedLessonPlannerAgent::class.java)
+    private val log = org.slf4j.LoggerFactory.getLogger(AutomatedLessonPlannerArchitectureAgent::class.java)
 
   }
 }
 
 
-
-class AutomatedLessonPlannerActors(
+class AutomatedLessonPlannerArchitectureActors(
   val model: ChatModels = ChatModels.GPT4Turbo,
   val temperature: Double = 0.3,
 ) {
 
 
+  // Define the data class for the curriculum mapping result
   data class CurriculumMapping(
-    @Description("The subject area of the curriculum")
-    val subjectArea: String? = null,
-    @Description("The grade level for the curriculum")
-    val gradeLevel: String? = null,
-    @Description("A list of curriculum standards")
-    val standards: List<String>? = null
-  ) : ValidatedObject {
-    override fun validate() = when {
-      subjectArea.isNullOrBlank() -> "subjectArea is required"
-      gradeLevel.isNullOrBlank() -> "gradeLevel is required"
-      standards.isNullOrEmpty() -> "standards are required"
-      else -> null
-    }
-  }
+    @Description("A list of learning objectives.")
+    val learningObjectives: List<String>,
 
-  interface CurriculumMapperParser : Function<String, CurriculumMapping> {
-    @Description("Parse the text into a CurriculumMapping data structure.")
-    override fun apply(text: String): CurriculumMapping
-  }
-
-  val curriculumMapperActor = ParsedActor<CurriculumMapping>(
-    parserClass = CurriculumMapperParser::class.java,
-    model = ChatModels.GPT35Turbo,
-    prompt = """
-            You are an assistant specialized in curriculum mapping.
-            Your task is to analyze the input data and map it to the relevant curriculum standards.
-            Input data: "Subject: Mathematics, Grade: 7, Topics: Algebra, Geometry"
-            Based on the input data, provide the curriculum mapping in a structured format.
-        """.trimIndent()
-  )
-
-
-  data class PersonalizedPlan(
-    @Description("A map of student preferences for personalization.")
-    val studentPreferences: Map<String, Any>? = null,
-    @Description("A map of student performance data for personalization.")
-    val performanceData: Map<String, Any>? = null
+    @Description("A map of learning objectives to curriculum standards.")
+    val standardMappings: Map<String, String>
   ) : ValidatedObject {
     override fun validate(): String? {
-      if (studentPreferences == null || studentPreferences.isEmpty()) return "studentPreferences is required"
-      if (performanceData == null || performanceData.isEmpty()) return "performanceData is required"
+      if (learningObjectives.isEmpty()) return "Learning objectives are required."
+      if (standardMappings.isEmpty()) return "Standard mappings are required."
       return null
     }
   }
 
-  interface PersonalizationParser : Function<String, PersonalizedPlan> {
-    @Description("Parse the text response into a PersonalizedPlan data structure.")
-    override fun apply(text: String): PersonalizedPlan
+  // Define the parser interface
+  interface CurriculumMappingParser : Function<String, CurriculumMapping> {
+    @Description("Parse the text response into a CurriculumMapping data structure.")
+    override fun apply(text: String): CurriculumMapping
   }
 
-  val personalizationActor = ParsedActor<PersonalizedPlan>(
-    parserClass = PersonalizationParser::class.java,
+  // Instantiate the curriculumMapperActor
+  val curriculumMapperActor = ParsedActor<CurriculumMapping>(
+    parserClass = CurriculumMappingParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
-            You are an assistant that personalizes lesson plans based on student data.
-            Given the student preferences and performance data, create a personalized lesson plan.
+            You are an assistant that maps learning objectives to curriculum standards.
+            Given a list of learning objectives, provide the corresponding curriculum standards.
         """.trimIndent()
   )
 
 
-  // Define the ResourceAllocation data class
   data class ResourceAllocation(
-    @Description("A list of required materials for the lesson.")
-    val requiredMaterials: List<String>? = null,
-    @Description("A list of suggested supplementary materials for the lesson.")
-    val suggestedSupplementaryMaterials: List<String>? = null
+    @Description("A list of available resources.")
+    val availableResources: List<String>,
+    @Description("A list of suggested activities based on the available resources.")
+    val suggestedActivities: List<String>
   ) : ValidatedObject {
     override fun validate() = when {
-      requiredMaterials.isNullOrEmpty() -> "requiredMaterials is required"
+      availableResources.isEmpty() -> "Available resources are required."
+      suggestedActivities.isEmpty() -> "Suggested activities are required."
       else -> null
     }
   }
 
-  // Define the ResourceAllocatorParser interface
   interface ResourceAllocatorParser : Function<String, ResourceAllocation> {
-    @Description("Parse the text response into a ResourceAllocation data structure.")
+    @Description("Parses the text into a ResourceAllocation data structure.")
     override fun apply(text: String): ResourceAllocation
   }
 
-  // Instantiate the resourceAllocatorActor using the ParsedActor constructor
   val resourceAllocatorActor = ParsedActor<ResourceAllocation>(
     parserClass = ResourceAllocatorParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
-            You are an assistant that allocates resources for lesson plans.
-            Given a set of constraints and available materials, suggest the best use of resources.
+            You are an assistant that suggests educational activities based on a list of available resources.
+            Given a list of resources, provide a list of possible activities that can be conducted using these resources.
+            Please format your response as follows:
+            Available Resources: [Resource1, Resource2, ...]
+            Suggested Activities: [Activity1, Activity2, ...]
         """.trimIndent()
   )
 
 
-  data class TimeAllocation(
-    @Description("A map of activities and their corresponding durations in minutes.")
-    val activityDurations: Map<String, Int>
+  data class TimeBlock(
+    @Description("The start time of the activity.")
+    val startTime: String? = null,
+    @Description("The end time of the activity.")
+    val endTime: String? = null
   ) : ValidatedObject {
     override fun validate() = when {
-      activityDurations.isEmpty() -> "At least one activity with its duration is required."
-      activityDurations.any { it.value <= 0 } -> "Activity durations must be greater than zero."
+      startTime.isNullOrBlank() -> "startTime is required"
+      endTime.isNullOrBlank() -> "endTime is required"
       else -> null
     }
   }
 
-  interface TimeAllocationParser : Function<String, TimeAllocation> {
-    @Description("Parse the text into a TimeAllocation data structure.")
-    override fun apply(text: String): TimeAllocation
-  }
-
-  val timeManagerActor = ParsedActor<TimeAllocation>(
-    parserClass = TimeAllocationParser::class.java,
-    model = ChatModels.GPT35Turbo,
-    prompt = """
-            You are an assistant for managing time allocation in lesson plans.
-            Given a list of activities and a total lesson duration, allocate time to each activity.
-            Produce a structured output with activity names and their corresponding durations in minutes.
-        """.trimIndent()
-  )
-
-
-  data class LessonContinuity(
-    @Description("A summary of the previous lesson.")
-    val previousLessonSummary: String? = null,
-    @Description("A preview of the next lesson.")
-    val nextLessonPreview: String? = null
+  data class Activity(
+    @Description("The name of the activity.")
+    val name: String? = null,
+    @Description("The description of the activity.")
+    val description: String? = null
   ) : ValidatedObject {
     override fun validate() = when {
-      previousLessonSummary.isNullOrBlank() -> "Previous lesson summary is required."
-      nextLessonPreview.isNullOrBlank() -> "Next lesson preview is required."
+      name.isNullOrBlank() -> "name is required"
       else -> null
     }
   }
 
-  interface ContinuityParser : Function<String, LessonContinuity> {
-    @Description("Parse the text into a LessonContinuity data structure.")
-    override fun apply(text: String): LessonContinuity
+  data class LessonTimeline(
+    @Description("A list of activities.")
+    val activities: List<Activity>? = null,
+    @Description("A map of activities to their corresponding time blocks.")
+    val activityTiming: Map<Activity, TimeBlock>? = null
+  ) : ValidatedObject {
+    override fun validate() = when {
+      activities.isNullOrEmpty() -> "activities are required"
+      activityTiming.isNullOrEmpty() -> "activityTiming is required"
+      else -> null
+    }
   }
 
-  val continuityActor = ParsedActor<LessonContinuity>(
-    parserClass = ContinuityParser::class.java,
+  interface TimeManagerParser : Function<String, LessonTimeline> {
+    @Description("Parse the text response into a lesson timeline structure.")
+    override fun apply(text: String): LessonTimeline
+  }
+
+  val timeManagerActor = ParsedActor<LessonTimeline>(
+    parserClass = TimeManagerParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
-            You are an assistant that helps in planning educational lessons. Your task is to ensure continuity between lessons.
-            Given a description of a previous lesson and the objectives of the upcoming lesson, provide a summary of the previous lesson and a preview of the next lesson.
+            You are an assistant that creates a timeline for a lesson plan.
+            Given a list of activities and their descriptions, along with the total lesson time, 
+            organize these activities into a structured timeline that fits within the lesson duration.
         """.trimIndent()
   )
 
 
-  data class AssessmentIntegration(
-    @Description("A list of formative assessment methods to be used.")
-    val formativeAssessments: List<String>? = null,
-    @Description("A list of summative assessment methods to be used.")
-    val summativeAssessments: List<String>? = null
+  data class AssessmentMethod(
+    @Description("The type of assessment method.")
+    val type: String,
+    @Description("A brief description of the assessment method.")
+    val description: String
   ) : ValidatedObject {
     override fun validate(): String? {
-      if (formativeAssessments.isNullOrEmpty() && summativeAssessments.isNullOrEmpty()) {
-        return "At least one formative or summative assessment method is required."
-      }
+      if (type.isBlank()) return "Assessment method type is required."
+      if (description.isBlank()) return "Assessment method description is required."
       return null
     }
   }
 
-  interface AssessmentIntegratorParser : Function<String, AssessmentIntegration> {
-    @Description("Parse the text response into an AssessmentIntegration data structure.")
-    override fun apply(text: String): AssessmentIntegration
+  data class AssessmentPlan(
+    @Description("The learning objectives to be assessed.")
+    val learningObjectives: List<String>,
+    @Description("The suggested assessment methods for the objectives.")
+    val assessmentMethods: List<AssessmentMethod>
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (learningObjectives.isEmpty()) return "At least one learning objective is required."
+      if (assessmentMethods.isEmpty()) return "At least one assessment method is required."
+      return null
+    }
   }
 
-  val assessmentIntegratorActor = ParsedActor<AssessmentIntegration>(
-    parserClass = AssessmentIntegratorParser::class.java,
+  interface AssessmentPlanParser : Function<String, AssessmentPlan> {
+    @Description("Parse the text response into an assessment plan.")
+    override fun apply(text: String): AssessmentPlan
+  }
+
+  val assessmentPlannerActor = ParsedActor<AssessmentPlan>(
+    parserClass = AssessmentPlanParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
-            You are an assistant that helps integrate various assessment methods into lesson plans.
-            Based on the provided information, suggest appropriate formative and summative assessments.
+            You are an assistant specializing in educational assessment. Your task is to recommend assessment methods that align with specific learning objectives. For each learning objective provided, suggest one or more assessment methods that effectively measure student understanding and mastery.
+            
+            Learning Objectives:
+            - Understand the concept of photosynthesis.
+            - Be able to solve basic algebraic equations.
+            - Describe the significance of the water cycle.
+            
+            Based on these objectives, what assessment methods would you recommend?
         """.trimIndent()
   )
 
 
-  data class LearningAdaptations(
-    @Description("Adaptations for different learning styles and needs.")
-    val adaptations: Map<String, String>
+  val customizationActor = SimpleActor(
+    prompt = """
+            You are an automated lesson planner customization tool.
+            Provide options for teachers to customize their lesson plans.
+            Listen to the teacher's requests and incorporate their preferences into the lesson plan.
+        """.trimIndent()
+  )
+
+
+  data class FeedbackAnalysis(
+    @Description("The original feedback provided by the user.")
+    val feedback: String,
+    @Description("A list of suggestions for improvement based on the feedback.")
+    val improvementSuggestions: List<String>
   ) : ValidatedObject {
-    override fun validate(): String? {
-      if (adaptations.isEmpty()) return "Adaptations map cannot be empty."
-      return null
+    override fun validate() = when {
+      feedback.isBlank() -> "Feedback is required"
+      improvementSuggestions.isEmpty() -> "At least one improvement suggestion is required"
+      else -> null
     }
   }
 
-  interface LearningAdaptationsParser : Function<String, LearningAdaptations> {
-    @Description("Parse the text into a LearningAdaptations data structure.")
-    override fun apply(text: String): LearningAdaptations
+  interface FeedbackParser : Function<String, FeedbackAnalysis> {
+    @Description("Parse the feedback text into a structured feedback analysis.")
+    override fun apply(text: String): FeedbackAnalysis
   }
 
-  val adaptationActor = ParsedActor<LearningAdaptations>(
-    parserClass = LearningAdaptationsParser::class.java,
+  val feedbackAnalyzerActor = ParsedActor<FeedbackAnalysis>(
+    parserClass = FeedbackParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
-            You are an assistant that provides adaptations for lesson plans to accommodate different learning styles and special needs.
-            Based on the provided information, suggest appropriate adaptations.
+            You are an assistant that analyzes teacher feedback on lesson plans to suggest improvements.
+            Analyze the following feedback and provide suggestions for improvement.
         """.trimIndent()
   )
 
   enum class ActorType {
     CURRICULUM_MAPPER_ACTOR,
-    PERSONALIZATION_ACTOR,
     RESOURCE_ALLOCATOR_ACTOR,
     TIME_MANAGER_ACTOR,
-    CONTINUITY_ACTOR,
-    ASSESSMENT_INTEGRATOR_ACTOR,
-    ADAPTATION_ACTOR,
+    ASSESSMENT_PLANNER_ACTOR,
+    CUSTOMIZATION_ACTOR,
+    FEEDBACK_ANALYZER_ACTOR,
   }
 
-  val actorMap: Map<ActorType, BaseActor<out Any,out Any>> = mapOf(
+  val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
     ActorType.CURRICULUM_MAPPER_ACTOR to curriculumMapperActor,
-    ActorType.PERSONALIZATION_ACTOR to personalizationActor,
     ActorType.RESOURCE_ALLOCATOR_ACTOR to resourceAllocatorActor,
     ActorType.TIME_MANAGER_ACTOR to timeManagerActor,
-    ActorType.CONTINUITY_ACTOR to continuityActor,
-    ActorType.ASSESSMENT_INTEGRATOR_ACTOR to assessmentIntegratorActor,
-    ActorType.ADAPTATION_ACTOR to adaptationActor,
+    ActorType.ASSESSMENT_PLANNER_ACTOR to assessmentPlannerActor,
+    ActorType.CUSTOMIZATION_ACTOR to customizationActor,
+    ActorType.FEEDBACK_ANALYZER_ACTOR to feedbackAnalyzerActor,
   )
 
   companion object {
-    val log = org.slf4j.LoggerFactory.getLogger(AutomatedLessonPlannerActors::class.java)
+    val log = org.slf4j.LoggerFactory.getLogger(AutomatedLessonPlannerArchitectureActors::class.java)
   }
 }

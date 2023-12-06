@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.coding.CodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
+import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
 import com.simiacryptus.skyenet.apps.generated.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
 import com.simiacryptus.skyenet.apps.generated.PresentationGeneratorApp
@@ -39,6 +40,7 @@ open class AppServer(
             ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName)),
             ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName)),
             ChildWebApp("/presentation_generator", PresentationGeneratorApp(domainName = domainName)),
+            ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName)),
             ChildWebApp("/meta_agent", MetaAgentApp()),
             ChildWebApp("/aws_coder", CodingApp(
                     "AWS Coding Assistant",

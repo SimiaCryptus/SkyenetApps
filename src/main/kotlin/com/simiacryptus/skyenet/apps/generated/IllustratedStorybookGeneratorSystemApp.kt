@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.*
 import java.util.function.Function
@@ -29,7 +28,7 @@ import javax.imageio.ImageIO
 
 open class IllustratedStorybookApp(
   applicationName: String = "Illustrated Storybook Generator",
-  domainName: String,
+  domainName: String
 ) : ApplicationServer(
   applicationName = applicationName,
 ) {
@@ -55,11 +54,11 @@ open class IllustratedStorybookApp(
         user = user,
         session = session,
         dataStorage = dataStorage,
-        api = api,
         ui = ui,
+        api = api,
         model = settings?.model ?: ChatModels.GPT35Turbo,
-        imageModel = settings?.imageModel ?: ImageModels.DallE2,
         temperature = settings?.temperature ?: 0.3,
+        imageModel = settings?.imageModel ?: ImageModels.DallE2,
       ).inputHandler(userMessage)
     } catch (e: Throwable) {
       log.warn("Error", e)
@@ -115,40 +114,8 @@ open class IllustratedStorybookAgent(
       // Step 3: Format the story and illustrations into an HTML document
       task.add("Formatting the storybook into HTML...")
       val htmlStorybook = htmlFormatter(storyData, illustrations, userPreferencesContent)
-      task.add("HTML formatting complete.")
-
-      // Step 4: Save the HTML document to a file
-      task.add("Saving the storybook file...")
       val savedStorybookPath = fileManager(htmlStorybook)
-      task.add("Storybook saved at: $savedStorybookPath")
-
-      // Step 5: Display the storybook in the web interface
-      task.add("Displaying the storybook...")
-      webInterface(savedStorybookPath)
-
-      task.complete("Storybook generation process complete.")
-    } catch (e: Throwable) {
-      task.error(e)
-      throw e
-    }
-  }
-
-  private fun webInterface(savedStorybookPath: String) {
-    val task = ui.newTask()
-    try {
-      task.header("Displaying Storybook")
-
-      // Read the HTML content from the saved storybook file
-      val storybookContent = Files.readString(Path.of(savedStorybookPath))
-
-      // Display the storybook in the web interface
-      // Assuming there is a method in the UI to display HTML content directly
-      // If not, we would need to implement a way to serve the HTML file through a web server
-      // and provide a link to the user to view the storybook
-      task.add("Your storybook is ready! You can view it by opening the following file:")
-      task.add("<a href='file://$savedStorybookPath' target='_blank'>$savedStorybookPath</a>")
-
-      task.complete("Storybook display process complete.")
+      task.complete("<a href='$savedStorybookPath' target='_blank'>Storybook Ready!</a>")
     } catch (e: Throwable) {
       task.error(e)
       throw e
@@ -172,7 +139,7 @@ open class IllustratedStorybookAgent(
 
 
   // Assuming the storyText is of type AgentSystemArchitectureActors.StoryData and illustrations is a List<BufferedImage>
-  private fun htmlFormatter(storyText: IllustratedStorybookActors.StoryData, illustrations: List<BufferedImage>, userPreferencesContent: UserPreferencesContent): String {
+  private fun htmlFormatter(storyText: IllustratedStorybookActors.StoryData, illustrations: List<BufferedImage?>, userPreferencesContent: UserPreferencesContent): String {
     val task = ui.newTask()
     try {
       task.header("Formatting Storybook")
@@ -217,8 +184,10 @@ open class IllustratedStorybookAgent(
         htmlContent.append("<div class='story-paragraph'>$paragraph</div>")
         if (index < illustrations.size) {
           val illustration = illustrations[index]
-          val base64Image = encodeToBase64(illustration)
-          htmlContent.append("<div class='story-illustration'><img src='data:AgentSystemArchitectureActors.image/png;base64,$base64Image' /></div>")
+          if(illustration != null) {
+            val base64Image = encodeToBase64(illustration)
+            htmlContent.append("<div class='story-illustration'><img src='data:AgentSystemArchitectureActors.image/png;base64,$base64Image' /></div>")
+          }
         }
       }
 
@@ -248,7 +217,7 @@ open class IllustratedStorybookAgent(
 
       // Generate a unique file name for the storybook
       val fileName = "storybook_${UUID.randomUUID()}.html"
-      val directoryPath = Path.of("path/to/storybooks") // Replace with actual directory path
+      val directoryPath = dataStorage.getSessionDir(user, session).toPath()
       val filePath = directoryPath.resolve(fileName)
 
       // Ensure the directory exists
@@ -260,7 +229,7 @@ open class IllustratedStorybookAgent(
       task.add("Storybook saved successfully at: $filePath")
 
       // Return the path to the saved file as a string
-      return filePath.toString()
+      return "fileIndex/$session/"+ filePath.toString()
     } catch (e: Throwable) {
       task.error(e)
       throw e
@@ -271,14 +240,13 @@ open class IllustratedStorybookAgent(
 
 
   // Define the function for generating illustrations for a given story segment
-  private fun illustrationGeneratorActor(segment: String, userPreferencesContent: UserPreferencesContent): BufferedImage {
+  private fun illustrationGeneratorActor(segment: String, userPreferencesContent: UserPreferencesContent): BufferedImage? {
     val task = ui.newTask()
     try {
       task.header("Generating Illustration")
 
       // Construct the conversation thread with the story segment and user preferences
       val conversationThread = listOf(
-        "Please create an illustration for the following story segment:",
         segment,
         "The illustration should reflect the genre: ${userPreferencesContent.genre}",
         "It should be appropriate for the target age group: ${userPreferencesContent.targetAgeGroup}",
@@ -290,14 +258,14 @@ open class IllustratedStorybookAgent(
 
       // Log the AgentSystemArchitectureActors.image description
       task.add("Illustration description: ${illustrationResponse.text}")
+      task.image(illustrationResponse.image)
+      task.complete()
 
       // Return the generated AgentSystemArchitectureActors.image
       return illustrationResponse.image
     } catch (e: Throwable) {
       task.error(e)
-      throw e
-    } finally {
-      task.complete("Illustration generation complete.")
+      return null
     }
   }
 
@@ -401,7 +369,7 @@ class IllustratedStorybookActors(
 
 
   private val illustrationGeneratorActor = ImageActor(
-    prompt = "Describe an illustration to be created for a story with the given details.",
+    prompt = "In less than 200 words, briefly describe an illustration to be created for a story with the given details",
     name = "IllustrationGenerator",
     imageModel = imageModel, // Assuming DallE2 is suitable for generating storybook illustrations
     temperature = 0.5, // Adjust temperature for creativity vs. coherence

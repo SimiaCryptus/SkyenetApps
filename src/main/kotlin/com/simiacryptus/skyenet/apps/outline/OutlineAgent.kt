@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.outline
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.GPT4Tokenizer
+import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.apps.outline.OutlineActors.ActorType
 import com.simiacryptus.skyenet.apps.outline.OutlineManager.NodeList
@@ -9,7 +10,6 @@ import com.simiacryptus.skyenet.apps.outline.OutlineManager.OutlinedText
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
@@ -26,7 +26,7 @@ class OutlineAgent(
     session: Session,
     user: User?,
     temperature: Double,
-    private val iterations: Int,
+    val models: List<ChatModels>,
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
@@ -35,7 +35,7 @@ class OutlineAgent(
     val domainName: String
 ) : ActorSystem<ActorType>(OutlineActors.actorMap(temperature), dataStorage, user, session) {
     init {
-        require(iterations > -1)
+        require(models.isNotEmpty())
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -45,7 +45,8 @@ class OutlineAgent(
     @Suppress("UNCHECKED_CAST")
     private val expand get() = getActor(ActorType.EXPAND) as ParsedActor<NodeList>
     private val activeThreadCounter = AtomicInteger(0)
-    
+    private val tokenizer = GPT4Tokenizer(false)
+
     fun buildMap() {
         val message = ui.newTask()
         val outlineManager = try {
@@ -60,8 +61,8 @@ class OutlineAgent(
             throw e
         }
 
-        if (iterations > 0) {
-            processRecursive(outlineManager, outlineManager.rootNode, (iterations - 1))
+        if (models.isNotEmpty()) {
+            processRecursive(outlineManager, outlineManager.rootNode, models)
             while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
             while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
         }
@@ -114,7 +115,6 @@ class OutlineAgent(
         }
     }
 
-    private val tokenizer = GPT4Tokenizer(false)
     private fun buildFinalEssay(
         nodeList: NodeList,
         manager: OutlineManager
@@ -127,7 +127,7 @@ class OutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlinedText,
-        depth: Int
+        models: List<ChatModels>
     ) {
         val terminalNodeMap = node.outline.getTerminalNodeMap()
         if (terminalNodeMap.isEmpty()) {
@@ -141,7 +141,7 @@ class OutlineAgent(
                 activeThreadCounter.incrementAndGet()
                 val message = ui.newTask()
                 try {
-                    val newNode = processNode(node, item, manager, message) ?: return@submit
+                    val newNode = processNode(node, item, manager, message, models.first()) ?: return@submit
                     synchronized(manager.expansionMap) {
                         if (!manager.expansionMap.containsKey(childNode)) {
                             manager.expansionMap[childNode] = newNode
@@ -153,7 +153,7 @@ class OutlineAgent(
                         }
                     }
                     message.complete()
-                    if (depth > 0) processRecursive(manager, newNode, depth - 1)
+                    if (models.size > 1) processRecursive(manager, newNode, models.drop(1))
                 } catch (e: Exception) {
                     log.warn("Error in processRecursive", e)
                     message.error(e)
@@ -169,13 +169,14 @@ class OutlineAgent(
         sectionName: String,
         outlineManager: OutlineManager,
         message: SessionTask,
+        model: ChatModels,
     ): OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
             log.debug("Skipping: ${parent.text}")
             return null
         }
         message.header("Expand $sectionName")
-        val answer = expand.answer(listOf(this.userMessage, parent.text, sectionName), api = api)
+        val answer = expand.withModel(model).answer(listOf(this.userMessage, parent.text, sectionName), api = api)
         message.add(renderMarkdown(answer.text))
         message.verbose(toJson(answer.obj))
         val newNode = OutlinedText(answer.text, answer.obj)

@@ -158,7 +158,7 @@ open class LibraryGeneratorAgent(
    * @param functionName The name of the function to outline.
    * @return The outlined function.
    */
-  fun outlineFunction(functionName: String): LibraryGeneratorActors.FunctionOutline {
+  private fun outlineFunction(functionName: String): LibraryGeneratorActors.FunctionOutline {
     val task = ui.newTask()
     try {
       task.header("Outlining Function")
@@ -184,7 +184,7 @@ open class LibraryGeneratorAgent(
    * @param functionOutline The outline of the function to synthesize PseudocodeBreakdownActors.code for.
    * @return The synthesized PseudocodeBreakdownActors.code.
    */
-  fun synthesizeCodeForFunction(functionOutline: LibraryGeneratorActors.FunctionOutline): String {
+  private fun synthesizeCodeForFunction(functionOutline: LibraryGeneratorActors.FunctionOutline): String {
     val task = ui.newTask()
     try {
       task.header("Synthesizing Code for Function")
@@ -216,7 +216,7 @@ open class LibraryGeneratorAgent(
     }
   }
 
-  fun formatOutput(
+  private fun formatOutput(
     code_snippets: List<CodeSnippet>,
     documentation: List<Documentation>,
     test_cases: List<LibraryGeneratorActors.TestCase>
@@ -260,7 +260,7 @@ open class LibraryGeneratorAgent(
     }
   }
 
-  fun createTestCases(code_snippet: CodeSnippet): List<LibraryGeneratorActors.TestCase> {
+  private fun createTestCases(code_snippet: CodeSnippet): List<LibraryGeneratorActors.TestCase> {
     val task = ui.newTask()
     try {
       task.header("Creating Test Cases")
@@ -283,7 +283,7 @@ open class LibraryGeneratorAgent(
     }
   }
 
-  fun extractRequirements(prompt: String): LibraryGeneratorActors.InterpretationResult {
+  private fun extractRequirements(prompt: String): LibraryGeneratorActors.InterpretationResult {
     val task = ui.newTask()
     try {
       task.header("Extracting Requirements")
@@ -316,7 +316,7 @@ open class LibraryGeneratorAgent(
   )
 
   // Implement the function to synthesize PseudocodeBreakdownActors.code for a given data structure
-  fun synthesizeCodeForDataStructure(data_structure: Structure): String {
+  private fun synthesizeCodeForDataStructure(data_structure: Structure): String {
     val task = ui.newTask()
     try {
       task.header("Synthesizing Code for Data Structure")
@@ -350,7 +350,7 @@ open class LibraryGeneratorAgent(
     val code: String
   )
 
-  fun composeDocumentation(code_snippet: CodeSnippet): String {
+  private fun composeDocumentation(code_snippet: CodeSnippet): String {
     val task = ui.newTask()
     try {
       task.header("Composing Documentation")
@@ -374,7 +374,7 @@ open class LibraryGeneratorAgent(
     val content: String
   )
 
-  fun assessQuality(
+  private fun assessQuality(
     code_snippets: List<CodeSnippet>,
     documentation: List<Documentation>,
     test_cases: List<LibraryGeneratorActors.TestCase>
@@ -412,7 +412,7 @@ open class LibraryGeneratorAgent(
    *
    * @param formatted_output The formatted output to be saved.
    */
-  fun saveOutput(formatted_output: String) {
+  private fun saveOutput(formatted_output: String) {
     val task = ui.newTask()
     try {
       task.header("Saving Output")
@@ -437,7 +437,7 @@ open class LibraryGeneratorAgent(
     }
   }
 
-  fun designDataStructure(structure: String): LibraryGeneratorActors.DataStructureDesign {
+  private fun designDataStructure(structure: String): LibraryGeneratorActors.DataStructureDesign {
     val task = ui.newTask()
     try {
       task.header("Designing Data Structure")
@@ -490,7 +490,7 @@ class LibraryGeneratorActors(
     override fun apply(text: String): InterpretationResult
   }
 
-  val requirementInterpreter = ParsedActor<InterpretationResult>(
+  private val requirementInterpreter = ParsedActor<InterpretationResult>(
     parserClass = RequirementInterpreter::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
@@ -524,7 +524,7 @@ class LibraryGeneratorActors(
     override fun apply(text: String): DataStructureDesign
   }
 
-  val structureDesigner = ParsedActor<DataStructureDesign>(
+  private val structureDesigner = ParsedActor<DataStructureDesign>(
     parserClass = StructureDesignerParser::class.java,
     prompt = """
             You are an AI that designs data structures based on specified requirements. Given a description, create a data structure with appropriate fields and types.
@@ -562,7 +562,7 @@ class LibraryGeneratorActors(
     override fun apply(text: String): FunctionOutline
   }
 
-  val functionArchitect = ParsedActor<FunctionOutline>(
+  private val functionArchitect = ParsedActor<FunctionOutline>(
     parserClass = FunctionOutlineParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
@@ -571,7 +571,7 @@ class LibraryGeneratorActors(
   )
 
 
-  val codeSynthesizer = CodingActor(
+  private val codeSynthesizer = CodingActor(
     interpreterClass = KotlinInterpreter::class,
     symbols = mapOf(
       "ui" to ui,
@@ -596,7 +596,7 @@ class LibraryGeneratorActors(
   )
 
 
-  val documentationComposer = SimpleActor(
+  private val documentationComposer = SimpleActor(
     prompt = """
             You are a documentation composer.
             Your task is to create clear and concise documentation for the provided code snippets.
@@ -627,7 +627,7 @@ class LibraryGeneratorActors(
     }
   }
 
-  val testCaseCreator = ParsedActor<TestCase>(
+  private val testCaseCreator = ParsedActor<TestCase>(
     parserClass = TestCaseParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
@@ -654,7 +654,7 @@ class LibraryGeneratorActors(
     override fun apply(text: String): QualityReview
   }
 
-  val qualityAssessor = ParsedActor<QualityReview>(
+  private val qualityAssessor = ParsedActor<QualityReview>(
     parserClass = QualityReviewParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
@@ -665,7 +665,7 @@ class LibraryGeneratorActors(
   )
 
 
-  val outputFormatter = SimpleActor(
+  private val outputFormatter = SimpleActor(
     prompt = """
             You are an output formatter. Your job is to take the generated code, documentation, and test cases and format them neatly for presentation. Ensure that the code is properly indented and commented, the documentation is clear and concise, and the test cases are well-organized and easy to understand.
         """.trimIndent()

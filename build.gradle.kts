@@ -37,7 +37,7 @@ val spark_version = "3.5.0"
 val jackson_version = "2.15.3"
 val jupiter_version = "5.10.1"
 dependencies {
-    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.40")
+    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.41")
 
     implementation(group = "com.simiacryptus.skyenet", name = "core", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "groovy", version = skyenet_version)
