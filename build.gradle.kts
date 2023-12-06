@@ -54,7 +54,7 @@ dependencies {
     implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
     implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
     implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
-    implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version = "5.2.1")
+    implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version = "5.2.3")
     implementation(group = "com.google.code.gson", name = "gson", version = "2.10.1")
     implementation(group = "com.h2database", name = "h2", version = "2.2.224")
 
