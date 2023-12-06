@@ -13,8 +13,7 @@ open class MetaAgentApp(
     applicationName: String = "MetaAgent",
     temperature: Double = 0.1,
 ) : ApplicationServer(
-    applicationName = applicationName,
-    temperature = temperature,
+  applicationName = applicationName,
 ) {
     override val description: String
         get() = "<div>${

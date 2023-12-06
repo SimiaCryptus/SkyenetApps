@@ -76,6 +76,7 @@ open class MetaAgentAgent(
         |import com.simiacryptus.skyenet.core.actors.ImageActor
         |import com.simiacryptus.skyenet.core.platform.file.DataStorage
         |import com.simiacryptus.skyenet.core.platform.Session
+        |import com.simiacryptus.skyenet.core.platform.StorageInterface
         |import com.simiacryptus.skyenet.core.platform.User
         |import com.simiacryptus.skyenet.webui.application.ApplicationServer
         |import com.simiacryptus.skyenet.webui.session.*
@@ -133,10 +134,8 @@ open class MetaAgentAgent(
         |
         |open class ${classBaseName}App(
         |    applicationName: String = "${design.obj.name}",
-        |    temperature: Double = 0.1,
         |) : ApplicationServer(
         |    applicationName = applicationName,
-        |    temperature = temperature,
         |) {
         |
         |    data class Settings(

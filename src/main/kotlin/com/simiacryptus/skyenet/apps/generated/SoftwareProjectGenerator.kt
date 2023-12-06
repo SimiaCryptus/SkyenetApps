@@ -19,7 +19,6 @@ open class SoftwareProjectGeneratorApp(
   temperature: Double = 0.1,
 ) : ApplicationServer(
   applicationName = applicationName,
-  temperature = temperature,
 ) {
 
   data class Settings(

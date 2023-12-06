@@ -1,30 +1,43 @@
 package com.simiacryptus.skyenet.apps.generated
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.jopenai.proxy.ValidatedObject
+import com.simiacryptus.jopenai.util.JsonUtil.toJson
+import com.simiacryptus.skyenet.core.actors.ActorSystem
+import com.simiacryptus.skyenet.core.actors.BaseActor
+import com.simiacryptus.skyenet.core.actors.ImageActor
+import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
-import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+import java.util.*
 import java.util.function.Function
+import javax.imageio.ImageIO
 
 
-open class AIbasedIllustratedStorybookGeneratorApp(
-applicationName: String = "AI-based Illustrated Storybook Generator",
-temperature: Double = 0.1,
+open class IllustratedStorybookApp(
+  applicationName: String = "Illustrated Storybook Generator",
+  domainName: String,
 ) : ApplicationServer(
-applicationName = applicationName,
-temperature = temperature,
+  applicationName = applicationName,
 ) {
 
   data class Settings(
     val model: ChatModels = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
+    val imageModel: ImageModels = ImageModels.DallE2
   )
   override val settingsClass: Class<*> get() = Settings::class.java
   @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
@@ -38,28 +51,30 @@ temperature = temperature,
   ) {
     try {
       val settings = getSettings<Settings>(session, user)
-      AIbasedIllustratedStorybookGeneratorAgent(
+      IllustratedStorybookAgent(
         user = user,
         session = session,
         dataStorage = dataStorage,
         api = api,
         ui = ui,
         model = settings?.model ?: ChatModels.GPT35Turbo,
+        imageModel = settings?.imageModel ?: ImageModels.DallE2,
         temperature = settings?.temperature ?: 0.3,
-      ).aiBasedIllustratedStorybookGenerator(userMessage)
+      ).inputHandler(userMessage)
     } catch (e: Throwable) {
       log.warn("Error", e)
     }
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(AIbasedIllustratedStorybookGeneratorApp::class.java)
+    private val log = LoggerFactory.getLogger(IllustratedStorybookApp::class.java)
   }
 
 }
 
 
-open class AIbasedIllustratedStorybookGeneratorAgent(
+
+open class IllustratedStorybookAgent(
   user: User?,
   session: Session,
   dataStorage: StorageInterface,
@@ -67,396 +82,346 @@ open class AIbasedIllustratedStorybookGeneratorAgent(
   val api: API,
   model: ChatModels = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
-) : ActorSystem<AIbasedIllustratedStorybookGeneratorActors.ActorType>(AIbasedIllustratedStorybookGeneratorActors(
-model = model,
-temperature = temperature,
+  imageModel: ImageModels = ImageModels.DallE2,
+) : ActorSystem<IllustratedStorybookActors.ActorType>(IllustratedStorybookActors(
+  model = model,
+  temperature = temperature,
+  imageModel = imageModel,
 ).actorMap, dataStorage, user, session) {
 
   @Suppress("UNCHECKED_CAST")
-  private val plotGeneratorActor by lazy { getActor(AIbasedIllustratedStorybookGeneratorActors.ActorType.PLOT_GENERATOR_ACTOR) as ParsedActor<String> }
-  private val characterCreatorActor by lazy { getActor(AIbasedIllustratedStorybookGeneratorActors.ActorType.CHARACTER_CREATOR_ACTOR) as ParsedActor<String> }
-  private val dialogueGeneratorActor by lazy { getActor(AIbasedIllustratedStorybookGeneratorActors.ActorType.DIALOGUE_GENERATOR_ACTOR) as ParsedActor<String> }
-  private val illustrationCoordinatorActor by lazy { getActor(AIbasedIllustratedStorybookGeneratorActors.ActorType.ILLUSTRATION_COORDINATOR_ACTOR) as ImageActor }
-  private val styleCustomizerActor by lazy { getActor(AIbasedIllustratedStorybookGeneratorActors.ActorType.STYLE_CUSTOMIZER_ACTOR) as ImageActor }
-  private val bookLayoutActor by lazy { getActor(AIbasedIllustratedStorybookGeneratorActors.ActorType.BOOK_LAYOUT_ACTOR) as CodingActor }
+  private val storyGeneratorActor by lazy { getActor(IllustratedStorybookActors.ActorType.STORY_GENERATOR_ACTOR) as ParsedActor<IllustratedStorybookActors.StoryData> }
+  private val illustrationGeneratorActor by lazy { getActor(IllustratedStorybookActors.ActorType.ILLUSTRATION_GENERATOR_ACTOR) as ImageActor }
+  @Suppress("UNCHECKED_CAST")
+  private val requirementsActor by lazy { getActor(IllustratedStorybookActors.ActorType.REQUIREMENTS_ACTOR) as ParsedActor<UserPreferencesContent> }
 
-  fun aiBasedIllustratedStorybookGenerator(user_preferences: String) {
+  private fun agentSystemArchitecture(userPreferencesContent: UserPreferencesContent) {
     val task = ui.newTask()
     try {
-      task.header("AI-Based Illustrated Storybook Generator")
+      task.header("Starting Storybook Generation Process")
 
-      // Step 1: Generate the plot based on user preferences
-      task.add("Generating the story plot...")
-      val plotResponse = plotGeneratorActor.answer(listOf(user_preferences), api = api)
-      val plotText = plotResponse.text
-      task.add("Plot generated successfully: $plotText")
+      // Step 1: Generate the story text using the Story Generator Actor
+      task.add("Generating the story based on user preferences...")
+      val storyData = storyGeneratorActor(userPreferencesContent)
+      task.add("Story generated successfully with title: '${storyData.title}'")
 
-      // Step 2: Create characters for the story
-      task.add("Creating characters for the story...")
-      val characterResponse = characterCreatorActor.answer(listOf(user_preferences), api = api)
-      val characterText = characterResponse.text
-      task.add("Characters created successfully: $characterText")
+      // Step 2: Generate illustrations for each paragraph of the story
+      task.add("Generating illustrations for the story...")
+      val illustrations = storyData.paragraphs?.map { paragraph ->
+        illustrationGeneratorActor(paragraph, userPreferencesContent)
+      } ?: emptyList()
+      task.add("Illustrations generated successfully.")
 
-      // Step 3: Generate dialogues for the characters
-      task.add("Generating dialogues for the characters...")
-      val dialogueResponse = dialogueGeneratorActor.answer(listOf(plotText, characterText), api = api)
-      val dialogueText = dialogueResponse.text
-      task.add("Dialogues generated successfully: $dialogueText")
+      // Step 3: Format the story and illustrations into an HTML document
+      task.add("Formatting the storybook into HTML...")
+      val htmlStorybook = htmlFormatter(storyData, illustrations, userPreferencesContent)
+      task.add("HTML formatting complete.")
 
-      // Step 4: Coordinate illustrations for the story
-      task.add("Coordinating illustrations for the story...")
-      val illustrationResponse = illustrationCoordinatorActor.answer(listOf(plotText, characterText), api = api)
-      val illustration = illustrationResponse.image
-      task.add("Illustrations coordinated successfully.")
-      task.image(illustration) // Display the illustration to the user
+      // Step 4: Save the HTML document to a file
+      task.add("Saving the storybook file...")
+      val savedStorybookPath = fileManager(htmlStorybook)
+      task.add("Storybook saved at: $savedStorybookPath")
 
-      // Step 5: Customize the style of the illustrations
-      task.add("Customizing the style of the illustrations...")
-      val styleCustomizationResponse = styleCustomizerActor.answer(listOf(user_preferences), api = api)
-      val styledIllustration = styleCustomizationResponse.image
-      task.add("Illustrations customized successfully.")
-      task.image(styledIllustration) // Display the styled illustration to the user
+      // Step 5: Display the storybook in the web interface
+      task.add("Displaying the storybook...")
+      webInterface(savedStorybookPath)
 
-      // Step 6: Design the layout of the storybook
-      task.add("Designing the layout of the storybook...")
-      val layoutCodeResult = bookLayoutActor.answer(
-        CodingActor.CodeRequest(listOf(plotText, dialogueText, styledIllustration.toString())), api = api
-      )
-      val layoutCode = layoutCodeResult.code
-      task.add("Book layout code generated successfully: $layoutCode")
-
-      // Execute the generated code to produce the book layout
-      val executionResult = layoutCodeResult.result
-      val bookLayoutOutput = executionResult.resultOutput
-      task.add("Book layout designed successfully. Here is the layout output:")
-      task.add(bookLayoutOutput) // Display the book layout output to the user
-
-      task.complete("Storybook generation complete. Enjoy your personalized illustrated storybook!")
+      task.complete("Storybook generation process complete.")
     } catch (e: Throwable) {
       task.error(e)
       throw e
     }
   }
 
-  fun characterCreatorActor(CCA: ParsedActor<String>) {
+  private fun webInterface(savedStorybookPath: String) {
     val task = ui.newTask()
     try {
-      task.header("Character Creator")
+      task.header("Displaying Storybook")
 
-      // Ask the user for input regarding the story preferences for character creation
-      task.add(ui.textInput { preferences ->
-        task.add("Creating characters based on the following preferences: $preferences")
+      // Read the HTML content from the saved storybook file
+      val storybookContent = Files.readString(Path.of(savedStorybookPath))
 
-        // Call the CCA actor to generate character profiles
-        val characterResponse = CCA.answer(listOf(preferences), api = api)
-        val characterText = characterResponse.text // Extract the text part of the response
+      // Display the storybook in the web interface
+      // Assuming there is a method in the UI to display HTML content directly
+      // If not, we would need to implement a way to serve the HTML file through a web server
+      // and provide a link to the user to view the storybook
+      task.add("Your storybook is ready! You can view it by opening the following file:")
+      task.add("<a href='file://$savedStorybookPath' target='_blank'>$savedStorybookPath</a>")
 
-        task.add("Characters created successfully. Here are the profiles:")
-
-        // Display the generated character profiles to the user
-        task.add(characterText)
-
-        // Optionally, you can parse the characterResponse into a structured format if needed
-        // For this example, we are assuming characterResponse is a string containing the character profiles
-      })
-
-      task.complete("Character creation complete.")
+      task.complete("Storybook display process complete.")
     } catch (e: Throwable) {
       task.error(e)
       throw e
     }
   }
 
-  fun plotGeneratorActor(PGA: ParsedActor<String>) {
+  fun inputHandler(userMessage: String) {
     val task = ui.newTask()
     try {
-      task.header("Plot Generator")
-
-      // Ask the user for input regarding the story preferences
-      task.add(ui.textInput { preferences ->
-        task.add("Generating plot based on the following preferences: $preferences")
-
-        // Call the PGA actor to generate the plot
-        val plotResponse = PGA.answer(listOf(preferences), api = api)
-        val plotText = plotResponse.text // Extract the text part of the response
-
-        task.add("Plot generated successfully. Here is the outline:")
-
-        // Display the generated plot to the user
-        task.add(plotText)
-
-        // Optionally, you can parse the plotResponse into a structured format if needed
-        // For this example, we are assuming plotResponse is a string containing the plot outline
-      })
-
-      task.complete("Plot generation complete.")
+      task.echo(userMessage)
+      val answer = requirementsActor.answer(listOf(userMessage), api = api)
+      task.add(renderMarkdown(answer.text))
+      task.verbose(toJson(answer.obj))
+      agentSystemArchitecture(answer.obj)
+      task.complete("Generation complete!")
     } catch (e: Throwable) {
       task.error(e)
       throw e
     }
   }
 
-  fun illustrationCoordinatorActor(ICA: ImageActor, plot_with_dialogue: String, user_preferences: String) {
+
+  // Assuming the storyText is of type AgentSystemArchitectureActors.StoryData and illustrations is a List<BufferedImage>
+  private fun htmlFormatter(storyText: IllustratedStorybookActors.StoryData, illustrations: List<BufferedImage>, userPreferencesContent: UserPreferencesContent): String {
     val task = ui.newTask()
     try {
-      task.header("Illustration Coordinator")
+      task.header("Formatting Storybook")
 
-      // Combine the plot and dialogue with user preferences to form the illustration prompt
-      val illustrationPrompt = "Generate an illustration for a scene with the following details: $plot_with_dialogue " +
-          "and according to user preferences: $user_preferences"
+      // Initialize HTML content with a StringBuilder
+      val htmlContent = StringBuilder()
 
-      // Call the ICA actor to generate the illustration
-      val illustrationResponse = ICA.answer(listOf(illustrationPrompt), api = api)
-      val illustration = illustrationResponse.image // Extract the image part of the response
+      // Start of HTML document
+      htmlContent.append("<html><head><title>${storyText.title}</title></head><body>")
 
-      task.add("Illustration generated successfully. Here is the image:")
+      // Add CSS styles for the storybook
+      htmlContent.append("""
+                <style>
+                    body {
+                        font-family: 'Arial', sans-serif;
+                    }
+                    .story-title {
+                        text-align: center;
+                        font-size: 2em;
+                        margin-top: 20px;
+                    }
+                    .story-paragraph {
+                        text-align: justify;
+                        margin: 15px;
+                    }
+                    .story-illustration {
+                        text-align: center;
+                        margin: 20px;
+                    }
+                    .story-illustration img {
+                        max-width: 100%;
+                        height: auto;
+                    }
+                </style>
+            """.trimIndent())
 
-      // Display the generated illustration to the user
-      task.image(illustration)
+      // Add the story title
+      htmlContent.append("<div class='story-title'>${storyText.title}</div>")
 
-      task.complete("Illustration coordination complete.")
-    } catch (e: Throwable) {
-      task.error(e)
-      throw e
-    }
-  }
-
-  fun styleCustomizerActor(SCA: ImageActor, illustrations: List<String>, user_preferences: String) {
-    val task = ui.newTask()
-    try {
-      task.header("Style Customizer")
-
-      // Iterate over each illustration URL or description
-      for (illustration in illustrations) {
-        // Construct the prompt to customize the illustration based on user preferences
-        val styleCustomizationPrompt = "Customize the following illustration to match the style and color palette preferences: $user_preferences"
-
-        // Call the SCA actor to customize the illustration
-        val styleCustomizationResponse = SCA.answer(listOf(styleCustomizationPrompt), api = api)
-        val customizedIllustration = styleCustomizationResponse.image // Extract the image part of the response
-
-        task.add("Illustration customized successfully. Here is the styled image:")
-
-        // Display the customized illustration to the user
-        task.image(customizedIllustration)
+      // Add each paragraph and corresponding illustration
+      storyText.paragraphs?.forEachIndexed { index, paragraph ->
+        htmlContent.append("<div class='story-paragraph'>$paragraph</div>")
+        if (index < illustrations.size) {
+          val illustration = illustrations[index]
+          val base64Image = encodeToBase64(illustration)
+          htmlContent.append("<div class='story-illustration'><img src='data:AgentSystemArchitectureActors.image/png;base64,$base64Image' /></div>")
+        }
       }
 
-      task.complete("Style customization complete.")
+      // End of HTML document
+      htmlContent.append("</body></html>")
+
+      task.complete("Storybook formatting complete.")
+      return htmlContent.toString()
     } catch (e: Throwable) {
       task.error(e)
       throw e
     }
   }
 
-  fun bookLayoutActor(BLA: CodingActor, plot_with_dialogue: String, styled_illustrations: List<String>) {
+  // Helper function to encode BufferedImage to Base64 string
+  private fun encodeToBase64(image: BufferedImage): String {
+    val outputStream = ByteArrayOutputStream()
+    ImageIO.write(image, "png", outputStream)
+    return Base64.getEncoder().encodeToString(outputStream.toByteArray())
+  }
+
+
+  private fun fileManager(htmlStorybook: String): String {
     val task = ui.newTask()
     try {
-      task.header("Book Layout Design")
+      task.header("Saving Storybook File")
 
-      // Construct a code request to design the book layout with the given plot and illustrations
-      val codeRequest = CodingActor.CodeRequest(
-        listOf(
-          "Arrange the provided text and illustrations into a book layout.",
-          "Text content: $plot_with_dialogue",
-          "Illustrations: $styled_illustrations"
-        )
+      // Generate a unique file name for the storybook
+      val fileName = "storybook_${UUID.randomUUID()}.html"
+      val directoryPath = Path.of("path/to/storybooks") // Replace with actual directory path
+      val filePath = directoryPath.resolve(fileName)
+
+      // Ensure the directory exists
+      Files.createDirectories(directoryPath)
+
+      // Write the HTML content to the file
+      Files.writeString(filePath, htmlStorybook, StandardOpenOption.CREATE_NEW)
+
+      task.add("Storybook saved successfully at: $filePath")
+
+      // Return the path to the saved file as a string
+      return filePath.toString()
+    } catch (e: Throwable) {
+      task.error(e)
+      throw e
+    } finally {
+      task.complete("File management complete.")
+    }
+  }
+
+
+  // Define the function for generating illustrations for a given story segment
+  private fun illustrationGeneratorActor(segment: String, userPreferencesContent: UserPreferencesContent): BufferedImage {
+    val task = ui.newTask()
+    try {
+      task.header("Generating Illustration")
+
+      // Construct the conversation thread with the story segment and user preferences
+      val conversationThread = listOf(
+        "Please create an illustration for the following story segment:",
+        segment,
+        "The illustration should reflect the genre: ${userPreferencesContent.genre}",
+        "It should be appropriate for the target age group: ${userPreferencesContent.targetAgeGroup}",
+        "Please include the following elements if possible: ${userPreferencesContent.specificElements.joinToString(", ")}"
       )
 
-      // Call the BLA actor to generate the book layout code
-      val layoutCodeResult = BLA.answer(codeRequest, api = api)
-      val layoutCode = layoutCodeResult.code // Extract the generated code
+      // Generate the illustration using the illustrationGeneratorActor
+      val illustrationResponse = illustrationGeneratorActor.answer(conversationThread, api = api)
 
-      task.add("Book layout code generated successfully. Here is the code snippet:")
+      // Log the AgentSystemArchitectureActors.image description
+      task.add("Illustration description: ${illustrationResponse.text}")
 
-      // Display the generated code snippet to the user
-      task.add(layoutCode)
-
-      // Execute the generated code to produce the book layout
-      val executionResult = layoutCodeResult.result
-      val bookLayoutOutput = executionResult.resultOutput
-      // The resultValue is not directly displayable, it would be the result of the code execution, e.g., a data structure
-
-      task.add("Book layout designed successfully. Here is the layout output:")
-
-      // Display the book layout output to the user
-      task.add(bookLayoutOutput)
-
-      task.complete("Book layout design complete.")
+      // Return the generated AgentSystemArchitectureActors.image
+      return illustrationResponse.image
     } catch (e: Throwable) {
       task.error(e)
       throw e
+    } finally {
+      task.complete("Illustration generation complete.")
     }
   }
 
-  fun dialogueGeneratorActor(DGA: ParsedActor<String>, plot: String, characters: List<String>) {
+  // Define the structure for user preferences
+  data class UserPreferencesContent(
+    val genre: String,
+    val targetAgeGroup: String,
+    val specificElements: List<String> // List of specific elements to include in the story
+  )
+
+  // Implement the storyGeneratorActor function
+  private fun storyGeneratorActor(userPreferencesContent: UserPreferencesContent): IllustratedStorybookActors.StoryData {
     val task = ui.newTask()
     try {
-      task.header("Dialogue Generator")
+      task.header("Generating Story")
 
-      // Construct a conversation thread that includes the plot and characters
-      val conversationThread = listOf("Plot: $plot") + characters.map { "Character: $it" }
+      // Construct the conversation thread with user preferences
+      val conversationThread = listOf(
+        "Genre: ${userPreferencesContent.genre}",
+        "Target Age Group: ${userPreferencesContent.targetAgeGroup}",
+        "Specific Elements: ${userPreferencesContent.specificElements.joinToString(", ")}"
+      )
 
-      // Call the DGA actor to generate dialogues
-      val dialogueResponse = DGA.answer(conversationThread, api = api)
-      val dialogueText = dialogueResponse.text // Extract the text part of the response
+      // Generate the story using the storyGeneratorActor
+      val storyResponse = storyGeneratorActor.answer(conversationThread, api = api)
 
-      task.add("Dialogues generated successfully. Here are the dialogues:")
+      // Log the natural language answer
+      task.add("Story generated: ${storyResponse.text}")
 
-      // Display the generated dialogues to the user
-      task.add(dialogueText)
-
-      // Optionally, you can parse the dialogueResponse into a structured format if needed
-      // For this example, we are assuming dialogueResponse is a string containing the dialogues
-      task.complete("Dialogue generation complete.")
+      // Return the parsed story data
+      return storyResponse.obj
     } catch (e: Throwable) {
       task.error(e)
       throw e
+    } finally {
+      task.complete("Story generation complete.")
     }
   }
 
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(AIbasedIllustratedStorybookGeneratorAgent::class.java)
+    private val log = org.slf4j.LoggerFactory.getLogger(IllustratedStorybookAgent::class.java)
 
   }
 }
 
 
-class AIbasedIllustratedStorybookGeneratorActors(
-val model: ChatModels = ChatModels.GPT4Turbo,
-val temperature: Double = 0.3,
+
+class IllustratedStorybookActors(
+  val model: ChatModels = ChatModels.GPT4Turbo,
+  val temperature: Double = 0.3,
+  val imageModel: ImageModels = ImageModels.DallE2,
 ) {
 
 
-  // Define a parser that simply returns the string response.
-  class StringParser : Function<String, String> {
-    override fun apply(text: String): String {
-      return text
+  data class StoryData(
+    @Description("The title of the story")
+    val title: String? = null,
+    @Description("The paragraphs of the story")
+    val paragraphs: List<String>? = null,
+    @Description("The genre of the story")
+    val genre: String? = null,
+    @Description("The target age group for the story")
+    val targetAgeGroup: String? = null
+  ) : ValidatedObject {
+    override fun validate() = when {
+      title.isNullOrBlank() -> "Title is required"
+      paragraphs.isNullOrEmpty() -> "Paragraphs are required"
+      genre.isNullOrBlank() -> "Genre is required"
+      targetAgeGroup.isNullOrBlank() -> "Target age group is required"
+      else -> null
     }
   }
 
-  // Instantiate the plotGeneratorActor using the ParsedActor constructor.
-  val plotGeneratorActor = ParsedActor<String>(
-    parserClass = StringParser::class.java,
-    prompt = """
-            You are an AI capable of generating creative and engaging story plots. 
-            When given a set of parameters such as genre, themes, and length, 
-            you will produce a structured plot outline with a title, synopsis, 
-            conflict, resolution, and key plot points.
-        """.trimIndent(),
+  interface StoryDataParser : Function<String, StoryData> {
+    @Description("Parse the text into a StoryData structure.")
+    override fun apply(text: String): StoryData
+  }
+
+  interface UserPreferencesContentParser : Function<String, IllustratedStorybookAgent.UserPreferencesContent> {
+    @Description("Parse the text into a UserPreferencesContent structure.")
+    override fun apply(text: String): IllustratedStorybookAgent.UserPreferencesContent
+  }
+
+  private val requirementsActor = ParsedActor<IllustratedStorybookAgent.UserPreferencesContent>(
+    parserClass = UserPreferencesContentParser::class.java,
     model = ChatModels.GPT35Turbo,
-    temperature = 0.3
-  )
-
-
-  // Define the parser interface
-  interface CharacterParser : Function<String, String> {
-    override fun apply(text: String): String {
-      // Here you would implement the logic to parse the text into a structured format.
-      // For the sake of this example, let's assume the text is already in the desired JSON format.
-      return text
-    }
-  }
-
-  // Define the function to instantiate the ParsedActor
-  fun createCharacterCreatorActor(): ParsedActor<String> {
-    return ParsedActor(
-      parserClass = CharacterParser::class.java,
-      prompt = """
-                You are an AI creating character profiles for a story. 
-                Generate detailed descriptions including names, personalities, roles, and physical appearances.
-            """.trimIndent(),
-      model = ChatModels.GPT35Turbo,
-      temperature = 0.3
-    )
-  }
-
-  // Instantiate the characterCreatorActor
-  val characterCreatorActor: ParsedActor<String> = createCharacterCreatorActor()
-
-
-  // Define the parser interface for dialogue generation
-  interface DialogueParser : Function<String, String> {
-    override fun apply(text: String): String {
-      // Here you would implement the logic to parse the GPT response
-      // For simplicity, we are returning the text as-is
-      return text
-    }
-  }
-
-  // Instantiate the dialogueGeneratorActor using the ParsedActor constructor
-  val dialogueGeneratorActor = ParsedActor<String>(
-    parserClass = DialogueParser::class.java,
     prompt = """
-            You are an AI creating dialogues for characters in a story.
-            Generate engaging and character-specific dialogues based on the provided plot and character profiles.
-        """.trimIndent(),
-    model = ChatModels.GPT35Turbo,
-    temperature = 0.3
+            You are helping gather requirements for a storybook. 
+            Respond to the user by suggesting a genre, target age group, and specific elements to include in the story.
+        """.trimIndent()
   )
 
-
-  val illustrationCoordinatorActor = ImageActor(
-    prompt = "Generate an illustration that visually represents the following scene description:",
-    name = "IllustrationCoordinator",
-    imageModel = ImageModels.DallE2, // Assuming Dall-E 2 is the desired model for image generation
-    temperature = 0.3, // Adjust temperature to control the randomness of the image generation
-    width = 1024, // Set the width of the generated image
-    height = 1024 // Set the height of the generated image
-  )
-
-
-  val styleCustomizerActor = ImageActor(
+  private val storyGeneratorActor = ParsedActor<StoryData>(
+    parserClass = StoryDataParser::class.java,
+    model = ChatModels.GPT4Turbo,
     prompt = """
-            You are an AI that applies style and color preferences to illustrations.
-            Customize the given illustration to match the user's desired aesthetic, style, and color palette.
-        """.trimIndent(),
-    imageModel = ImageModels.DallE2, // Assuming DallE2 can be used for style customization
-    temperature = 0.3, // A lower temperature for more precise control over the style
-    width = 1024, // Width of the output image
-    height = 1024 // Height of the output image
+            You are an AI creating a story for a digital storybook. Generate a story that includes a title, storyline, dialogue, and descriptions.
+            The story should be engaging and suitable for the specified target age group and genre.
+        """.trimIndent()
   )
 
 
-  val bookLayoutActor: CodingActor = CodingActor(
-    interpreterClass = KotlinInterpreter::class,
-    symbols = mapOf(
-      // Add predefined symbols/functions that the actor might need for layout generation
-      // For example, "addTextBlock", "addImage", "applyStyle", etc.
-    ),
-    details = """
-            You are a book layout generator.
-    
-            Your role is to design the layout of a digital storybook. You will arrange the generated text and illustrations into a coherent book format, allowing for user customization and interaction.
-    
-            You have access to a layout engine or library capable of arranging text and images on a page. Your environment includes functions for adding text blocks, images, and styling elements.
-    
-            Expected code structure:
-            * An 'execute' method that takes the story content and illustration data as input and returns the layout.
-            * Functions to add text blocks, images, and apply styles to the layout.
-            * The ability to output the final layout in a format suitable for web display or print (e.g., HTML, PDF).
-        """.trimIndent(),
-    name = "BookLayoutActor"
+  private val illustrationGeneratorActor = ImageActor(
+    prompt = "Describe an illustration to be created for a story with the given details.",
+    name = "IllustrationGenerator",
+    imageModel = imageModel, // Assuming DallE2 is suitable for generating storybook illustrations
+    temperature = 0.5, // Adjust temperature for creativity vs. coherence
+    width = 1024, // Width of the generated image
+    height = 1024 // Height of the generated image
   )
 
   enum class ActorType {
-    PLOT_GENERATOR_ACTOR,
-    CHARACTER_CREATOR_ACTOR,
-    DIALOGUE_GENERATOR_ACTOR,
-    ILLUSTRATION_COORDINATOR_ACTOR,
-    STYLE_CUSTOMIZER_ACTOR,
-    BOOK_LAYOUT_ACTOR,
+    REQUIREMENTS_ACTOR,
+    STORY_GENERATOR_ACTOR,
+    ILLUSTRATION_GENERATOR_ACTOR,
   }
 
   val actorMap: Map<ActorType, BaseActor<out Any,out Any>> = mapOf(
-    ActorType.PLOT_GENERATOR_ACTOR to plotGeneratorActor,
-    ActorType.CHARACTER_CREATOR_ACTOR to characterCreatorActor,
-    ActorType.DIALOGUE_GENERATOR_ACTOR to dialogueGeneratorActor,
-    ActorType.ILLUSTRATION_COORDINATOR_ACTOR to illustrationCoordinatorActor,
-    ActorType.STYLE_CUSTOMIZER_ACTOR to styleCustomizerActor,
-    ActorType.BOOK_LAYOUT_ACTOR to bookLayoutActor,
+    ActorType.STORY_GENERATOR_ACTOR to storyGeneratorActor,
+    ActorType.ILLUSTRATION_GENERATOR_ACTOR to illustrationGeneratorActor,
+    ActorType.REQUIREMENTS_ACTOR to requirementsActor,
   )
 
   companion object {
-    val log = org.slf4j.LoggerFactory.getLogger(AIbasedIllustratedStorybookGeneratorActors::class.java)
+    val log = org.slf4j.LoggerFactory.getLogger(IllustratedStorybookActors::class.java)
   }
 }

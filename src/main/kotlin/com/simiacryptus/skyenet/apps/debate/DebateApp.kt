@@ -14,8 +14,7 @@ open class DebateApp(
     temperature: Double = 0.3,
     val domainName: String,
 ) : ApplicationServer(
-    applicationName = applicationName,
-    temperature = temperature,
+  applicationName = applicationName,
 ) {
     override val description: String
         @Language("HTML")
