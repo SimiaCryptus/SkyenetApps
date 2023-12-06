@@ -35,6 +35,7 @@ val skyenet_version = "1.0.43"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 val jackson_version = "2.15.3"
+val jupiter_version = "5.10.1"
 dependencies {
     implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.40")
 
@@ -70,6 +71,10 @@ dependencies {
     implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.9")
     implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.4.11")
     implementation(group = "ch.qos.logback", name = "logback-core", version = "1.4.11")
+
+    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = jupiter_version)
+    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-params", version = jupiter_version)
+    testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = jupiter_version)
 }
 
 tasks {
