@@ -30,7 +30,7 @@ open class SoftwareProjectGeneratorApp(
   @Suppress("UNCHECKED_CAST")
   override fun <T : Any> initSettings(session: Session): T? = Settings() as T
 
-  override fun newSession(
+  override fun userMessage(
     session: Session,
     user: User?,
     userMessage: String,

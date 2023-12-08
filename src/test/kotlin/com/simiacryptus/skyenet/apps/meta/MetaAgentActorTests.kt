@@ -124,7 +124,7 @@ class MetaAgentActorTests {
             val session = StorageInterface.newGlobalID()
             val dataStorage = DataStorage(File("."))
             val socketManager = object : ApplicationSocketManager(session, user, dataStorage, this::class.java) {
-                override fun newSession(
+                override fun userMessage(
                     session: Session,
                     user: User?,
                     userMessage: String,

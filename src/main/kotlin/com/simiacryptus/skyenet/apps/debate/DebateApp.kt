@@ -34,7 +34,7 @@ open class DebateApp(
           """.trimIndent()
         ) + "</div>"
 
-    override fun newSession(
+    override fun userMessage(
         session: Session,
         user: User?,
         userMessage: String,
