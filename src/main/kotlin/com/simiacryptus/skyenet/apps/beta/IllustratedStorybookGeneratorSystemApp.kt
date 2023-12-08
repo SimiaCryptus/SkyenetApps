@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.generated
+package com.simiacryptus.skyenet.apps.beta
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
@@ -82,7 +82,8 @@ open class IllustratedStorybookAgent(
   model: ChatModels = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
   imageModel: ImageModels = ImageModels.DallE2,
-) : ActorSystem<IllustratedStorybookActors.ActorType>(IllustratedStorybookActors(
+) : ActorSystem<IllustratedStorybookActors.ActorType>(
+  IllustratedStorybookActors(
   model = model,
   temperature = temperature,
   imageModel = imageModel,

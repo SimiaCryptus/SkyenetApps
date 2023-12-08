@@ -4,7 +4,7 @@ import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.coding.CodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
-import com.simiacryptus.skyenet.apps.generated.IllustratedStorybookApp
+import com.simiacryptus.skyenet.apps.beta.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
 import com.simiacryptus.skyenet.apps.generated.PresentationGeneratorApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
