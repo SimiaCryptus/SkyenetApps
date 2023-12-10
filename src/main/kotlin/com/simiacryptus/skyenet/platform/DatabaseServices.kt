@@ -89,7 +89,7 @@ open class DatabaseServices(
           statement.execute(
             """
               CREATE TABLE IF NOT EXISTS usage (
-                  usage_id INT AUTO_INCREMENT PRIMARY KEY,
+                  usage_id SERIAL PRIMARY KEY,
                   session_id VARCHAR(255),
                   user_id VARCHAR(255),
                   model VARCHAR(255),
@@ -118,7 +118,7 @@ open class DatabaseServices(
           statement.execute(
             """
                 CREATE TABLE IF NOT EXISTS messages (
-                    message_id INT AUTO_INCREMENT PRIMARY KEY,
+                    message_id SERIAL PRIMARY KEY,
                     session_id VARCHAR(255),
                     message_text TEXT,
                     FOREIGN KEY (session_id) REFERENCES sessions(session_id)
