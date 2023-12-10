@@ -256,7 +256,12 @@ open class DatabaseServices(
         connection.autoCommit = false
         try {
           upsertUser(connection, user)
-          connection.prepareStatement("MERGE INTO user_settings KEY(user_id) VALUES (?, ?)").apply {
+          connection.prepareStatement("""
+            INSERT INTO user_settings (user_id, api_key)
+            VALUES (?, ?)
+            ON CONFLICT (user_id) DO UPDATE
+            SET api_key = EXCLUDED.api_key
+            """.trimIndent()).apply {
             setString(1, user.id)
             setString(2, settings.apiKey)
             execute()
@@ -336,7 +341,12 @@ open class DatabaseServices(
     accessToken: String,
     user: User
   ) {
-    connection.prepareStatement("MERGE INTO authentication KEY(token_id) VALUES (?, ?)").apply {
+    connection.prepareStatement("""
+      INSERT INTO authentication (token_id, user_id)
+      VALUES (?, ?)
+      ON CONFLICT (token_id) DO UPDATE
+      SET user_id = EXCLUDED.user_id
+      """.trimIndent()).apply {
       setString(1, accessToken)
       setString(2, user.id)
       execute()
@@ -344,7 +354,14 @@ open class DatabaseServices(
   }
 
   fun upsertUser(connection: Connection, user: User) {
-    connection.prepareStatement("MERGE INTO users KEY(id) VALUES (?, ?, ?, ?)").apply {
+    connection.prepareStatement("""
+        INSERT INTO users (id, email, name, picture)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT (id) DO UPDATE
+        SET email = EXCLUDED.email,
+            name = EXCLUDED.name,
+            picture = EXCLUDED.picture
+      """.trimIndent()).apply {
       setString(1, user.id)
       setString(2, user.email)
       setString(3, user.name)
@@ -355,7 +372,12 @@ open class DatabaseServices(
 
 
   fun upsertSession(connection: Connection, session: Session, user: User?) {
-    connection.prepareStatement("MERGE INTO sessions KEY(session_id) VALUES (?, ?)").apply {
+    connection.prepareStatement("""
+      INSERT INTO sessions (session_id, user_id)
+      VALUES (?, ?)
+      ON CONFLICT (session_id) DO UPDATE
+      SET user_id = EXCLUDED.user_id
+      """.trimIndent()).apply {
       setString(1, session.toString())
       setString(2, user?.id)
       execute()
