@@ -83,6 +83,7 @@ open class OAuthPatreon(
         val email = attributes?.email!!
         _users[email] = userInfo
         val user = User(
+          id = UUID.randomUUID().toString(),
           email = email,
           name = attributes.full_name,
           picture = attributes.image_url,
