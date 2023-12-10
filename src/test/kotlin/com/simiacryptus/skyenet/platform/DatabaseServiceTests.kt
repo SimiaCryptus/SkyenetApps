@@ -1,7 +1,6 @@
 package com.simiacryptus.skyenet.platform
 
 import AuthenticationInterfaceTest
-import DatabaseServices
 import com.simiacryptus.skyenet.core.platform.test.StorageInterfaceTest
 import com.simiacryptus.skyenet.core.platform.test.UsageTest
 import com.simiacryptus.skyenet.core.platform.test.UserSettingsTest
@@ -11,8 +10,9 @@ import java.util.*
 
 class DatabaseServiceTests  {
 
-  val databaseServices: DatabaseServices get() {
-    val databaseServices = DatabaseServices("jdbc:h2:mem:${UUID.randomUUID().toString()};DB_CLOSE_DELAY=-1")
+  val databaseServices: DatabaseServices
+    get() {
+    val databaseServices = DatabaseServices("jdbc:h2:mem:${UUID.randomUUID()};DB_CLOSE_DELAY=-1")
     databaseServices.initializeSchema()
     return databaseServices
   }

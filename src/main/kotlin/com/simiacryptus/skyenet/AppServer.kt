@@ -1,10 +1,10 @@
 package com.simiacryptus.skyenet
 
 import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.skyenet.apps.beta.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.coding.CodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
-import com.simiacryptus.skyenet.apps.beta.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
 import com.simiacryptus.skyenet.apps.generated.PresentationGeneratorApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
@@ -14,6 +14,7 @@ import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.core.util.AwsUtil
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
+import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
@@ -68,6 +69,12 @@ open class AppServer(
                 return super.matches(user, line)
             }
         }
+        val jdbc = System.getProperties()["db.url"]
+        if(jdbc != null) DatabaseServices(
+            jdbcUrl = jdbc as String,
+            username = System.getProperties()["db.user"] as String,
+            password = System.getProperties()["db.password"] as String
+        ).register()
 
     }
 }

@@ -1,4 +1,6 @@
+package com.simiacryptus.skyenet.platform
 import com.simiacryptus.jopenai.ApiModel
+import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.OpenAIModel
 import com.simiacryptus.skyenet.core.platform.*
 import com.simiacryptus.skyenet.core.platform.file.DataStorage
@@ -16,85 +18,119 @@ open class DatabaseServices(
     return DriverManager.getConnection(jdbcUrl, username, password)
   }
 
-  private fun executeSql(connection: Connection, sql: String) {
-    connection.createStatement().use { statement ->
-      statement.execute(sql)
-    }
+  fun register() {
+    ApplicationServices.authenticationManager = authenticationManager
+    ApplicationServices.dataStorageFactory = dataStorageFactory
+    ApplicationServices.usageManager = usageManager
+    ApplicationServices.userSettingsManager = userSettingsManager
   }
 
   fun initializeSchema() {
     getConnection().use { connection ->
       connection.autoCommit = false
       try {
-        executeSql(
-          connection, """
-                    CREATE TABLE users (
-                        id VARCHAR(255) PRIMARY KEY,
-                        email VARCHAR(255) NOT NULL UNIQUE,
-                        name VARCHAR(255),
-                        picture VARCHAR(255)
-                    );
-                """.trimIndent()
-        )
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                CREATE TABLE IF NOT EXISTS users (
+                    id VARCHAR(255) PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL UNIQUE,
+                    name VARCHAR(255),
+                    picture VARCHAR(255)
+                );
+            """.trimIndent()
+          )
+          // Email index
+          statement.execute(
+            """
+                CREATE INDEX IF NOT EXISTS users_email ON users(email);
+            """.trimIndent()
+          )
+        }
 
-        executeSql(
-          connection, """
-                    CREATE TABLE sessions (
-                        session_id VARCHAR(255) PRIMARY KEY,
-                        user_id VARCHAR(255),
-                        FOREIGN KEY (user_id) REFERENCES users(id)
-                    );
-                """.trimIndent()
-        )
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                CREATE TABLE IF NOT EXISTS authentication (
+                    token_id VARCHAR(255) PRIMARY KEY,
+                    user_id VARCHAR(255),
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                );
+            """.trimIndent()
+          )
+        }
 
-        executeSql(
-          connection, """
-                    CREATE TABLE user_settings (
-                        user_id VARCHAR(255) PRIMARY KEY,
-                        api_key VARCHAR(255),
-                        FOREIGN KEY (user_id) REFERENCES users(id)
-                    );
-                """.trimIndent()
-        )
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                CREATE TABLE IF NOT EXISTS sessions (
+                    session_id VARCHAR(255) PRIMARY KEY,
+                    user_id VARCHAR(255),
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                );
+            """.trimIndent()
+          )
+        }
 
-        executeSql(
-          connection, """
-                    CREATE TABLE usage (
-                        usage_id INT AUTO_INCREMENT PRIMARY KEY,
-                        session_id VARCHAR(255),
-                        user_id VARCHAR(255),
-                        model VARCHAR(255),
-                        input_tokens INT,
-                        output_tokens INT,
-                        FOREIGN KEY (session_id) REFERENCES sessions(session_id),
-                        FOREIGN KEY (user_id) REFERENCES users(id)
-                    );
-                """.trimIndent()
-        )
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                CREATE TABLE IF NOT EXISTS user_settings (
+                    user_id VARCHAR(255) PRIMARY KEY,
+                    api_key VARCHAR(255),
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                );
+            """.trimIndent()
+          )
+        }
 
-        executeSql(
-          connection, """
-                    CREATE TABLE messages (
-                        message_id INT AUTO_INCREMENT PRIMARY KEY,
-                        session_id VARCHAR(255),
-                        message_text TEXT,
-                        FOREIGN KEY (session_id) REFERENCES sessions(session_id)
-                    );
-                """.trimIndent()
-        )
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+              CREATE TABLE IF NOT EXISTS usage (
+                  usage_id INT AUTO_INCREMENT PRIMARY KEY,
+                  session_id VARCHAR(255),
+                  user_id VARCHAR(255),
+                  model VARCHAR(255),
+                  input_tokens INT,
+                  output_tokens INT,
+                  FOREIGN KEY (session_id) REFERENCES sessions(session_id),
+                  FOREIGN KEY (user_id) REFERENCES users(id)
+              );
+          """.trimIndent()
+          )
+          // session_id, model index
+          statement.execute(
+            """
+                CREATE INDEX IF NOT EXISTS usage_session_model ON usage(session_id, model);
+            """.trimIndent()
+          )
+          // user_id, model index
+          statement.execute(
+            """
+                CREATE INDEX IF NOT EXISTS usage_user_model ON usage(user_id, model);
+            """.trimIndent()
+          )
+        }
 
-        executeSql(
-          connection, """
-                    CREATE TABLE authorizations (
-                        authorization_id INT AUTO_INCREMENT PRIMARY KEY,
-                        user_id VARCHAR(255),
-                        application_class VARCHAR(255),
-                        operation_type ENUM('Read', 'Write', 'Share', 'Execute', 'Delete', 'Admin', 'GlobalKey'),
-                        FOREIGN KEY (user_id) REFERENCES users(id)
-                    );
-                """.trimIndent()
-        )
-
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                CREATE TABLE IF NOT EXISTS messages (
+                    message_id INT AUTO_INCREMENT PRIMARY KEY,
+                    session_id VARCHAR(255),
+                    message_text TEXT,
+                    FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+                );
+            """.trimIndent()
+          )
+          // session_id index
+          statement.execute(
+            """
+                CREATE INDEX IF NOT EXISTS messages_session ON messages(session_id);
+            """.trimIndent()
+          )
+        }
         connection.commit()
       } catch (e: Exception) {
         connection.rollback()
@@ -109,12 +145,21 @@ open class DatabaseServices(
       getConnection().use { connection ->
         connection.autoCommit = false
         try {
-          executeSql(
-            connection, """
-                    INSERT INTO usage (session_id, user_id, model, input_tokens, output_tokens)
-                    VALUES (?, ?, ?, ?, ?);
-                """.trimIndent()
-          )
+          upsertUser(connection, user!!)
+          upsertSession(connection, session, user)
+          connection.prepareStatement(
+            """
+                INSERT INTO usage (session_id, user_id, model, input_tokens, output_tokens)
+                VALUES (?, ?, ?, ?, ?);
+            """.trimIndent()
+          ).apply {
+            setString(1, session.toString())
+            setString(2, user?.id)
+            setString(3, model.modelName)
+            setInt(4, tokens.prompt_tokens)
+            setInt(5, tokens.completion_tokens)
+            execute()
+          }
           connection.commit()
         } catch (e: Exception) {
           connection.rollback()
@@ -126,43 +171,61 @@ open class DatabaseServices(
     override fun getUserUsageSummary(user: User): Map<OpenAIModel, ApiModel.Usage> {
       getConnection().use { connection ->
         connection.autoCommit = false
-        try {
-          executeSql(
-            connection, """
-                    SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens
-                    FROM usage
-                    WHERE user_id = ?
-                    GROUP BY model;
-                """.trimIndent()
-          )
-          connection.commit()
-        } catch (e: Exception) {
-          connection.rollback()
-          throw e
+        connection.prepareStatement(
+          """
+              SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens
+              FROM usage
+              WHERE user_id = ?
+              GROUP BY model;
+          """.trimIndent()
+        ).apply {
+          setString(1, user.id)
+          executeQuery().use { resultSet ->
+            val map = HashMap<OpenAIModel, ApiModel.Usage>()
+            while (resultSet.next()) {
+              val modelName = resultSet.getString("model")
+              val inputTokens = resultSet.getInt("input_tokens")
+              val outputTokens = resultSet.getInt("output_tokens")
+              val model = ChatModels.entries.find { it.modelName == modelName }
+              if (null != model) map[model] = ApiModel.Usage(
+                prompt_tokens = inputTokens,
+                completion_tokens = outputTokens
+              )
+            }
+            return map
+          }
         }
       }
-      return mapOf()
     }
 
     override fun getSessionUsageSummary(session: Session): Map<OpenAIModel, ApiModel.Usage> {
       getConnection().use { connection ->
         connection.autoCommit = false
-        try {
-          executeSql(
-            connection, """
-                    SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens
-                    FROM usage
-                    WHERE session_id = ?
-                    GROUP BY model;
-                """.trimIndent()
-          )
-          connection.commit()
-        } catch (e: Exception) {
-          connection.rollback()
-          throw e
+        connection.prepareStatement(
+          """
+          SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens
+          FROM usage
+          WHERE session_id = ?
+          GROUP BY model;
+          """.trimIndent()
+        ).apply {
+          setString(1, session.toString())
+          executeQuery().use { resultSet ->
+            val map = HashMap<OpenAIModel, ApiModel.Usage>()
+            while (resultSet.next()) {
+              val modelName = resultSet.getString("model")
+              val inputTokens = resultSet.getInt("input_tokens")
+              val outputTokens = resultSet.getInt("output_tokens")
+              val model = ChatModels.entries.find { it.modelName == modelName }
+              if (null != model) map[model] = ApiModel.Usage(
+                prompt_tokens = inputTokens,
+                completion_tokens = outputTokens
+              )
+            }
+            return map
+          }
         }
       }
-      return mapOf()
     }
   }
   val userSettingsManager: UserSettingsInterface = object : UserSettingsInterface {
@@ -170,16 +233,17 @@ open class DatabaseServices(
       getConnection().use { connection ->
         connection.autoCommit = false
         try {
-          executeSql(
-            connection, """
-                    SELECT api_key
-                    FROM user_settings
-                    WHERE user_id = ?;
-                """.trimIndent()
-          )
-          connection.commit()
+          connection.prepareStatement("SELECT * FROM user_settings WHERE user_id = ?").apply {
+            setString(1, user.id)
+            executeQuery().use { resultSet ->
+              if (resultSet.next()) {
+                return UserSettingsInterface.UserSettings(
+                  apiKey = resultSet.getString("api_key")
+                )
+              }
+            }
+          }
         } catch (e: Exception) {
-          connection.rollback()
           throw e
         }
       }
@@ -190,13 +254,12 @@ open class DatabaseServices(
       getConnection().use { connection ->
         connection.autoCommit = false
         try {
-          executeSql(
-            connection, """
-                    INSERT INTO user_settings (user_id, api_key)
-                    VALUES (?, ?)
-                    ON DUPLICATE KEY UPDATE api_key = ?;
-                """.trimIndent()
-          )
+          upsertUser(connection, user)
+          connection.prepareStatement("MERGE INTO user_settings KEY(user_id) VALUES (?, ?)").apply {
+            setString(1, user.id)
+            setString(2, settings.apiKey)
+            execute()
+          }
           connection.commit()
         } catch (e: Exception) {
           connection.rollback()
@@ -209,18 +272,26 @@ open class DatabaseServices(
     override fun getUser(accessToken: String?): User? {
       getConnection().use { connection ->
         connection.autoCommit = false
-        try {
-          executeSql(
-            connection, """
-                    SELECT id, email, name, picture
-                    FROM users
-                    WHERE id = ?;
-                """.trimIndent()
-          )
-          connection.commit()
-        } catch (e: Exception) {
-          connection.rollback()
-          throw e
+        connection.prepareStatement("SELECT * FROM authentication WHERE token_id = ?").apply {
+          setString(1, accessToken)
+          executeQuery().use { resultSet ->
+            if (resultSet.next()) {
+              val userId = resultSet.getString("user_id")
+              connection.prepareStatement("SELECT * FROM users WHERE id = ?").apply {
+                setString(1, userId)
+                executeQuery().use { resultSet ->
+                  if (resultSet.next()) {
+                    return User(
+                      id = resultSet.getString("id"),
+                      email = resultSet.getString("email"),
+                      name = resultSet.getString("name"),
+                      picture = resultSet.getString("picture")
+                    )
+                  }
+                }
+              }
+            }
+          }
         }
       }
       return null
@@ -230,13 +301,8 @@ open class DatabaseServices(
       getConnection().use { connection ->
         connection.autoCommit = false
         try {
-          executeSql(
-            connection, """
-                    INSERT INTO users (id, email, name, picture)
-                    VALUES (?, ?, ?, ?)
-                    ON DUPLICATE KEY UPDATE email = ?, name = ?, picture = ?;
-                """.trimIndent()
-          )
+          upsertUser(connection, user)
+          upsertToken(connection, accessToken, user)
           connection.commit()
         } catch (e: Exception) {
           connection.rollback()
@@ -246,16 +312,15 @@ open class DatabaseServices(
       return user
     }
 
+
     override fun logout(accessToken: String, user: User) {
       getConnection().use { connection ->
         connection.autoCommit = false
         try {
-          executeSql(
-            connection, """
-                    DELETE FROM users
-                    WHERE id = ?;
-                """.trimIndent()
-          )
+          connection.prepareStatement("DELETE FROM authentication WHERE token_id = ?").apply {
+            setString(1, accessToken)
+            execute()
+          }
           connection.commit()
         } catch (e: Exception) {
           connection.rollback()
@@ -264,6 +329,38 @@ open class DatabaseServices(
       }
     }
   }
+
+  private fun upsertToken(
+    connection: Connection,
+    accessToken: String,
+    user: User
+  ) {
+    connection.prepareStatement("MERGE INTO authentication KEY(token_id) VALUES (?, ?)").apply {
+      setString(1, accessToken)
+      setString(2, user.id)
+      execute()
+    }
+  }
+
+  fun upsertUser(connection: Connection, user: User) {
+    connection.prepareStatement("MERGE INTO users KEY(id) VALUES (?, ?, ?, ?)").apply {
+      setString(1, user.id)
+      setString(2, user.email)
+      setString(3, user.name)
+      setString(4, user.picture)
+      execute()
+    }
+  }
+
+
+  fun upsertSession(connection: Connection, session: Session, user: User?) {
+    connection.prepareStatement("MERGE INTO sessions KEY(session_id) VALUES (?, ?)").apply {
+      setString(1, session.toString())
+      setString(2, user?.id)
+      execute()
+    }
+  }
+
   val dataStorageFactory: (File) -> StorageInterface = { storageRoot ->
     object : DataStorage(storageRoot) {
       override fun <T> getJson(user: User?, session: Session, filename: String, clazz: Class<T>): T? {
