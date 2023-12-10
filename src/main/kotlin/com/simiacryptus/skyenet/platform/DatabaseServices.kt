@@ -23,6 +23,7 @@ open class DatabaseServices(
     ApplicationServices.dataStorageFactory = dataStorageFactory
     ApplicationServices.usageManager = usageManager
     ApplicationServices.userSettingsManager = userSettingsManager
+    initializeSchema()
   }
 
   fun initializeSchema() {
