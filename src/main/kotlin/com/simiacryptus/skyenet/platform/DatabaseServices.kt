@@ -89,6 +89,7 @@ open class DatabaseServices(
                   model VARCHAR(255),
                   input_tokens INT,
                   output_tokens INT,
+                  cost DOUBLE,
                   FOREIGN KEY (session_id) REFERENCES sessions(session_id),
                   FOREIGN KEY (user_id) REFERENCES users(id)
               );
@@ -144,8 +145,8 @@ open class DatabaseServices(
           upsertSession(connection, session, user)
           connection.prepareStatement(
             """
-                INSERT INTO usage (session_id, user_id, model, input_tokens, output_tokens)
-                VALUES (?, ?, ?, ?, ?);
+                INSERT INTO usage (session_id, user_id, model, input_tokens, output_tokens, cost)
+                VALUES (?, ?, ?, ?, ?, ?);
             """.trimIndent()
           ).apply {
             setString(1, session.toString())
@@ -153,6 +154,7 @@ open class DatabaseServices(
             setString(3, model.modelName)
             setInt(4, tokens.prompt_tokens)
             setInt(5, tokens.completion_tokens)
+            setDouble(6, tokens.cost)
             execute()
           }
           connection.commit()
@@ -168,7 +170,7 @@ open class DatabaseServices(
         connection.autoCommit = false
         connection.prepareStatement(
           """
-              SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens
+              SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost) AS cost
               FROM usage
               WHERE user_id = ?
               GROUP BY model;
@@ -181,10 +183,12 @@ open class DatabaseServices(
               val modelName = resultSet.getString("model")
               val inputTokens = resultSet.getInt("input_tokens")
               val outputTokens = resultSet.getInt("output_tokens")
+              val cost = resultSet.getDouble("cost")
               val model = ChatModels.entries.find { it.modelName == modelName }
               if (null != model) map[model] = ApiModel.Usage(
                 prompt_tokens = inputTokens,
-                completion_tokens = outputTokens
+                completion_tokens = outputTokens,
+                cost = cost
               )
             }
             return map
@@ -198,7 +202,7 @@ open class DatabaseServices(
         connection.autoCommit = false
         connection.prepareStatement(
           """
-          SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens
+          SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost) AS cost
           FROM usage
           WHERE session_id = ?
           GROUP BY model;
@@ -211,10 +215,12 @@ open class DatabaseServices(
               val modelName = resultSet.getString("model")
               val inputTokens = resultSet.getInt("input_tokens")
               val outputTokens = resultSet.getInt("output_tokens")
+              val cost = resultSet.getDouble("cost")
               val model = ChatModels.entries.find { it.modelName == modelName }
               if (null != model) map[model] = ApiModel.Usage(
                 prompt_tokens = inputTokens,
-                completion_tokens = outputTokens
+                completion_tokens = outputTokens,
+                cost = cost
               )
             }
             return map
