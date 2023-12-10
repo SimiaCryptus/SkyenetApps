@@ -154,7 +154,7 @@ open class DatabaseServices(
             setString(3, model.modelName)
             setInt(4, tokens.prompt_tokens)
             setInt(5, tokens.completion_tokens)
-            setDouble(6, tokens.cost)
+            setDouble(6, tokens.cost ?: 0.0)
             execute()
           }
           connection.commit()
