@@ -34,9 +34,9 @@ open class IllustratedStorybookApp(
 ) {
 
   data class Settings(
-    val model: ChatModels = ChatModels.GPT35Turbo,
-    val temperature: Double = 0.1,
-    val imageModel: ImageModels = ImageModels.DallE2
+    val model: ChatModels = ChatModels.GPT4Turbo,
+    val temperature: Double = 0.5,
+    val imageModel: ImageModels = ImageModels.DallE3
   )
   override val settingsClass: Class<*> get() = Settings::class.java
   @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
@@ -79,7 +79,7 @@ open class IllustratedStorybookAgent(
   dataStorage: StorageInterface,
   val ui: ApplicationInterface,
   val api: API,
-  model: ChatModels = ChatModels.GPT35Turbo,
+  model: ChatModels = ChatModels.GPT4Turbo,
   temperature: Double = 0.3,
   imageModel: ImageModels = ImageModels.DallE2,
 ) : ActorSystem<IllustratedStorybookActors.ActorType>(

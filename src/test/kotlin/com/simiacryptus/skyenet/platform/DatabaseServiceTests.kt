@@ -12,7 +12,7 @@ class DatabaseServiceTests  {
 
   val databaseServices: DatabaseServices
     get() {
-    val databaseServices = DatabaseServices("jdbc:h2:mem:${UUID.randomUUID()};DB_CLOSE_DELAY=-1")
+    val databaseServices = DatabaseServices("jdbc:h2:mem:${UUID.randomUUID()};MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
     databaseServices.initializeSchema()
     return databaseServices
   }

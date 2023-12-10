@@ -41,12 +41,6 @@ open class DatabaseServices(
                 );
             """.trimIndent()
           )
-          // Email index
-          statement.execute(
-            """
-                CREATE INDEX IF NOT EXISTS users_email ON users(email);
-            """.trimIndent()
-          )
         }
 
         connection.createStatement().use { statement ->
