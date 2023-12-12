@@ -49,7 +49,7 @@ open class DatabaseServices(
                 CREATE TABLE IF NOT EXISTS authentication (
                     token_id VARCHAR(255) PRIMARY KEY,
                     user_id VARCHAR(255),
-                    FOREIGN KEY (user_id) REFERENCES users(id)
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
             """.trimIndent()
           )
