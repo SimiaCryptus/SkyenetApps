@@ -357,8 +357,8 @@ open class DatabaseServices(
     connection.prepareStatement("""
         INSERT INTO users (id, email, name, picture)
         VALUES (?, ?, ?, ?)
-        ON CONFLICT (id) DO UPDATE
-        SET email = EXCLUDED.email,
+        ON CONFLICT (email) DO UPDATE
+        SET id = EXCLUDED.id,
             name = EXCLUDED.name,
             picture = EXCLUDED.picture
       """.trimIndent()).apply {
