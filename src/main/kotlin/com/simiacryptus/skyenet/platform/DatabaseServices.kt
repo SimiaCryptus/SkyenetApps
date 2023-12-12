@@ -409,6 +409,10 @@ open class DatabaseServices(
   }
 
   fun upsertUser(connection: Connection, user: User) {
+    connection.prepareStatement("DELETE FROM authentication WHERE user_id = ?").apply {
+      setString(1, user.id)
+      execute()
+    }
     connection.prepareStatement("""
         INSERT INTO users (id, email, name, picture)
         VALUES (?, ?, ?, ?)
