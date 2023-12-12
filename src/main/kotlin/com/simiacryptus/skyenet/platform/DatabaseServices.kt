@@ -23,6 +23,7 @@ open class DatabaseServices(
     ApplicationServices.dataStorageFactory = dataStorageFactory
     ApplicationServices.usageManager = usageManager
     ApplicationServices.userSettingsManager = userSettingsManager
+    teardownSchema()
     initializeSchema()
   }
 
@@ -61,7 +62,7 @@ open class DatabaseServices(
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id VARCHAR(255) PRIMARY KEY,
                     user_id VARCHAR(255),
-                    FOREIGN KEY (user_id) REFERENCES users(id)
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
             """.trimIndent()
           )
@@ -73,7 +74,7 @@ open class DatabaseServices(
                 CREATE TABLE IF NOT EXISTS user_settings (
                     user_id VARCHAR(255) PRIMARY KEY,
                     api_key VARCHAR(255),
-                    FOREIGN KEY (user_id) REFERENCES users(id)
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 );
             """.trimIndent()
           )
@@ -90,8 +91,8 @@ open class DatabaseServices(
                   input_tokens INT,
                   output_tokens INT,
                   cost DOUBLE,
-                  FOREIGN KEY (session_id) REFERENCES sessions(session_id),
-                  FOREIGN KEY (user_id) REFERENCES users(id)
+                  FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE,
+                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
               );
           """.trimIndent()
           )
@@ -116,7 +117,7 @@ open class DatabaseServices(
                     message_id SERIAL PRIMARY KEY,
                     session_id VARCHAR(255),
                     message_text TEXT,
-                    FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+                    FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
                 );
             """.trimIndent()
           )
@@ -124,6 +125,60 @@ open class DatabaseServices(
           statement.execute(
             """
                 CREATE INDEX IF NOT EXISTS messages_session ON messages(session_id);
+            """.trimIndent()
+          )
+        }
+        connection.commit()
+      } catch (e: Exception) {
+        connection.rollback()
+        throw e
+      }
+    }
+  }
+
+  fun teardownSchema() {
+    getConnection().use { connection ->
+      connection.autoCommit = false
+      try {
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                DROP TABLE IF EXISTS messages;
+            """.trimIndent()
+          )
+        }
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                DROP TABLE IF EXISTS usage;
+            """.trimIndent()
+          )
+        }
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                DROP TABLE IF EXISTS user_settings;
+            """.trimIndent()
+          )
+        }
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                DROP TABLE IF EXISTS authentication;
+            """.trimIndent()
+          )
+        }
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                DROP TABLE IF EXISTS sessions;
+            """.trimIndent()
+          )
+        }
+        connection.createStatement().use { statement ->
+          statement.execute(
+            """
+                DROP TABLE IF EXISTS users;
             """.trimIndent()
           )
         }
