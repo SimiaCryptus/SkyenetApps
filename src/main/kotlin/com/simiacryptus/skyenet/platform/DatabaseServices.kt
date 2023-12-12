@@ -90,7 +90,7 @@ open class DatabaseServices(
                   model VARCHAR(255),
                   input_tokens INT,
                   output_tokens INT,
-                  cost DOUBLE,
+                  cost DOUBLE PRECISION,
                   FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE,
                   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
               );
