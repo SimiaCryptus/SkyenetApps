@@ -1,9 +1,9 @@
 package com.simiacryptus.skyenet.platform
 import com.simiacryptus.jopenai.ApiModel
-import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.OpenAIModel
 import com.simiacryptus.skyenet.core.platform.*
 import com.simiacryptus.skyenet.core.platform.file.DataStorage
+import com.simiacryptus.skyenet.core.util.getModel
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
@@ -239,8 +239,7 @@ open class DatabaseServices(
               val inputTokens = resultSet.getInt("input_tokens")
               val outputTokens = resultSet.getInt("output_tokens")
               val cost = resultSet.getDouble("cost")
-              val model = ChatModels.entries.find { it.modelName == modelName }
-              if (null != model) map[model] = ApiModel.Usage(
+              map[getModel(modelName) ?: continue] = ApiModel.Usage(
                 prompt_tokens = inputTokens,
                 completion_tokens = outputTokens,
                 cost = cost
@@ -271,8 +270,7 @@ open class DatabaseServices(
               val inputTokens = resultSet.getInt("input_tokens")
               val outputTokens = resultSet.getInt("output_tokens")
               val cost = resultSet.getDouble("cost")
-              val model = ChatModels.entries.find { it.modelName == modelName }
-              if (null != model) map[model] = ApiModel.Usage(
+              map[getModel(modelName) ?: continue] = ApiModel.Usage(
                 prompt_tokens = inputTokens,
                 completion_tokens = outputTokens,
                 cost = cost
