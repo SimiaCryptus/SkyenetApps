@@ -23,7 +23,7 @@ open class DatabaseServices(
     ApplicationServices.dataStorageFactory = dataStorageFactory
     ApplicationServices.usageManager = usageManager
     ApplicationServices.userSettingsManager = userSettingsManager
-    teardownSchema()
+    if(System.getProperty("DBRESET", "false").toBoolean()) teardownSchema()
     initializeSchema()
   }
 
