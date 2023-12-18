@@ -50,7 +50,7 @@ open class DatabaseServices(
                 CREATE TABLE IF NOT EXISTS authentication (
                     token_id VARCHAR(255) PRIMARY KEY,
                     user_id VARCHAR(255),
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
                 );
             """.trimIndent()
           )
@@ -62,7 +62,7 @@ open class DatabaseServices(
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id VARCHAR(255) PRIMARY KEY,
                     user_id VARCHAR(255),
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
                 );
             """.trimIndent()
           )
@@ -74,7 +74,7 @@ open class DatabaseServices(
                 CREATE TABLE IF NOT EXISTS user_settings (
                     user_id VARCHAR(255) PRIMARY KEY,
                     api_key VARCHAR(255),
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
                 );
             """.trimIndent()
           )
@@ -91,8 +91,8 @@ open class DatabaseServices(
                   input_tokens INT,
                   output_tokens INT,
                   cost DOUBLE PRECISION,
-                  FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE,
-                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                  FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE ON UPDATE CASCADE,
+                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
               );
           """.trimIndent()
           )
@@ -117,7 +117,7 @@ open class DatabaseServices(
                     message_id SERIAL PRIMARY KEY,
                     session_id VARCHAR(255),
                     message_text TEXT,
-                    FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
+                    FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE ON UPDATE CASCADE
                 );
             """.trimIndent()
           )
