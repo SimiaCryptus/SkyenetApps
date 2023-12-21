@@ -42,11 +42,7 @@ class IntArrayFile(val file: File) {
       return byteArray
     }
     fun ByteArray.toInt(): Int {
-      var result = 0
-      for (i in 0 until 4) {
-        result = result or (this[i].toInt() shl (i * 8))
-      }
-      return result
+      return ByteBuffer.wrap(this).int
     }
 
   }

@@ -1,7 +1,6 @@
 package com.simiacryptus.util
 
 import com.simiacryptus.util.IntArrayFile.Companion.toBytes
-import com.simiacryptus.util.IntArrayFile.Companion.toInt
 import java.io.File
 import java.nio.channels.FileChannel
 import java.nio.file.StandardOpenOption
@@ -22,24 +21,40 @@ class SequenceFile(file: File) {
     return pos++.toInt()
   }
 
-  fun get(pos: Int) : ByteArray {
+  fun get(pos: Int) : ByteArray? {
     read = true
-    val buffer = ByteArray(4)
-    // Seek to the position of the length field
     var curPos = 0
     var curIdx = 0
-    while(curPos < pos) {
-      mappedByteBuffer.get(buffer, curPos, 4)
-      curPos += buffer.toInt() + 4
+    val capacity = mappedByteBuffer.capacity()
+    while(curIdx < pos) {
+      if(curPos >= capacity) return null
+      curPos += mappedByteBuffer.getInt(curPos) + 4
       curIdx += 1
     }
-    // Read the length field
-    mappedByteBuffer.get(buffer, curPos, 4)
-    val length = buffer.toInt()
-    // Read the string
+    val length = mappedByteBuffer.getInt(curPos)
+    curPos += 4
     val result = ByteArray(length)
-    mappedByteBuffer.get(result, curPos + 4, length)
+    if (curPos + length > capacity) return null
+    mappedByteBuffer.get(curPos, result)
     return result
+  }
+
+  fun read() : Array<ByteArray> {
+    val result = mutableListOf<ByteArray>()
+    var curPos = 0
+    val capacity = mappedByteBuffer.capacity()
+    while(curPos < capacity) {
+      val length = mappedByteBuffer.getInt(curPos)
+      curPos += 4
+      if (curPos + length > capacity) {
+        throw IllegalStateException()
+      }
+      val str = ByteArray(length)
+      mappedByteBuffer.get(curPos, str)
+      result.add(str)
+      curPos += length
+    }
+    return result.toTypedArray()
   }
 
   fun close() {

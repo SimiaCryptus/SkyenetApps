@@ -3,10 +3,13 @@ package com.simiacryptus.util
 import java.io.File
 import java.nio.ByteBuffer
 
-class CharsetDataFileMapper(file: File, charsetName: String = "UTF-8", val maxCharSize: Int = 8) :
-  DataFileMapper(file) {
+class CharsetTokenFile(
+  file: File,
+  charsetName: String = "UTF-8",
+  val maxCharSize: Int = 8
+) : TokenFile(file) {
   private val charset = java.nio.charset.Charset.forName(charsetName)
-  override var recordLength: Long = file.length()
+  override var tokenCount: Long = file.length()
   val indices by lazy {
     (0 until fileLength).runningFold(0L) { position, index ->
       val buffer = ByteArray(maxCharSize)
@@ -16,19 +19,19 @@ class CharsetDataFileMapper(file: File, charsetName: String = "UTF-8", val maxCh
       position + size
     }.takeWhile { it < fileLength }.toLongArray()
   }
+
   init {
-    recordLength = indices.size.toLong()
+    tokenCount = indices.size.toLong()
   }
 
-
   override fun readString(position: Long, n: Int, skip: Int): String {
-    val buffer = ByteArray(((n+skip)*maxCharSize).coerceAtMost(fileLength.toInt()))
+    val buffer = ByteArray(((n + skip) * maxCharSize).coerceAtMost(fileLength.toInt()))
     read(indices[position.toInt()], buffer)
     return charset.decode(ByteBuffer.wrap(buffer)).drop(skip).take(n).toString()
   }
 
-  override fun get(position: Long): () -> CharIterator {
-    val initialBuffer = readString(position, 16.coerceAtMost(recordLength.toInt()-1))
+  override fun charIterator(position: Long): () -> CharIterator {
+    val initialBuffer = readString(position, 16.coerceAtMost(tokenCount.toInt() - 1))
     return {
       object : CharIterator() {
         var buffer = initialBuffer
@@ -49,3 +52,4 @@ class CharsetDataFileMapper(file: File, charsetName: String = "UTF-8", val maxCh
   }
 
 }
+

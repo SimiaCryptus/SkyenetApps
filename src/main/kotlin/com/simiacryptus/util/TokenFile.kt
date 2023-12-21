@@ -4,11 +4,12 @@ import java.io.File
 import java.nio.channels.FileChannel
 import java.nio.file.StandardOpenOption
 
-abstract class DataFileMapper(val file: File) {
-  val fileLength = file.length()
-  abstract val recordLength: Long
+abstract class TokenFile(val file: File) {
   private val channel by lazy { FileChannel.open(file.toPath(), StandardOpenOption.READ) }
   protected val mappedByteBuffer by lazy { channel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength) }
+
+  val fileLength = file.length()
+  abstract val tokenCount: Long
 
   private class PrefixLookup(codec: Collection<String>) {
     val children by lazy {
@@ -27,20 +28,17 @@ abstract class DataFileMapper(val file: File) {
     private fun exactMatches(first: Char) = if (matches.contains(first)) listOf(first.toString()) else null
   }
 
-  fun writeCompressed(codec: List<String>): File? {
-    val maxPrefixLength = codec.maxOfOrNull { it.length } ?: return null
+  fun writeCompressed(codec: List<String>): Pair<File, File> {
+    val maxPrefixLength = codec.maxOfOrNull { it.length } ?: throw IllegalStateException()
     val compressedSequence = File(file.parentFile, "${file.name}.compressed")
-    val dictionaryFile = File(file.parentFile, "${file.name}.dictionary")
-    val sequenceFile = SequenceFile(dictionaryFile)
-    val indexMap = codec.mapIndexed { index, str ->
-      require(index == sequenceFile.append(str.encodeToByteArray()))
+    val indexMap = codec.mapIndexed() { index, str ->
       str to index
     }.toMap()
-    sequenceFile.close()
+    val dictionary = writeDictionary(codec)
     val prefixLookup = PrefixLookup(codec)
     val arrayFile = IntArrayFile(compressedSequence)
     var position = 0L
-    while (position < recordLength) {
+    while (position < tokenCount) {
       val string = readString(position, maxPrefixLength)
       val prefix = prefixLookup.find(string)?.firstOrNull()
       prefix ?: throw IllegalStateException("No prefix found for $string")
@@ -50,7 +48,18 @@ abstract class DataFileMapper(val file: File) {
       position += size
     }
     arrayFile.close()
-    return compressedSequence
+    return compressedSequence to dictionary
+  }
+
+  private fun writeDictionary(codec: List<String>): File {
+    val dictionaryFile = File(file.parentFile, "${file.name}.dictionary")
+    val sequenceFile = SequenceFile(dictionaryFile)
+    val indexMap = codec.mapIndexed { index, str ->
+      require(index == sequenceFile.append(str.encodeToByteArray()))
+      str to index
+    }.toMap()
+    sequenceFile.close()
+    return dictionaryFile
   }
 
 
@@ -69,9 +78,22 @@ abstract class DataFileMapper(val file: File) {
   }
 
   open fun readString(position: Long, n: Int, skip: Int = 0) =
-    get(position).invoke().asSequence().drop(skip).take(n).joinToString("")
+    tokenIterator(position).invoke().asSequence().runningFold("", {a,b->a+b})
+      .dropWhile { it.length < skip + n }.first().drop(skip).take(n)
 
-  abstract fun get(position: Long): () -> CharIterator
+  abstract fun charIterator(position: Long): () -> CharIterator
+
+  open fun tokenIterator(position: Long): () -> Iterator<String> {
+    val charIterator = charIterator(position)
+    return {
+      object : Iterator<String> {
+        val iterator = charIterator.invoke()
+        override fun hasNext() = iterator.hasNext()
+        override fun next(): String = iterator.next().toString()
+      }
+    }
+  }
+
   fun close() {
     channel.close()
   }

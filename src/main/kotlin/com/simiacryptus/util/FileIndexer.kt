@@ -4,16 +4,15 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
 
+
 class FileIndexer(
-  private val dataFile: File,
-  indexFile: File = File(dataFile.parentFile, "${dataFile.name}.index")
+  val data: TokenFile,
+  val index: PointerArrayFile,
 ) {
 
   val characters: Set<String> by lazy {
-    (0 until data.recordLength).map { data.get(it).invoke().next() }.map { it.toString() }.toSet()
+    (0 until data.tokenCount).map { data.tokenIterator(it).invoke().next() }.toSet()
   }
-  val data: DataFileMapper by lazy { CharsetDataFileMapper(dataFile) }
-  val index by lazy { PointerArrayFile(indexFile, data.recordLength) }
 
   /**
    * Sorts the file points in the index file to match the (infinite circular) substring at the given position.
@@ -63,9 +62,9 @@ class FileIndexer(
     val returnMap = TreeMap<String, Int>()
     val map = TreeMap<String, TreeSet<Long>>()
     for (i in 0 until index.length) {
-      val lastPtr = if(i <= 0) null else data.get(index.get(i - 1))
-      val nextPtr = if(i >= index.length-1) null else data.get(index.get(i + 1))
-      val currentPtr = data.get(index.get(i))
+      val lastPtr = if(i <= 0) null else data.tokenIterator(index.get(i - 1))
+      val nextPtr = if(i >= index.length-1) null else data.tokenIterator(index.get(i + 1))
+      val currentPtr = data.tokenIterator(index.get(i))
       val commonPrefixA = commonPrefix(lastPtr?.invoke(), currentPtr())
       val commonPrefixB = commonPrefix(currentPtr(), nextPtr?.invoke())
       val longestCommonPrefix = if(commonPrefixA.length > commonPrefixB.length) commonPrefixA else commonPrefixB
@@ -106,7 +105,7 @@ class FileIndexer(
     return returnMap
   }
 
-  private fun commonPrefix(a: CharIterator?, b: CharIterator?): String {
+  private fun commonPrefix(a: Iterator<String>?, b: Iterator<String>?): String {
     a ?: return ""
     b ?: return ""
     val buffer = StringBuilder()
@@ -144,8 +143,9 @@ class FileIndexer(
               a == null && b == null -> 0
               a == null -> -1
               b == null -> 1
-              else -> data.get(a).invoke().asSequence().drop(skip)
-                .compareTo(data.get(b).invoke().asSequence().drop(skip))
+//              else -> data.charIterator(a).invoke().asSequence().drop(skip)
+//                .compareTo(data.charIterator(b).invoke().asSequence().drop(skip))
+              else -> data.readString(a, n, skip).compareTo(data.readString(b, n, skip))
             }
           }
           for (i in indices.indices) {
@@ -245,10 +245,21 @@ class FileIndexer(
         return 0
       }
     }
+
   }
 
 
 }
+
+fun FileIndexer(dataFile: File, indexFile: File = File(dataFile.parentFile, "${dataFile.name}.index") ): FileIndexer {
+  val data = CharsetTokenFile(dataFile)
+  return FileIndexer(data, indexFile)
+}
+
+fun FileIndexer(
+  data: TokenFile,
+  indexFile: File = File(data.file.parentFile, "${data.file.name}.index")
+) = FileIndexer(data, PointerArrayFile(indexFile, data.tokenCount))
 
 private operator fun CharSequence.compareTo(sequence: CharSequence): Int {
   var i = 0

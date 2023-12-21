@@ -1,3 +1,4 @@
+import com.simiacryptus.util.CompressedTokenFile
 import com.simiacryptus.util.FileIndexer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -50,8 +51,8 @@ class FileIndexerTest {
     fileIndexer.apply {
       val strings = (0 until index.length).toList()
         .map { index.get(it.toLong()) }
-        .map { data.get(it) }
-        .map { it.invoke().asSequence().take(data.recordLength.toInt()).joinToString("") }
+        .map { data.charIterator(it) }
+        .map { it.invoke().asSequence().take(data.tokenCount.toInt()).joinToString("") }
       strings.mapIndexed { index, s -> println("$index: $s") }
       assertEquals(strings.toList().sorted().joinToString("\n"), strings.joinToString("\n"))
     }
@@ -77,9 +78,15 @@ class FileIndexerTest {
     val codec = withPerf("findCompressionPrefixes") { indexer.findCompressionPrefixes(256, dictionaryMaxSize) }
 //    codec.forEach { (k, v) -> println("<$k>: $v") }
     val codecMap = (codec.map { it.first } + characters).sorted()
-    val compressed = withPerf("data.compress") { indexer.data.writeCompressed(codecMap) }
+    val (compressed, dictionaryFile) = withPerf("data.compress") { indexer.data.writeCompressed(codecMap) }
     val expandFile = File(dataFile.parentFile, "${dataFile.name}.expand")
     withPerf("data.expand") { indexer.data.expand(codecMap, compressed, expandFile) }
+
+    val compressedIndexer = FileIndexer(CompressedTokenFile(compressed, dictionaryFile))
+    withPerf("buildIndex (${compressedIndexer.data.fileLength} bytes)") { compressedIndexer.buildIndex(2) }
+    for (pos in withPerf("find") { compressedIndexer.find("This").toList() }.sorted()) {
+//      println(compressedIndexer.data.readString(pos, 100).takeWhile { it != '\n' }.trim())
+    }
   }
 
   private fun <T> withPerf(name: String, fn: () -> T): T {

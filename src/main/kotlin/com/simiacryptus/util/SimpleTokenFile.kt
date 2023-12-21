@@ -2,17 +2,17 @@ package com.simiacryptus.util
 
 import java.io.File
 
-class SimpleDataFileMapper(file: File) : DataFileMapper(file) {
+class SimpleTokenFile(file: File) : TokenFile(file) {
 
-  val indices by lazy { 0 until recordLength }
-  override val recordLength: Long = run {
+  val indices by lazy { 0 until tokenCount }
+  override val tokenCount: Long = run {
     val length = fileLength
     require(length > 0) { "Data file empty: $length" }
     require(length < Int.MAX_VALUE) { "Data file too large: $length" }
     length
   }
 
-  override fun get(position: Long): () -> CharIterator = {
+  override fun charIterator(position: Long): () -> CharIterator = {
     object : CharIterator() {
       val buffer = ByteArray(1)
       var current = position

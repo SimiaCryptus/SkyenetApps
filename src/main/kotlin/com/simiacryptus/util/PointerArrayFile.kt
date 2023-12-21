@@ -15,23 +15,11 @@ class PointerArrayFile(file: File, recordSize: Long) {
   val length by lazy { channelTuple.first }
 
   private val channelTuple by lazy {
-    var length: Long = 0
-    if (!file.exists()) {
-      file.createNewFile()
-      file.setWritable(true)
-      file.setReadable(true)
-      file.setExecutable(false)
-      file.outputStream().buffered().use { out ->
-        val byteArray = ByteArray(4)
-        val wrap = ByteBuffer.wrap(byteArray)
-        length = (0 until recordSize).map { i ->
-          wrap.clear()
-          wrap.putInt(i.toInt())
-          out.write(byteArray)
-        }.count().toLong()
-      }
+    val length = if (!file.exists()) {
+      initialize(file, recordSize)
+      recordSize
     } else {
-      length = file.length() / 4
+      file.length() / 4
     }
     (length to FileChannel.open(file.toPath(), StandardOpenOption.WRITE, StandardOpenOption.READ))
   }
@@ -55,6 +43,24 @@ class PointerArrayFile(file: File, recordSize: Long) {
   fun close() {
     mappedByteBuffer.force()
     channel.close()
+  }
+
+  companion object {
+    fun initialize(file: File, recordSize: Long) {
+      file.createNewFile()
+      file.setWritable(true)
+      file.setReadable(true)
+      file.setExecutable(false)
+      file.outputStream().buffered().use { out ->
+        val byteArray = ByteArray(4)
+        val wrap = ByteBuffer.wrap(byteArray)
+        (0 until recordSize).forEach { i ->
+          wrap.clear()
+          wrap.putInt(i.toInt())
+          out.write(byteArray)
+        }
+      }
+    }
   }
 
 }
