@@ -10,7 +10,11 @@ class CharsetTokenFile(
 ) : TokenFile(file) {
   private val charset = java.nio.charset.Charset.forName(charsetName)
   override var tokenCount: Long = file.length()
-  val indices by lazy {
+  override val indices by lazy {
+    indexArray.asIterable()
+  }
+
+  private val indexArray by lazy {
     (0 until fileLength).runningFold(0L) { position, index ->
       val buffer = ByteArray(maxCharSize)
       read(position, buffer)
@@ -21,12 +25,12 @@ class CharsetTokenFile(
   }
 
   init {
-    tokenCount = indices.size.toLong()
+    tokenCount = indexArray.size.toLong()
   }
 
   override fun readString(position: Long, n: Int, skip: Int): String {
     val buffer = ByteArray(((n + skip) * maxCharSize).coerceAtMost(fileLength.toInt()))
-    read(indices[position.toInt()], buffer)
+    read(indexArray[position.toInt()], buffer)
     return charset.decode(ByteBuffer.wrap(buffer)).drop(skip).take(n).toString()
   }
 

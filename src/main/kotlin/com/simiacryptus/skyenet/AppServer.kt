@@ -17,6 +17,7 @@ import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
+import com.simiacryptus.util.BashInterpreter
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 
 
@@ -44,11 +45,15 @@ open class AppServer(
             ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName)),
             ChildWebApp("/meta_agent", MetaAgentApp()),
             ChildWebApp("/aws_coder", CodingApp(
-                    "AWS Coding Assistant",
-                    KotlinInterpreter::class,
-                    mapOf(
-                            "region" to DefaultAwsRegionProviderChain().getRegion(),
-                    ))),
+                "AWS Coding Assistant",
+                KotlinInterpreter::class,
+                mapOf(
+                    "region" to DefaultAwsRegionProviderChain().getRegion(),
+                ))),
+            ChildWebApp("/bash", CodingApp(
+                "Bash Coding Assistant",
+                BashInterpreter::class,
+                mapOf())),
         )
     }
 

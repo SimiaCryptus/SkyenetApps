@@ -4,7 +4,7 @@ import java.io.File
 
 class SimpleTokenFile(file: File) : TokenFile(file) {
 
-  val indices by lazy { 0 until tokenCount }
+  override val indices by lazy { 0 until tokenCount }
   override val tokenCount: Long = run {
     val length = fileLength
     require(length > 0) { "Data file empty: $length" }

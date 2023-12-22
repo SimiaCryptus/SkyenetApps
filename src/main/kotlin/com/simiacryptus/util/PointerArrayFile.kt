@@ -56,7 +56,8 @@ class PointerArrayFile(file: File, recordSize: Long) {
         val wrap = ByteBuffer.wrap(byteArray)
         (0 until recordSize).forEach { i ->
           wrap.clear()
-          wrap.putInt(i.toInt())
+//          wrap.putInt(i.toInt())
+          wrap.putInt(-1)
           out.write(byteArray)
         }
       }

@@ -11,7 +11,7 @@ class FileIndexer(
 ) {
 
   val characters: Set<String> by lazy {
-    (0 until data.tokenCount).map { data.tokenIterator(it).invoke().next() }.toSet()
+    data.tokenIterator(0).invoke().asSequence().take(data.tokenCount.toInt()).toSet()
   }
 
   /**
@@ -19,7 +19,7 @@ class FileIndexer(
    */
   fun buildIndex(n: Int = 2) {
     populateIndex(
-      parent = populateByScan(n = n, skip = 0, from = 0L, to = index.length),
+      parent = populateByScan(n = n, skip = 0, from = 0L, to = index.length, indices = data.indices),
       n = n,
       skip = n,
       from = 0
@@ -62,9 +62,12 @@ class FileIndexer(
     val returnMap = TreeMap<String, Int>()
     val map = TreeMap<String, TreeSet<Long>>()
     for (i in 0 until index.length) {
-      val lastPtr = if(i <= 0) null else data.tokenIterator(index.get(i - 1))
-      val nextPtr = if(i >= index.length-1) null else data.tokenIterator(index.get(i + 1))
-      val currentPtr = data.tokenIterator(index.get(i))
+      val lastPtrIdx = if(i <= 0) null else index.get(i - 1)
+      val currentIdx = index.get(i)
+      val nextPtrIdx = if(i >= index.length-1) null else index.get(i + 1)
+      val lastPtr = lastPtrIdx?.run { data.tokenIterator(this) }
+      val nextPtr = nextPtrIdx?.run { data.tokenIterator(this) }
+      val currentPtr = data.tokenIterator(currentIdx)
       val commonPrefixA = commonPrefix(lastPtr?.invoke(), currentPtr())
       val commonPrefixB = commonPrefix(currentPtr(), nextPtr?.invoke())
       val longestCommonPrefix = if(commonPrefixA.length > commonPrefixB.length) commonPrefixA else commonPrefixB
@@ -112,7 +115,11 @@ class FileIndexer(
     a ?: return ""
     b ?: return ""
     val buffer = StringBuilder()
+    var loopCnt = 0
     while (a.hasNext() && b.hasNext()) {
+      if(loopCnt++ > 10000) {
+        throw IllegalStateException()
+      }
       val next = a.next()
       val next2 = b.next()
       if (next != next2) break
@@ -121,10 +128,9 @@ class FileIndexer(
     return buffer.toString()
   }
 
-  private fun countNGrams(n: Int, skip: Int = 0, from: Long = 0, to: Long = index.length): TreeMap<CharSequence, Int> {
+  private fun countNGrams(n: Int, skip: Int = 0, indices: Iterable<Long>): TreeMap<CharSequence, Int> {
     val map = TreeMap<CharSequence, Int>()
-    for (i in from until to) {
-      val position = index.get(i)
+    for (position in indices) {
       val key = data.readString(position, n, skip)
       map[key] = map.getOrDefault(key, 0) + 1
     }
@@ -139,23 +145,25 @@ class FileIndexer(
       position = end
       val indices = (start until end).map { index.get(it) }.toTypedArray()
       if (count > 1) {
-        if (count < 10) {
-          // Sort directly for small blocks
-          indices.sortWith { a, b ->
-            when {
-              a == null && b == null -> 0
-              a == null -> -1
-              b == null -> 1
-              else -> data.readString(a, n, skip).compareTo(data.readString(b, n, skip))
-            }
-          }
-          for (i in indices.indices) {
-            index.set(start + i, indices[i])
-          }
-        } else {
+        if (count >= 10) {
           // Sort and recurse for large blocks
           val nextMap = populateByScan(n = n, skip = skip, from = start, to = end, indices= indices.asIterable())
-          populateIndex(parent = nextMap, n = n, skip = skip + n, from = start)
+          if(nextMap.size > 1) {
+            populateIndex(parent = nextMap, n = n, skip = skip + n, from = start)
+            return@forEach
+          }
+        }
+        // Sort directly for small blocks
+        indices.sortWith { a, b ->
+          when {
+            a == null && b == null -> 0
+            a == null -> -1
+            b == null -> 1
+            else -> data.readString(a, n, skip).compareTo(data.readString(b, n, skip))
+          }
+        }
+        for (i in indices.indices) {
+          index.set(start + i, indices[i])
         }
       }
     }
@@ -166,9 +174,10 @@ class FileIndexer(
     skip: Int,
     from: Long,
     to: Long,
-    indices: Iterable<Long> = (from until to),
+    indices: Iterable<Long>,
   ): TreeMap<CharSequence, Int> {
-    val nGramCounts = countNGrams(n, skip, from, to)
+    val nGramCounts = countNGrams(n, skip, indices)
+    require(nGramCounts.values.sum() == (to-from).toInt())
     val nGramPositions = accumulatePositions(nGramCounts)
     for (i in indices) {
       val key = data.readString(i, n, skip)
@@ -253,8 +262,7 @@ class FileIndexer(
 }
 
 fun FileIndexer(dataFile: File, indexFile: File = File(dataFile.parentFile, "${dataFile.name}.index") ): FileIndexer {
-  val data = CharsetTokenFile(dataFile)
-  return FileIndexer(data, indexFile)
+  return FileIndexer(CharsetTokenFile(dataFile), indexFile)
 }
 
 fun FileIndexer(

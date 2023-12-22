@@ -5,11 +5,19 @@ import java.nio.channels.FileChannel
 import java.nio.file.StandardOpenOption
 
 abstract class TokenFile(val file: File) {
+  abstract val indices: Iterable<Long>
   private val channel by lazy { FileChannel.open(file.toPath(), StandardOpenOption.READ) }
   protected val mappedByteBuffer by lazy { channel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength) }
 
   val fileLength = file.length()
   abstract val tokenCount: Long
+
+  @JvmInline
+  value class TokenIndex(val index: Long)
+
+  @JvmInline
+  value class BytePosition(val position: Long)
+
 
   private class PrefixLookup(codec: Collection<String>) {
     val children by lazy {
@@ -81,7 +89,29 @@ abstract class TokenFile(val file: File) {
     tokenIterator(position).invoke().asSequence().runningFold("", {a,b->a+b})
       .dropWhile { it.length < skip + n }.first().drop(skip).take(n)
 
-  abstract fun charIterator(position: Long): () -> CharIterator
+  open fun charIterator(position: Long): () -> CharIterator {
+    return {
+      object : CharIterator() {
+        val iterator = tokenIterator(position).invoke()
+        var current: String? = null
+        var pos = 0
+        override fun hasNext() = true
+        override fun nextChar() : Char = when {
+          current == null -> {
+            current = iterator.next()
+            pos = 0
+            nextChar()
+          }
+          pos >= current!!.length -> {
+            current = iterator.next()
+            pos = 0
+            nextChar()
+          }
+          else -> current!![pos++]
+        }
+      }
+    }
+  }
 
   open fun tokenIterator(position: Long): () -> Iterator<String> {
     val charIterator = charIterator(position)
