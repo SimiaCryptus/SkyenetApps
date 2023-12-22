@@ -91,7 +91,10 @@ class FileIndexer(
     return collect(returnMap, count).toList().sortedBy { -prefixFitness(it.first, it.second) }.toTypedArray()
   }
 
-  private fun prefixFitness(string: String, count: Int) = (count * string.length) - (count * 3) - (string.length)
+  private fun prefixFitness(string: String, count: Int): Int {
+    val length = string.encodeToByteArray().size
+    return (count * length) - (count * 4) - length
+  }
 
   private fun collect(map: TreeMap<String, Int>, count: Int): Map<String, Int> {
     // Iteratively select the top fitness value, add it to the new map, and remove all overlapping entries
@@ -136,15 +139,13 @@ class FileIndexer(
       position = end
       val indices = (start until end).map { index.get(it) }.toTypedArray()
       if (count > 1) {
-        if (count < 100) {
+        if (count < 10) {
           // Sort directly for small blocks
           indices.sortWith { a, b ->
             when {
               a == null && b == null -> 0
               a == null -> -1
               b == null -> 1
-//              else -> data.charIterator(a).invoke().asSequence().drop(skip)
-//                .compareTo(data.charIterator(b).invoke().asSequence().drop(skip))
               else -> data.readString(a, n, skip).compareTo(data.readString(b, n, skip))
             }
           }

@@ -310,12 +310,12 @@ open class MetaAgentAgent(
       task.header("Main Function")
       val codeRequest = CodingActor.CodeRequest(
         messages = listOf(
-          userMessage,
-          design.text,
+          userMessage to Role.user,
+          design.text to Role.assistant,
           "Implement `fun ${design.obj.name?.camelCase()}(${
             listOf(design.obj.mainInput!!)
               .joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") }
-          })`"
+          })`" to Role.user
         ),
         codePrefix = (standardImports + (actorImpls.values + flowStepCode.values)
           .joinToString("\n\n") { it.trimIndent() }).sortCode(),
@@ -369,8 +369,8 @@ open class MetaAgentAgent(
     val type = actorDesign.type ?: ""
     val codeRequest = CodingActor.CodeRequest(
       listOf(
-        userMessage,
-        design.text,
+        userMessage to Role.user,
+        design.text to Role.assistant,
         "Implement `val ${(actorDesign.name).camelCase()} : ${
           when (type.lowercase()) {
             "simple" -> "SimpleActor"
@@ -379,7 +379,7 @@ open class MetaAgentAgent(
             "image" -> "ImageActor"
             else -> throw IllegalArgumentException("Unknown actor type: $type")
           }
-        }`"
+        }`" to Role.user
       ),
       autoEvaluate = autoEvaluate
     )
@@ -419,11 +419,11 @@ open class MetaAgentAgent(
           flowStepDesigner.answer(
             CodingActor.CodeRequest(
               messages = listOf(
-                userMessage,
-                design.text,
+                userMessage to Role.user,
+                design.text to Role.assistant,
                 "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
                   logicFlowItem.inputs?.joinToString<DataInfo>(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
-                })`"
+                })`" to Role.user
               ),
               autoEvaluate = autoEvaluate,
               codePrefix = (actorImpls.values + flowImpls.values)

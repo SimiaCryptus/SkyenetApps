@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.meta
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.ApiModel
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
@@ -87,7 +88,7 @@ interface ExampleActors {
         }
 
         fun useExampleCodingActor(): CodingActor.CodeResult {
-            val answer = exampleCodingActor().answer(CodingActor.CodeRequest(listOf("This is an example question.")), api = api)
+            val answer = exampleCodingActor().answer(CodingActor.CodeRequest(listOf("This is an example question." to ApiModel.Role.user)), api = api)
             log.info("Answer: " + answer.code)
             val executionResult = answer.result
             log.info("Execution Log: " + executionResult.resultOutput)

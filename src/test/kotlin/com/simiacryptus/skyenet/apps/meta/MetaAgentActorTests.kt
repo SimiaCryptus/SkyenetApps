@@ -151,7 +151,7 @@ class MetaAgentActorTests {
             return actor.answer(
                 messages = messages,
                 input = CodingActor.CodeRequest(
-                    messages = messages.map { it.content?.first()?.text ?: "" },
+                    messages = messages.map { (it.content?.first()?.text ?: "") to ApiModel.Role.user },
                     codePrefix = codePrefix,
                 ),
                 api = api

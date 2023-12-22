@@ -281,6 +281,10 @@ open class DatabaseServices(
         }
       }
     }
+
+    override fun clear() {
+      throw UnsupportedOperationException()
+    }
   }
   val userSettingsManager: UserSettingsInterface = object : UserSettingsInterface {
     override fun getUserSettings(user: User): UserSettingsInterface.UserSettings {

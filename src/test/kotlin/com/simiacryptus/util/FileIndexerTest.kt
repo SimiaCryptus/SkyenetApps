@@ -74,8 +74,8 @@ class FileIndexerTest {
 //      println(indexer.data.get(pos).invoke().asSequence().take(100).joinToString("").takeWhile { it != '\n' }.trim())
 //    }
     val characters = indexer.characters
-    val dictionaryMaxSize = Short.MAX_VALUE.toInt() - characters.size
-    val codec = withPerf("findCompressionPrefixes") { indexer.findCompressionPrefixes(256, dictionaryMaxSize) }
+    val dictionaryMaxSize = Integer.MAX_VALUE.toInt() - characters.size
+    val codec = withPerf("findCompressionPrefixes") { indexer.findCompressionPrefixes(170, dictionaryMaxSize) }
 //    codec.forEach { (k, v) -> println("<$k>: $v") }
     val codecMap = (codec.map { it.first } + characters).sorted()
     val (compressed, dictionaryFile) = withPerf("data.compress") { indexer.data.writeCompressed(codecMap) }
@@ -83,7 +83,7 @@ class FileIndexerTest {
     withPerf("data.expand") { indexer.data.expand(codecMap, compressed, expandFile) }
 
     val compressedIndexer = FileIndexer(CompressedTokenFile(compressed, dictionaryFile))
-    withPerf("buildIndex (${compressedIndexer.data.fileLength} bytes)") { compressedIndexer.buildIndex(2) }
+    withPerf("buildIndex (${compressedIndexer.data.fileLength} bytes)") { compressedIndexer.buildIndex(3) }
     for (pos in withPerf("find") { compressedIndexer.find("This").toList() }.sorted()) {
 //      println(compressedIndexer.data.readString(pos, 100).takeWhile { it != '\n' }.trim())
     }

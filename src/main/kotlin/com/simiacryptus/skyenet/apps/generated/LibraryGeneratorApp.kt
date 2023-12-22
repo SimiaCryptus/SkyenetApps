@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.generated
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.ApiModel
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
@@ -193,7 +194,7 @@ open class LibraryGeneratorAgent(
       // Construct the PseudocodeBreakdownActors.code request for the PseudocodeBreakdownActors.code synthesizer
       val codeRequest = CodingActor.CodeRequest(
         messages = listOf(
-          "Generate a Kotlin function with the following signature: ${functionOutline.name}(${functionOutline.parameters!!.joinToString { "${it.name}: ${it.type}" }}): ${functionOutline.returnType}"
+          "Generate a Kotlin function with the following signature: ${functionOutline.name}(${functionOutline.parameters!!.joinToString { "${it.name}: ${it.type}" }}): ${functionOutline.returnType}" to ApiModel.Role.user
         )
       )
 
@@ -324,7 +325,9 @@ open class LibraryGeneratorAgent(
 
       // Construct the PseudocodeBreakdownActors.code request for the PseudocodeBreakdownActors.code synthesizer
       val codeRequest = CodingActor.CodeRequest(
-        messages = listOf("Generate a Kotlin data class for the following structure: `data class ${data_structure.name}(${data_structure.fields.joinToString { "${it.name}: ${it.type}" }})`")
+        messages = listOf(
+          "Generate a Kotlin data class for the following structure: `data class ${data_structure.name}(${data_structure.fields.joinToString { "${it.name}: ${it.type}" }})`" to ApiModel.Role.user
+        )
       )
 
       // Use the codeSynthesizer actor to generate the PseudocodeBreakdownActors.code
