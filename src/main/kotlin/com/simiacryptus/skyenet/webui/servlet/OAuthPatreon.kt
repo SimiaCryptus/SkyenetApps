@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit
 
 open class OAuthPatreon(
   redirectUri: String,
-  val config: PatreonOAuthInfo,
+  val config: PatreonOAuthInfo?,
 ) : OAuthBase(redirectUri) {
 
 
@@ -47,7 +47,7 @@ open class OAuthPatreon(
       resp.sendRedirect(
         patreonAuthorizationUrl + "?" + mapOf(
           "state" to req.getParameter("redirect"),
-          "client_id" to config.clientId,
+          "client_id" to config?.clientId,
           "redirect_uri" to redirectUri,
           "response_type" to "code",
           "scope" to listOf(
@@ -69,7 +69,7 @@ open class OAuthPatreon(
       val code = req.getParameter("code")?.urlEncode
       if (code != null) {
         val body =
-          "code=$code&grant_type=authorization_code&client_id=${config.clientId?.urlEncode}&client_secret=${config.clientSecret?.urlEncode}&redirect_uri=${redirectUri.urlEncode}"
+          "code=$code&grant_type=authorization_code&client_id=${config?.clientId?.urlEncode}&client_secret=${config?.clientSecret?.urlEncode}&redirect_uri=${redirectUri.urlEncode}"
         log.info("Body: $body")
         val tokenResponse = Request.create(Method.POST, URI(patreonTokenUrl))
           .bodyString(body, ContentType.APPLICATION_FORM_URLENCODED)

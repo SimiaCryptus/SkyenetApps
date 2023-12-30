@@ -1,6 +1,5 @@
 package com.simiacryptus.skyenet
 
-import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.beta.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.coding.CodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
@@ -12,12 +11,11 @@ import com.simiacryptus.skyenet.apps.outline.OutlineApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
-import com.simiacryptus.skyenet.core.util.AwsUtil
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
-import com.simiacryptus.util.BashInterpreter
+import com.simiacryptus.skyenet.interpreter.BashInterpreter
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 
 
@@ -59,11 +57,11 @@ open class AppServer(
 
     override fun authenticatedWebsite(): OAuthBase = OAuthPatreon(
         redirectUri = "$domainName/patreonOAuth2callback",
-        config = JsonUtil.fromJson(
+        config = null /*JsonUtil.fromJson(
             AwsUtil.decryptResource("patreon.json.kms", javaClass.classLoader),
             OAuthPatreon.PatreonOAuthInfo::class.java
         )
-    )
+*/    )
 
     override fun setupPlatform() {
         ApplicationServices.authorizationManager = object : AuthorizationManager() {

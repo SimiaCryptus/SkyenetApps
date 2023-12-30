@@ -1,5 +1,8 @@
-package com.simiacryptus.util
+package com.simiacryptus.util.index
 
+import com.simiacryptus.util.files.IntArrayAppendFile
+import com.simiacryptus.util.files.IntArrayMappedFile
+import com.simiacryptus.util.files.SequenceFile
 import java.io.File
 import java.nio.channels.FileChannel
 import java.nio.file.StandardOpenOption
@@ -44,7 +47,7 @@ abstract class TokenFile(val file: File) {
     }.toMap()
     val dictionary = writeDictionary(codec)
     val prefixLookup = PrefixLookup(codec)
-    val arrayFile = IntArrayFile(compressedSequence)
+    val arrayFile = IntArrayAppendFile(compressedSequence)
     var position = 0L
     while (position < tokenCount) {
       val string = readString(position, maxPrefixLength)
@@ -132,7 +135,7 @@ abstract class TokenFile(val file: File) {
     val codec = codecMap.mapIndexed { index, str ->
       index to str
     }.toMap()
-    val arrayFile = IntArrayFile(compressed!!)
+    val arrayFile = IntArrayMappedFile(compressed!!)
     val writer = file.writer()
     var position = 0L
     while (position < arrayFile.length) {

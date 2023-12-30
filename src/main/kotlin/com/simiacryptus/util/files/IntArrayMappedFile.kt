@@ -1,11 +1,11 @@
-package com.simiacryptus.util
+package com.simiacryptus.util.files
 
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.StandardOpenOption
 
-class IntArrayFile(val file: File) {
+class IntArrayMappedFile(val file: File) {
 
   val length : Long by lazy {
     val length = file.length()
@@ -13,26 +13,16 @@ class IntArrayFile(val file: File) {
     require(length < Int.MAX_VALUE) { "Data file too large: $length" }
     length/4
   }
-  private val channel by lazy { FileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE) }
 
+  private val channel by lazy { FileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE) }
   private val mappedByteBuffer by lazy { channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length()) }
-  private val bufferedOutputStream by lazy { file.outputStream().buffered() }
-  private var read = false
-  private var write = false
-  fun append(value: Int) {
-    write = true
-    val toBytes = value.toBytes()
-    bufferedOutputStream.write(toBytes)
-  }
 
   fun get(pos: Int) : Int {
-    read = true
     return mappedByteBuffer.getInt( pos * 4)
   }
 
   fun close() {
-    if (write) bufferedOutputStream.close()
-    if (read) channel.close()
+    channel.close()
   }
 
   companion object {

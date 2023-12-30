@@ -1,27 +1,27 @@
-package com.simiacryptus.util
+package com.simiacryptus.util.files
 
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.StandardOpenOption
 
-class PointerArrayFile(file: File, recordSize: Long) {
+class LongArrayMappedFile(file: File, count: Long) {
 
   private val mappedByteBuffer by lazy {
     channel.map(FileChannel.MapMode.READ_WRITE, 0, 4 * length)
   }
 
-  private val channel by lazy { channelTuple.second }
-  val length by lazy { channelTuple.first }
+  private var length : Long = -1
+  fun getLength() = length
 
-  private val channelTuple by lazy {
-    val length = if (!file.exists()) {
-      initialize(file, recordSize)
-      recordSize
+  private val channel by lazy {
+    length = if (!file.exists()) {
+      initialize(file, count)
+      count
     } else {
       file.length() / 4
     }
-    (length to FileChannel.open(file.toPath(), StandardOpenOption.WRITE, StandardOpenOption.READ))
+    FileChannel.open(file.toPath(), StandardOpenOption.WRITE, StandardOpenOption.READ)
   }
 
   fun get(position: Long): Long {
@@ -34,10 +34,10 @@ class PointerArrayFile(file: File, recordSize: Long) {
     return value
   }
 
-  fun set(position: Long, value: Long): ByteBuffer? {
+  fun set(position: Long, value: Long) {
     require(position >= 0) { "Index out of bounds: $position" }
     require(position < length) { "Index out of bounds: $position / $length" }
-    return mappedByteBuffer.putInt(4 * position.toInt(), value.toInt())
+    mappedByteBuffer.putInt(4 * position.toInt(), value.toInt())
   }
 
   fun close() {
@@ -46,7 +46,7 @@ class PointerArrayFile(file: File, recordSize: Long) {
   }
 
   companion object {
-    fun initialize(file: File, recordSize: Long) {
+    fun initialize(file: File, count: Long) {
       file.createNewFile()
       file.setWritable(true)
       file.setReadable(true)
@@ -54,9 +54,8 @@ class PointerArrayFile(file: File, recordSize: Long) {
       file.outputStream().buffered().use { out ->
         val byteArray = ByteArray(4)
         val wrap = ByteBuffer.wrap(byteArray)
-        (0 until recordSize).forEach { i ->
+        (0 until count).forEach { i ->
           wrap.clear()
-//          wrap.putInt(i.toInt())
           wrap.putInt(-1)
           out.write(byteArray)
         }

@@ -1,4 +1,4 @@
-package com.simiacryptus.util
+package com.simiacryptus.util.index
 
 import java.io.File
 

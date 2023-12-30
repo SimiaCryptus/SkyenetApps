@@ -1,7 +1,7 @@
 
-import com.simiacryptus.util.CompressedTokenFile
-import com.simiacryptus.util.FileIndexer
-import com.simiacryptus.util.WordTokenFile
+import com.simiacryptus.util.index.CompressedTokenFile
+import com.simiacryptus.util.index.FileIndexer
+import com.simiacryptus.util.index.WordTokenFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -51,7 +51,7 @@ class FileIndexerTest {
     try {
       fileIndexer.buildIndex(1)
       fileIndexer.apply {
-        val strings = (0 until index.length).toList()
+        val strings = (0 until index.getLength()).toList()
           .map { index.get(it.toLong()) }
           .map { data.charIterator(it) }
           .map { it.invoke().asSequence().take(data.tokenCount.toInt()).joinToString("") }
@@ -79,7 +79,7 @@ class FileIndexerTest {
     try {
       fileIndexer.buildIndex(1)
       fileIndexer.apply {
-        val strings = (0 until index.length).toList()
+        val strings = (0 until index.getLength()).toList()
           .map { index.get(it.toLong()) }
           .map { data.charIterator(it) }
           .map { it.invoke().asSequence().take(data.tokenCount.toInt()).joinToString("") }

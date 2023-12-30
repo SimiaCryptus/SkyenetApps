@@ -1,6 +1,6 @@
-package com.simiacryptus.util
+package com.simiacryptus.util.files
 
-import com.simiacryptus.util.IntArrayFile.Companion.toBytes
+import com.simiacryptus.util.files.IntArrayAppendFile.Companion.toBytes
 import java.io.File
 import java.nio.channels.FileChannel
 import java.nio.file.StandardOpenOption
@@ -8,12 +8,13 @@ import java.nio.file.StandardOpenOption
 class SequenceFile(file: File) {
 
   private val channel by lazy { FileChannel.open(file.toPath(), StandardOpenOption.READ) }
-
   private val mappedByteBuffer by lazy { channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length()) }
   private val bufferedOutputStream by lazy { file.outputStream().buffered() }
+
   private var read = false
   private var write = false
   private var pos = 0L
+
   fun append(str: ByteArray): Int {
     bufferedOutputStream.write(str.size.toBytes())
     bufferedOutputStream.write(str)

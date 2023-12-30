@@ -1,5 +1,6 @@
-package com.simiacryptus.util
+package com.simiacryptus.util.index
 
+import com.simiacryptus.util.files.LongArrayMappedFile
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
@@ -7,7 +8,7 @@ import java.util.*
 
 class FileIndexer(
   val data: TokenFile,
-  val index: PointerArrayFile,
+  val index: LongArrayMappedFile,
 ) {
 
   val characters: Set<String> by lazy {
@@ -19,7 +20,7 @@ class FileIndexer(
    */
   fun buildIndex(n: Int = 2) {
     populateIndex(
-      parent = populateByScan(n = n, skip = 0, from = 0L, to = index.length, indices = data.indices),
+      parent = populateByScan(n = n, skip = 0, from = 0L, to = index.getLength(), indices = data.indices),
       n = n,
       skip = n,
       from = 0
@@ -28,7 +29,7 @@ class FileIndexer(
 
   fun find(sequence: CharSequence): Array<Long> {
     var start = 0L
-    var end = index.length
+    var end = index.getLength()
     while (start < end) {
       val mid = (start + end) / 2
       val midVal = data.readString(index.get(mid), sequence.length)
@@ -46,7 +47,7 @@ class FileIndexer(
           }
           // Find the end of the sequence
           var j = mid
-          while (j < index.length) {
+          while (j < index.getLength()) {
             buffer = data.readString(index.get(j + 1), sequence.length)
             if (buffer != sequence) break
             j++
@@ -61,10 +62,10 @@ class FileIndexer(
   fun findCompressionPrefixes(threshold: Int, count: Int): Array<Pair<String, Int>> {
     val returnMap = TreeMap<String, Int>()
     val map = TreeMap<String, TreeSet<Long>>()
-    for (i in 0 until index.length) {
+    for (i in 0 until index.getLength()) {
       val lastPtrIdx = if(i <= 0) null else index.get(i - 1)
       val currentIdx = index.get(i)
-      val nextPtrIdx = if(i >= index.length-1) null else index.get(i + 1)
+      val nextPtrIdx = if(i >= index.getLength()-1) null else index.get(i + 1)
       val lastPtr = lastPtrIdx?.run { data.tokenIterator(this) }
       val nextPtr = nextPtrIdx?.run { data.tokenIterator(this) }
       val currentPtr = data.tokenIterator(currentIdx)
@@ -268,7 +269,7 @@ fun FileIndexer(dataFile: File, indexFile: File = File(dataFile.parentFile, "${d
 fun FileIndexer(
   data: TokenFile,
   indexFile: File = File(data.file.parentFile, "${data.file.name}.index")
-) = FileIndexer(data, PointerArrayFile(indexFile, data.tokenCount))
+) = FileIndexer(data, LongArrayMappedFile(indexFile, data.tokenCount))
 
 private operator fun CharSequence.compareTo(sequence: CharSequence): Int {
   var i = 0

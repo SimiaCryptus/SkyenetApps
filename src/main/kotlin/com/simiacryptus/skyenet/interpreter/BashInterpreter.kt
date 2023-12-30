@@ -1,4 +1,4 @@
-package com.simiacryptus.util
+package com.simiacryptus.skyenet.interpreter
 
 import com.simiacryptus.skyenet.core.Interpreter
 import org.slf4j.LoggerFactory
