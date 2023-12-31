@@ -12,6 +12,7 @@ import com.simiacryptus.skyenet.apps.outline.OutlineApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
+import com.simiacryptus.skyenet.core.util.AwsUtil
 import com.simiacryptus.skyenet.interpreter.BashInterpreter
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.platform.DatabaseServices
@@ -62,11 +63,11 @@ open class AppServer(
 
     override fun authenticatedWebsite(): OAuthBase = OAuthPatreon(
         redirectUri = "$domainName/patreonOAuth2callback",
-        config = null /*JsonUtil.fromJson(
+        config = JsonUtil.fromJson(
             AwsUtil.decryptResource("patreon.json.kms", javaClass.classLoader),
             OAuthPatreon.PatreonOAuthInfo::class.java
         )
-*/    )
+    )
 
     override fun setupPlatform() {
         ApplicationServices.authorizationManager = object : AuthorizationManager() {
