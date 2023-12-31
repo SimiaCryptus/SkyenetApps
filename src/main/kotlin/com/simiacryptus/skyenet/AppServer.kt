@@ -1,5 +1,6 @@
 package com.simiacryptus.skyenet
 
+import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.beta.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.coding.CodingApp
 import com.simiacryptus.skyenet.apps.debate.DebateApp
@@ -11,12 +12,16 @@ import com.simiacryptus.skyenet.apps.outline.OutlineApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
+import com.simiacryptus.skyenet.interpreter.BashInterpreter
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
-import com.simiacryptus.skyenet.interpreter.BashInterpreter
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest
 
 
 open class AppServer(
@@ -76,9 +81,35 @@ open class AppServer(
         if(jdbc != null) DatabaseServices(
             jdbcUrl = jdbc as String,
             username = System.getProperties()["db.user"] as String,
-            password = System.getProperties()["db.password"] as String
+            password = getPassword()
         ).register()
 
     }
+
+    private fun fetchPlaintextSecret(secretArn: String, region: Region) =
+        SecretsManagerClient.builder()
+            .region(region)
+            .credentialsProvider(DefaultCredentialsProvider.create())
+            .build().getSecretValue(
+                GetSecretValueRequest.builder()
+                    .secretId(secretArn)
+                    .build()
+            ).secretString()
+
+    private fun getPassword() = (System.getProperties()["db.password"] as String).run {
+        when {
+            // e.g. arn:aws:secretsmanager:us-east-1:470240306861:secret:rds!cluster-2068049d-7d46-402b-b2c6-aff3bde9553d-SHe1Bs
+            startsWith("arn:aws:secretsmanager:us-east-1:") -> {
+                val plaintextSecret: String = fetchPlaintextSecret(this, Region.US_EAST_1)
+                //println("Plaintext secret: $plaintextSecret")
+                val secretJson = JsonUtil.fromJson<Map<String, String>>(plaintextSecret, Map::class.java)
+                secretJson["password"] as String
+            }
+            // Literal password
+            else -> this
+        }
+    }
 }
+
+
 
