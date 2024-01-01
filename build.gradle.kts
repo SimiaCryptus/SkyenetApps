@@ -31,7 +31,7 @@ kotlin {
 }
 
 val jetty_version = "11.0.18"
-val skyenet_version = "1.0.44"
+val skyenet_version = "1.0.45"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 val jackson_version = "2.15.3"
@@ -46,6 +46,9 @@ dependencies {
     implementation(group = "com.simiacryptus.skyenet", name = "kotlin", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
     implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
+
+    implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.16.1")
+    compileOnly(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.21.9")
 
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
