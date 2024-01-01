@@ -48,7 +48,8 @@ dependencies {
     implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
 
     implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.16.1")
-    compileOnly(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.21.9")
+    implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.21.9")
+    implementation("org.jsoup:jsoup:1.17.2")
 
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
