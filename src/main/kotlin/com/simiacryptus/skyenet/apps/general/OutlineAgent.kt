@@ -1,12 +1,12 @@
-package com.simiacryptus.skyenet.apps.outline
+package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.GPT4Tokenizer
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
-import com.simiacryptus.skyenet.apps.outline.OutlineActors.ActorType
-import com.simiacryptus.skyenet.apps.outline.OutlineManager.NodeList
-import com.simiacryptus.skyenet.apps.outline.OutlineManager.OutlinedText
+import com.simiacryptus.skyenet.apps.general.OutlineActors.ActorType
+import com.simiacryptus.skyenet.apps.general.OutlineManager.NodeList
+import com.simiacryptus.skyenet.apps.general.OutlineManager.OutlinedText
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
@@ -125,9 +125,9 @@ class OutlineAgent(
     }
 
     private fun processRecursive(
-        manager: OutlineManager,
-        node: OutlinedText,
-        models: List<ChatModels>
+      manager: OutlineManager,
+      node: OutlinedText,
+      models: List<ChatModels>
     ) {
         val terminalNodeMap = node.outline.getTerminalNodeMap()
         if (terminalNodeMap.isEmpty()) {
@@ -165,11 +165,11 @@ class OutlineAgent(
     }
 
     private fun processNode(
-        parent: OutlinedText,
-        sectionName: String,
-        outlineManager: OutlineManager,
-        message: SessionTask,
-        model: ChatModels,
+      parent: OutlinedText,
+      sectionName: String,
+      outlineManager: OutlineManager,
+      message: SessionTask,
+      model: ChatModels,
     ): OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
             log.debug("Skipping: ${parent.text}")

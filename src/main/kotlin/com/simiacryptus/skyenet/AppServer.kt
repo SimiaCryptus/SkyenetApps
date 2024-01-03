@@ -2,13 +2,13 @@ package com.simiacryptus.skyenet
 
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.beta.IllustratedStorybookApp
+import com.simiacryptus.skyenet.apps.beta.PresentationDesignerApp
 import com.simiacryptus.skyenet.apps.coding.CodingApp
-import com.simiacryptus.skyenet.apps.debate.DebateApp
+import com.simiacryptus.skyenet.apps.general.DebateApp
+import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
 import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
-import com.simiacryptus.skyenet.apps.generated.PresentationGeneratorApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
-import com.simiacryptus.skyenet.apps.outline.OutlineApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
@@ -45,8 +45,8 @@ open class AppServer(
             ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
             ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName)),
             ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName)),
-            ChildWebApp("/presentation_generator", PresentationGeneratorApp(domainName = domainName)),
             ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName)),
+            ChildWebApp("/present2", PresentationDesignerApp()),
             ChildWebApp("/meta_agent", MetaAgentApp()),
             ChildWebApp("/aws_coder", CodingApp(
                 "AWS Coding Assistant",

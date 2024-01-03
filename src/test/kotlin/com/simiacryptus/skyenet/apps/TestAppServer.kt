@@ -6,12 +6,11 @@ import com.simiacryptus.skyenet.core.platform.AuthenticationInterface
 import com.simiacryptus.skyenet.core.platform.AuthorizationInterface.OperationType
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
-import kotlin.random.Random
 
 object TestAppServer : AppServer(
     publicName = "localhost",
     localName = "localhost",
-    port = Random.nextInt(1024, 65535),
+    port = 37600/*Random.nextInt(1024, 65535)*/,
 ) {
     @JvmStatic
     fun main(args: Array<String>) {

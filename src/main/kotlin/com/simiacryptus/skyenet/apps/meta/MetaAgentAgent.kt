@@ -145,7 +145,7 @@ open class MetaAgentAgent(
         |    override val settingsClass: Class<*> get() = Settings::class.java
         |    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
         |
-        |    override fun newSession(
+        |    override fun userMessage(
         |        session: Session,
         |        user: User?,
         |        userMessage: String,
@@ -325,10 +325,10 @@ open class MetaAgentAgent(
       task.verbose(
         renderMarkdown(
           """
-                        |```kotlin
-                        |$mainFunction
-                        |```
-                        """.trimMargin()
+          |```kotlin
+          |$mainFunction
+          |```
+          """.trimMargin()
         ), tag = "div"
       )
       task.complete()
@@ -531,7 +531,7 @@ open class MetaAgentAgent(
       reviseResponse = { userMessage: String, design: T, userResponse: String ->
         val input = toInput(userMessage)
         actor.answer(
-          messages = *actor.chatMessages(input) +
+          messages = actor.chatMessages(input) +
               listOf(
                 design.toString().toContentList() to Role.assistant,
                 userResponse.toContentList() to Role.user

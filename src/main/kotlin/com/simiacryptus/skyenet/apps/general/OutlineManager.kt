@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.outline
+package com.simiacryptus.skyenet.apps.general
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.jopenai.proxy.ValidatedObject
@@ -6,7 +6,7 @@ import com.simiacryptus.jopenai.proxy.ValidatedObject
 open class OutlineManager(val rootNode: OutlinedText) {
 
     data class NodeList(
-        val children: List<Node>? = null,
+      val children: List<Node>? = null,
     ) : ValidatedObject {
         override fun validate(): String? = when {
             children == null -> "children is required"
@@ -44,9 +44,9 @@ open class OutlineManager(val rootNode: OutlinedText) {
     }
 
     data class Node(
-        val name: String? = null,
-        val children: NodeList? = null,
-        val description: String? = null,
+      val name: String? = null,
+      val children: NodeList? = null,
+      val description: String? = null,
     ) : ValidatedObject {
         override fun validate(): String? = when {
             null == name -> "name is required"
@@ -73,8 +73,8 @@ open class OutlineManager(val rootNode: OutlinedText) {
     }
 
     data class OutlinedText(
-        val text: String,
-        val outline: NodeList,
+      val text: String,
+      val outline: NodeList,
     )
 
     val nodes = mutableListOf<OutlinedText>()
@@ -127,7 +127,7 @@ open class OutlineManager(val rootNode: OutlinedText) {
         return buildFinalOutline(rootNode?.outline?.deepClone() ?: return NodeList()) ?: NodeList()
     }
 
-    private fun buildFinalOutline(outline: NodeList?): NodeList? {
+    private fun buildFinalOutline(outline: NodeList?, maxDepth: Int = 10): NodeList? {
         return NodeList(children = outline?.children?.map { node: Node ->
             val expanded = (expansionMap[node]?.outline ?: node.children)?.deepClone()
             when {
@@ -144,7 +144,13 @@ open class OutlineManager(val rootNode: OutlinedText) {
                     } else {
                         node.children
                     }
-                    if (null != children) children = buildFinalOutline(children)
+                    if (null != children) {
+                        if (maxDepth > 0) {
+                            children = buildFinalOutline(children, maxDepth - 1)
+                        } else {
+                            log.warn("Max depth exceeded for ${node.name}")
+                        }
+                    }
                     node.deepClone().copy(children = children)
                 }
             }

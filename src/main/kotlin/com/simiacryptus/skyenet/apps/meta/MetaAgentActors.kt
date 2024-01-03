@@ -193,16 +193,23 @@ class MetaAgentActors(
             Your task is to expand on the high-level architecture and conceptualize the architecture of an "agent" system that uses gpt "actors" to model a creative process.
             The system should be procedural in its overall structure, with creative steps modeled by gpt actors.
             
-            User and system interactions can include:
-            1. Threading operations
-            2. Message output (html+images) sent to the web interface
-            3. User input via text input or link clicks
-            4. File storage and retrieval
-            5. Additional tools as specified by the user
+            System interactions can include:
+            1. File storage and retrieval - the user and application both have access to a shared session folder 
+            2. Threading operations - Individual actors and actions can be run in parallel using java threading
             
-            The design should include:
+            User interactions can include:
+            1. Messages (html & images) sent to the web interface
+            2. User input via text input or link clicks, handled via callbacks
+            
+            Important design patterns include:
+            1. Iterative Thinking - user feedback loops and step-by-step thinking using sequences of specialized actors
+            2. Parse-and-Expand - an initial actor is used to generate a data structure which is then expanded by various potentially recursive actors
+            3. File Builder - the main web interface is used to monitor and control the application, but main output is generally written to files and displayed as links
+            
+            Output should include:
             1. Details on each individual actor including purpose and description
-            2. Pseudocode for the overall logic flow, including threads, loops, and conditionals
+            2. Pseudocode for the overall logic flow
+            3. Data structures used to pass and handle information
         """.trimIndent().trim(),
         model = model,
         temperature = temperature,

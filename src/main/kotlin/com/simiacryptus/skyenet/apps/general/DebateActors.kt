@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.debate
+package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
@@ -15,16 +15,16 @@ interface DebateActors {
   }
 
   data class DebateSetup(
-      val debaters: Debaters? = null,
-      val questions: Questions? = null,
+    val debaters: Debaters? = null,
+    val questions: Questions? = null,
   )
 
   data class Debaters(
-      val list: List<Debater>? = null,
+    val list: List<Debater>? = null,
   )
 
   data class Questions(
-      val list: List<Question>? = null,
+    val list: List<Question>? = null,
   )
 
   data class Debater(
@@ -42,7 +42,7 @@ interface DebateActors {
   }
 
   data class Outline(
-      val arguments: List<Argument>? = null,
+    val arguments: List<Argument>? = null,
   ) : ValidatedObject {
     override fun validate(): String? {
       val joinToString = arguments?.filter { it.validate() != null }?.map { it.validate() }?.joinToString("\n")

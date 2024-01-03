@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.outline
+package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
@@ -41,7 +41,6 @@ open class OutlineApp(
 
     data class Settings(
         val models: List<ChatModels> = listOf(
-            ChatModels.GPT4Turbo,
             ChatModels.GPT35Turbo
         ),
         val temperature: Double = 0.3,

@@ -1,8 +1,8 @@
-package com.simiacryptus.skyenet.apps.outline
+package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
-import com.simiacryptus.skyenet.apps.outline.OutlineManager.NodeList
+import com.simiacryptus.skyenet.apps.general.OutlineManager.NodeList
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import java.util.function.Function

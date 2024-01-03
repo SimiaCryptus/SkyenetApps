@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.debate
+package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.skyenet.core.platform.Session
