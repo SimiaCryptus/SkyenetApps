@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.meta
+package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ApiModel

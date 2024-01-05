@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.outline
+package com.simiacryptus.skyenet.apps.general
 
 import org.junit.jupiter.api.Test
 

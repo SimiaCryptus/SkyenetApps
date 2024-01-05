@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.meta
+package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ApiModel
@@ -6,7 +6,7 @@ import com.simiacryptus.jopenai.ApiModel.Role
 import com.simiacryptus.jopenai.ClientUtil.toContentList
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
-import com.simiacryptus.skyenet.apps.meta.MetaAgentActors.*
+import com.simiacryptus.skyenet.apps.premium.MetaAgentActors.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.camelCase
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.imports

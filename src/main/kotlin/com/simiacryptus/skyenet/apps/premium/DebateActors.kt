@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.general
+package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels

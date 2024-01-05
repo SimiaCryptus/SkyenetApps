@@ -1,9 +1,9 @@
-package com.simiacryptus.skyenet.apps.meta
+package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.skyenet.core.Interpreter
+import com.simiacryptus.skyenet.interpreter.Interpreter
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
@@ -422,7 +422,7 @@ class MetaAgentActors(
         |import com.simiacryptus.jopenai.models.ChatModels
         |import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
         |import com.simiacryptus.jopenai.describe.TypeDescriber
-        |import com.simiacryptus.skyenet.core.Interpreter
+        |import com.simiacryptus.skyenet.interpreter.Interpreter
         |import kotlin.reflect.KClass
         |
         |class CodingActor(

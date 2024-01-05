@@ -1,8 +1,8 @@
-package com.simiacryptus.skyenet.apps.general
+package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
-import com.simiacryptus.skyenet.apps.general.DebateActors.*
+import com.simiacryptus.skyenet.apps.premium.DebateActors.*
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session

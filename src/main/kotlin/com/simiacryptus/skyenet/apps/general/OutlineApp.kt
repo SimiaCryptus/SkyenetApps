@@ -10,7 +10,7 @@ import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
 
 open class OutlineApp(
-    applicationName: String = "IdeaMapper",
+    applicationName: String = "Outline Expansion Concept Map v1.0",
     val domainName: String,
 ) : ApplicationServer(
   applicationName = applicationName,
@@ -18,25 +18,17 @@ open class OutlineApp(
     override val description: String
         @Language("HTML")
         get() = ("<div>" + renderMarkdown("""
-          ### **Welcome to the Outline Agent!**
-
-          Are you struggling to organize your thoughts or structure your writing? Say hello to the Outline Agent, your personal assistant for creating detailed outlines and essays!
-
-          The Outline Agent is a sophisticated tool designed to help you turn a single idea into a well-structured document. Whether you're a student, a researcher, or a professional writer, this agent can streamline your writing process and enhance the clarity of your work.
-
-          Here's what the Outline Agent can do for you:
-
-          1. **Generate Initial Outlines**: Provide your main idea or topic, and the Outline Agent will create an initial outline to kickstart your writing project.
-          2. **Iterative Expansion**: The agent can iteratively expand on each section of your outline, adding depth and detail to your initial framework.
-          3. **Finalize Your Essay**: Once your outline is fully expanded, the agent can compile it into a final essay, ensuring that your document is coherent and comprehensive.
-          4. **Visualize Ideas**: If you're a visual learner, you'll love the Embedding Projector feature. It allows you to see a visual representation of your ideas and how they relate to each other.
-          5. **Customizable Experience**: You can set the number of iterations for expanding your outline, the minimum size for sections, and whether you want to see the final essay or the projector visualization.
-          6. **Interactive and User-Friendly**: With a user-friendly interface, the Outline Agent makes it easy to interact with the system, receive updates on the progress, and access your documents.
-          7. **Safe and Secure**: Your data is stored securely, and you can access your session's directory to retrieve all your generated outlines and essays.
-
-          The Outline Agent is powered by advanced AI technology, ensuring that your outlines are not only structured but also creative and engaging. Get ready to transform your ideas into beautifully crafted documents with ease!
-
-          Start your journey to better writing today with the Outline Agent! 📝✨
+          The Outline Agent is an AI-powered tool for exploring concepts via outline creation and expansion.
+          
+          Here's how it works:
+          
+          1. **Generate Initial Outline**: Provide your main idea or topic, and the Outline Agent will create an initial outline.
+          2. **Iterative Expansion**: The agent then expands on each section of your outline, adding depth and detail.
+          3. **Construct Final Outline**: Once your outline is fully expanded, the agent can compile it into a single outline. This presents the information in a clear and concise manner, making it easy to review.
+          4. **Visualize Embeddings**: Each section of your outline is represented as a vector in a high-dimensional space. The Outline Agent uses an Embedding Projector to visualize these vectors, allowing you to explore the relationships between different ideas and concepts.
+          5. **Customizable Experience**: You can set the number of iterations and the model used for each to control the depth and price, making it possible to generate sizable outputs.
+          
+          Start your journey into concept space today with the Outline Agent! 📝✨
           """.trimIndent()) + "</div>")
 
     data class Settings(

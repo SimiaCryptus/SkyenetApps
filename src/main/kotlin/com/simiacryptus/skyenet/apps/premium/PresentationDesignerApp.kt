@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.beta
+package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
@@ -6,14 +6,26 @@ import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil
+import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
 
 open class PresentationDesignerApp(
-  applicationName: String = "PresenterDesign",
+  applicationName: String = "Presentation Generator v1.0",
 ) : ApplicationServer(
   applicationName = applicationName,
 ) {
+
+  override val description: String
+    @Language("HTML")
+    get() = "<div>" + MarkdownUtil.renderMarkdown(
+      """
+        Welcome to the Presentation Designer, an app designed to help you create presentations with ease.
+        
+        Enter a prompt, and the Presentation Designer will generate a presentation for you, complete with slides, images, and speaking notes!                  
+      """.trimIndent()
+    ) + "</div>"
 
   data class Settings(
     val model: ChatModels = ChatModels.GPT35Turbo,

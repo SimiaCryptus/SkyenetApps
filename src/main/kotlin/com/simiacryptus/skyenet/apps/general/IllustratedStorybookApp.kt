@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.beta
+package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
@@ -7,14 +7,26 @@ import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil
+import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
 open class IllustratedStorybookApp(
-  applicationName: String = "Illustrated Storybook Generator",
+  applicationName: String = "Illustrated Storybook Generator v1.0",
   domainName: String
 ) : ApplicationServer(
   applicationName = applicationName,
 ) {
+
+  override val description: String
+    @Language("HTML")
+    get() = "<div>" + MarkdownUtil.renderMarkdown(
+      """
+        Welcome to the Illustrated Storybook Generator, an app designed to help you create illustrated storybooks with ease.
+        
+        Enter a prompt, and the Illustrated Storybook Generator will generate a storybook for you, complete with images and text!
+      """.trimIndent()
+    ) + "</div>"
 
   data class Settings(
     val model: ChatModels = ChatModels.GPT4Turbo,

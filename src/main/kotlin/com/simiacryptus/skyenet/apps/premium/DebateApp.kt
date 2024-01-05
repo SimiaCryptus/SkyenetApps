@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.general
+package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.skyenet.core.platform.Session
@@ -10,7 +10,7 @@ import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
 open class DebateApp(
-    applicationName: String = "DebateMapper",
+    applicationName: String = "Automated Debate Concept Map v1.0",
     temperature: Double = 0.3,
     val domainName: String,
 ) : ApplicationServer(
@@ -20,17 +20,14 @@ open class DebateApp(
         @Language("HTML")
         get() = "<div>" + MarkdownUtil.renderMarkdown(
             """
-              Welcome to the Debate Agent, an interactive platform designed to engage users in thought-provoking debates using advanced AI technology. Our Debate Agent leverages the power of machine learning to simulate a dynamic debating environment, where users can pose questions and receive articulate responses from virtual debaters.
-
+              Welcome to the Debate Agent, an app designed to expore the landscape of ideas with a focus on multiple perspectives.
+              
               Here's what you can expect from the Debate Agent:
-
-              * **Real-time Interaction**: Engage in debates by submitting your questions or statements, and watch as the AI-powered moderator and debaters craft their responses, providing you with a rich, conversational experience.
-              * **Diverse Perspectives**: Encounter a range of virtual debaters, each with unique characteristics and viewpoints, ensuring a multifaceted discussion that challenges your thinking and broadens your perspective.
+              
+              * **Initial Prompt**: Submit your questions or statements, and watch as the AI-powered moderator and debaters explore the topic, providing a range of perspectives and insights.
               * **Visual Insights**: Explore the intricate landscape of debate topics and responses through our Embedding Projector, a feature that visually maps out the relationships between different arguments and ideas.
-              * **User-Friendly Interface**: Navigate the platform with ease, thanks to a straightforward and accessible Application Interface that guides you through the debate process.
-              * **Personalized Experience**: Tailor the debate to your interests by posing questions that matter to you, and watch as the AI adapts to the context of the discussion, providing relevant and engaging content.
-
-              Whether you're a seasoned debater looking to hone your skills or a curious mind eager to explore new ideas, the Debate Agent is the perfect companion for an enriching and intellectually stimulating experience. Join the debate today and let your voice be heard!
+              
+              Similar to our Outline Agent, we hope you find the Debate Agent to be a useful tool for exploring the landscape of ideas.
           """.trimIndent()
         ) + "</div>"
 
