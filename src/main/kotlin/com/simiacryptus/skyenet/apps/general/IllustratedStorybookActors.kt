@@ -4,9 +4,11 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
+import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.ImageActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.TextToSpeechActor
 import java.util.function.Function
 
 class IllustratedStorybookActors(
@@ -72,17 +74,22 @@ class IllustratedStorybookActors(
     height = 1024 // Height of the generated image
   )
 
+  private val narrator = TextToSpeechActor()
+
   enum class ActorType {
     REQUIREMENTS_ACTOR,
     STORY_GENERATOR_ACTOR,
     ILLUSTRATION_GENERATOR_ACTOR,
+    NARRATOR,
   }
 
   val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
-    ActorType.STORY_GENERATOR_ACTOR to storyGeneratorActor,
-    ActorType.ILLUSTRATION_GENERATOR_ACTOR to illustrationGeneratorActor,
-    ActorType.REQUIREMENTS_ACTOR to requirementsActor,
+    STORY_GENERATOR_ACTOR to storyGeneratorActor,
+    ILLUSTRATION_GENERATOR_ACTOR to illustrationGeneratorActor,
+    REQUIREMENTS_ACTOR to requirementsActor,
+    NARRATOR to narrator,
   )
+
 
   companion object {
     val log = org.slf4j.LoggerFactory.getLogger(IllustratedStorybookActors::class.java)

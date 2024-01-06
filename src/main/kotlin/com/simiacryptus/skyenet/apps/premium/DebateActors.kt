@@ -5,6 +5,7 @@ import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.core.actors.TextToSpeechActor
 import java.util.function.Function
 
 interface DebateActors {

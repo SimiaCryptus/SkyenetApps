@@ -4,20 +4,22 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType
+import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.StoryData
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ImageActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.TextToSpeechActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import java.util.*
-import javax.imageio.ImageIO
 
 open class IllustratedStorybookAgent(
   user: User?,
@@ -28,18 +30,21 @@ open class IllustratedStorybookAgent(
   model: ChatModels = ChatModels.GPT4Turbo,
   temperature: Double = 0.3,
   imageModel: ImageModels = ImageModels.DallE2,
-) : ActorSystem<IllustratedStorybookActors.ActorType>(
+) : ActorSystem<ActorType>(
   IllustratedStorybookActors(
     model = model,
     temperature = temperature,
     imageModel = imageModel,
-  ).actorMap, dataStorage, user, session) {
+  ).actorMap, dataStorage, user, session
+) {
 
   @Suppress("UNCHECKED_CAST")
-  private val storyGeneratorActor by lazy { getActor(IllustratedStorybookActors.ActorType.STORY_GENERATOR_ACTOR) as ParsedActor<IllustratedStorybookActors.StoryData> }
-  private val illustrationGeneratorActor by lazy { getActor(IllustratedStorybookActors.ActorType.ILLUSTRATION_GENERATOR_ACTOR) as ImageActor }
+  private val storyGeneratorActor by lazy { getActor(ActorType.STORY_GENERATOR_ACTOR) as ParsedActor<StoryData> }
+  private val illustrationGeneratorActor by lazy { getActor(ActorType.ILLUSTRATION_GENERATOR_ACTOR) as ImageActor }
+
   @Suppress("UNCHECKED_CAST")
-  private val requirementsActor by lazy { getActor(IllustratedStorybookActors.ActorType.REQUIREMENTS_ACTOR) as ParsedActor<UserPreferencesContent> }
+  private val requirementsActor by lazy { getActor(ActorType.REQUIREMENTS_ACTOR) as ParsedActor<UserPreferencesContent> }
+  private val narratorActor by lazy { getActor(ActorType.NARRATOR) as TextToSpeechActor }
 
   private fun agentSystemArchitecture(userPreferencesContent: UserPreferencesContent) {
     val task = ui.newTask()
@@ -48,19 +53,28 @@ open class IllustratedStorybookAgent(
 
       // Step 1: Generate the story text using the Story Generator Actor
       task.add("Generating the story based on user preferences...")
-      val storyData = storyGeneratorActor(userPreferencesContent)
+      val storyData: StoryData = storyGeneratorActor(userPreferencesContent)
       task.add("Story generated successfully with title: '${storyData.title}'")
 
       // Step 2: Generate illustrations for each paragraph of the story
       task.add("Generating illustrations for the story...")
       val illustrations = (storyData.paragraphs?.map { paragraph ->
-        illustrationGeneratorActor(paragraph, userPreferencesContent)
-      } ?: emptyList())
+        pool.submit<Pair<String, BufferedImage>?> { illustrationGeneratorActor(paragraph, userPreferencesContent) }
+      }?.toTypedArray() ?: emptyArray()).map { it.get() }
       task.add("Illustrations generated successfully.")
+
+      task.add("Generating narration for the story...")
+      val narrations = (storyData.paragraphs?.withIndex()?.map { (idx, paragraph) ->
+        pool.submit<String> { narratorActor.answer(listOf(paragraph), api).mp3data?.let {
+          val fileLocation = task.saveFile("narration$idx.mp3", it)
+          task.add("<audio controls><source src='$fileLocation' type='audio/mpeg'></audio>")
+          fileLocation
+        } }
+      }?.toTypedArray() ?: emptyArray()).map { it.get() }
 
       // Step 3: Format the story and illustrations into an HTML document
       task.add("Formatting the storybook into HTML...")
-      val htmlStorybook = htmlFormatter(storyData, illustrations, userPreferencesContent)
+      val htmlStorybook = htmlFormatter(storyData, illustrations, userPreferencesContent, narrations)
       val savedStorybookPath = fileManager(htmlStorybook)
       task.complete("<a href='$savedStorybookPath' target='_blank'>Storybook Ready!</a>")
     } catch (e: Throwable) {
@@ -86,7 +100,12 @@ open class IllustratedStorybookAgent(
 
 
   // Assuming the storyText is of type AgentSystemArchitectureActors.StoryData and illustrations is a List<BufferedImage>
-  private fun htmlFormatter(storyText: IllustratedStorybookActors.StoryData, illustrations: List<Pair<String, BufferedImage>?>, userPreferencesContent: UserPreferencesContent): String {
+  private fun htmlFormatter(
+    storyText: StoryData,
+    illustrations: List<Pair<String, BufferedImage>?>,
+    userPreferencesContent: UserPreferencesContent,
+    narrations: List<String?>
+  ): String {
     val task = ui.newTask()
     try {
       task.header("Formatting Storybook")
@@ -95,66 +114,94 @@ open class IllustratedStorybookAgent(
       val htmlContent = StringBuilder()
 
       // Start of HTML document
-      htmlContent.append("<html><head><title>${storyText.title}</title></head><body>")
-
-      // Add CSS styles for the storybook
+      //language=HTML
       htmlContent.append("""
-                <style>
-                    body {
-                        font-family: 'Arial', sans-serif;
-                    }
-                    .story-title {
-                        text-align: center;
-                        font-size: 2em;
-                        margin-top: 20px;
-                    }
-                    .story-paragraph {
-                        text-align: justify;
-                        margin: 15px;
-                    }
-                    .story-illustration {
-                        text-align: center;
-                        margin: 20px;
-                    }
-                    .story-illustration img {
-                        max-width: 100%;
-                        height: auto;
-                    }
-                </style>
-            """.trimIndent())
+        |<html>
+        |<head><title>${storyText.title}</title></head>
+        |<body>
+        |<style>
+        |    body {
+        |        font-family: 'Arial', sans-serif;
+        |    }
+        |
+        |    .story-title {
+        |        text-align: center;
+        |        font-size: 2em;
+        |        margin-top: 20px;
+        |    }
+        |
+        |    .story-paragraph {
+        |        text-align: justify;
+        |        margin: 15px;
+        |    }
+        |
+        |    .story-illustration {
+        |        text-align: center;
+        |        margin: 20px;
+        |    }
+        |
+        |    .story-illustration img {
+        |        max-width: 100%;
+        |        height: auto;
+        |    }
+        |</style>
+        |<div class='story-title'>${storyText.title}</div>
+        |<button id='playAll'>Play All Slides</button>
+        |<script>
+        |document.getElementById('playAll').addEventListener('click', function() {
+        |  const slides = document.querySelectorAll('.story-page');
+        |  let currentSlide = 0;
+        |  function playNextSlide() {
+        |    if (currentSlide >= slides.length) return;
+        |    const slide = slides[currentSlide];
+        |    const audio = slide.querySelector('audio');
+        |    const image = slide.querySelector('.story-illustration');
+        |    if (audio) {
+        |      image.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        |      audio.play();
+        |      audio.onended = function() {
+        |        currentSlide++;
+        |        playNextSlide();
+        |      };
+        |    } else {
+        |      currentSlide++;
+        |      playNextSlide();
+        |    }
+        |  }
+        |  playNextSlide();
+        |});
+        |</script>
+        """.trimMargin()
+      )
 
-      // Add the story title
-      htmlContent.append("<div class='story-title'>${storyText.title}</div>")
+      val indexedNarrations = narrations.withIndex().associate { (idx, narration) -> idx to narration }
 
       // Add each paragraph and corresponding illustration
       storyText.paragraphs?.forEachIndexed { index, paragraph ->
-        htmlContent.append("<div class='story-paragraph'>$paragraph</div>")
-        if (index < illustrations.size) {
-          val illustration = illustrations[index]
-          if(illustration != null) {
-            // <img src="fileIndex/G-20240102-e3de5003/0642f463-00a9-41db-9857-cced3a09150f.png"> -> <img src="0642f463-00a9-41db-9857-cced3a09150f.png">
-            val img = illustration.first.replace("fileIndex/$session/", "")
-            htmlContent.append("<div class='story-illustration'>$img</div>")
-          }
-        }
+        val prefix = "fileIndex/$session/"
+        val narration = (if (index >= indexedNarrations.size) null else indexedNarrations[index]) ?: ""
+        val illustration = (if (index >= illustrations.size) null else illustrations[index]?.first) ?: ""
+        //language=HTML
+        htmlContent.append(
+          """
+            |<div class='story-page'>
+            |    <div class='story-illustration'>${illustration.removePrefix(prefix)}</div>
+            |    <audio controls><source src='${narration.removePrefix(prefix)}' type='audio/mpeg'></audio>
+            |    <div class='story-paragraph'>$paragraph</div>
+            |</div>
+            |""".trimMargin()
+        )
       }
 
       // End of HTML document
       htmlContent.append("</body></html>")
 
-      task.complete("Storybook formatting complete.")
+      task.complete("Storybook complete.")
       return htmlContent.toString()
     } catch (e: Throwable) {
       task.error(e)
       throw e
     }
-  }
-
-  // Helper function to encode BufferedImage to Base64 string
-  private fun encodeToBase64(image: BufferedImage): String {
-    val outputStream = ByteArrayOutputStream()
-    ImageIO.write(image, "png", outputStream)
-    return Base64.getEncoder().encodeToString(outputStream.toByteArray())
   }
 
 
@@ -188,10 +235,13 @@ open class IllustratedStorybookAgent(
 
 
   // Define the function for generating illustrations for a given story segment
-  private fun illustrationGeneratorActor(segment: String, userPreferencesContent: UserPreferencesContent): Pair<String, BufferedImage>? {
+  private fun illustrationGeneratorActor(
+    segment: String,
+    userPreferencesContent: UserPreferencesContent
+  ): Pair<String, BufferedImage>? {
     val task = ui.newTask()
     try {
-      task.header("Generating Illustration")
+      //task.add(renderMarkdown(segment))
 
       // Construct the conversation thread with the story segment and user preferences
       val conversationThread = listOf(
@@ -205,7 +255,7 @@ open class IllustratedStorybookAgent(
       val illustrationResponse = illustrationGeneratorActor.answer(conversationThread, api = api)
 
       // Log the AgentSystemArchitectureActors.image description
-      task.add("Illustration description: ${illustrationResponse.text}")
+      task.add(renderMarkdown(illustrationResponse.text), className = "illustration-caption")
       val imageHtml = task.image(illustrationResponse.image).toString()
       task.complete()
 
@@ -225,7 +275,7 @@ open class IllustratedStorybookAgent(
   )
 
   // Implement the storyGeneratorActor function
-  private fun storyGeneratorActor(userPreferencesContent: UserPreferencesContent): IllustratedStorybookActors.StoryData {
+  private fun storyGeneratorActor(userPreferencesContent: UserPreferencesContent): StoryData {
     val task = ui.newTask()
     try {
       task.header("Generating Story")
@@ -241,7 +291,8 @@ open class IllustratedStorybookAgent(
       val storyResponse = storyGeneratorActor.answer(conversationThread, api = api)
 
       // Log the natural language answer
-      task.add("Story generated: ${storyResponse.text}")
+      task.add(renderMarkdown(storyResponse.text))
+      task.verbose(JsonUtil.toJson(storyResponse.obj))
 
       // Return the parsed story data
       return storyResponse.obj

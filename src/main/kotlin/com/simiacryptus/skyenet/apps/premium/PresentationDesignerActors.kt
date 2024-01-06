@@ -4,10 +4,7 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.skyenet.core.actors.BaseActor
-import com.simiacryptus.skyenet.core.actors.ImageActor
-import com.simiacryptus.skyenet.core.actors.ParsedActor
-import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.core.actors.*
 import org.slf4j.LoggerFactory
 import java.util.function.Function
 
@@ -33,7 +30,7 @@ class PresentationDesignerActors(
     override fun apply(text: String): IdeaList
   }
 
-  val initialAuthor = ParsedActor<Outline>(
+  val initialAuthor = ParsedActor(
     parserClass = OutlineParser::class.java,
     model = ChatModels.GPT4Turbo,
     prompt = """
@@ -65,13 +62,24 @@ class PresentationDesignerActors(
     }
   }
 
+  data class SlideDetails(
+    val title: String? = null,
+    val html: String? = null,
+  ) : ValidatedObject {
+    override fun validate() = when {
+      title.isNullOrBlank() -> "Title is required"
+      html.isNullOrBlank() -> "HTML is required"
+      else -> null
+    }
+  }
+
   // Define the interface for parsing the text response into an Outline object
   interface OutlineParser : Function<String, Outline> {
     override fun apply(text: String): Outline
   }
 
   // Instantiate the outlineCreator as a ParsedActor<Outline>
-  val outlineCreator = ParsedActor<Outline>(
+  val outlineCreator = ParsedActor(
     parserClass = OutlineParser::class.java,
     prompt = """
             You are an assistant that creates structured outlines for presentations.
@@ -96,12 +104,17 @@ class PresentationDesignerActors(
     override fun apply(text: String): Content
   }
 
-  val contentExpander = SimpleActor(
+  interface SlideDetailsParser : Function<String, SlideDetails> {
+    override fun apply(text: String): SlideDetails
+  }
+
+  val contentExpander = ParsedActor(
     model = ChatModels.GPT4Turbo,
     prompt = """
             You are an assistant that expands outlines into detailed content. 
             Given an outline for a slide in a presentation, provide a comprehensive explanation or description for it.
-        """.trimIndent()
+        """.trimIndent(),
+    parserClass = SlideDetailsParser::class.java
   )
 
 
@@ -131,7 +144,7 @@ class PresentationDesignerActors(
     override fun apply(text: String): SpeakingNotes
   }
 
-  val speakerNotes = ParsedActor<SpeakingNotes>(
+  val speakerNotes = ParsedActor(
     parserClass = RefinerParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
@@ -149,12 +162,15 @@ class PresentationDesignerActors(
     temperature = 0.3
   )
 
+  val narrator = TextToSpeechActor()
+
   enum class ActorType {
     INITIAL_AUTHOR,
     CONTENT_EXPANDER,
     SLIDE_LAYOUT,
     SPEAKER_NOTES,
     IMAGE_RENDERER,
+    NARRATOR,
   }
 
   val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
@@ -163,6 +179,7 @@ class PresentationDesignerActors(
     ActorType.SLIDE_LAYOUT to styleFormatter,
     ActorType.SPEAKER_NOTES to speakerNotes,
     ActorType.IMAGE_RENDERER to imageRenderer,
+    ActorType.NARRATOR to narrator,
   )
 
   companion object {

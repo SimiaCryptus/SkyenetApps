@@ -116,6 +116,7 @@ open class MetaAgentAgent(
             "parsed" -> "ParsedActor<${actor.simpleClassName}>"
             "coding" -> "CodingActor"
             "image" -> "ImageActor"
+            "tts" -> "TextToSpeechActor"
             else -> throw IllegalArgumentException("Unknown actor type: ${actor.type}")
           }
         } }"""
@@ -377,6 +378,7 @@ open class MetaAgentAgent(
             "parsed" -> "ParsedActor<${actorDesign.simpleClassName}>"
             "coding" -> "CodingActor"
             "image" -> "ImageActor"
+            "tts" -> "TextToSpeechActor"
             else -> throw IllegalArgumentException("Unknown actor type: $type")
           }
         }`" to Role.user
@@ -388,6 +390,7 @@ open class MetaAgentAgent(
       "parsed" -> parsedActorDesigner.answer(codeRequest, api = api)
       "coding" -> codingActorDesigner.answer(codeRequest, api = api)
       "image" -> imageActorDesigner.answer(codeRequest, api = api)
+      "mp3" -> throw NotImplementedError() // TODO: Implement
       else -> throw IllegalArgumentException("Unknown actor type: $type")
     }
     val code = response.code

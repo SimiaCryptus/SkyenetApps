@@ -3,11 +3,11 @@ package com.simiacryptus.skyenet.apps.premium
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.skyenet.interpreter.Interpreter
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.interpreter.Interpreter
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import org.intellij.lang.annotations.Language
 import java.util.function.Function
@@ -103,9 +103,9 @@ class MetaAgentActors(
         @Description("Java class name of the actor")
         val name: String = "",
         val description: String? = null,
-        @Description("simple, parsed, image, or coding")
+        @Description("simple, parsed, image, tts, or coding")
         val type: String = "",
-        @Description("Simple actors: string; Image actors: image; Coding actors: code; Parsed actors: a simple java class name for the data structure")
+        @Description("Simple actors: string; Image actors: image; Coding actors: code; Text-to-speech actors: mp3; Parsed actors: a simple java class name for the data structure")
         val resultClass: String = "",
     ) : ValidatedObject {
         val simpleClassName : String get() = resultClass.split(".").last()
@@ -113,9 +113,9 @@ class MetaAgentActors(
             name.isEmpty() -> "name is required"
             name.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> "name must be a valid java identifier"
             type.isEmpty() -> "type is required"
-            type.lowercase().notIn("simple", "parsed", "coding", "image") -> "type must be simple, parsed, coding, or image"
+            type.lowercase().notIn("simple", "parsed", "coding", "image", "tts") -> "type must be simple, parsed, coding, tts, or image"
             resultClass.isEmpty() -> "resultType is required"
-            resultClass.lowercase().notIn("string", "code", "image") && !validClassName(resultClass) -> "resultType must be string, code, image, or a valid class name"
+            resultClass.lowercase().notIn("string", "code", "image", "mp3") && !validClassName(resultClass) -> "resultType must be string, code, image, mp3, or a valid class name"
             else -> null
         }
 
