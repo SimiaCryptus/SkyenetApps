@@ -33,7 +33,7 @@ open class IllustratedStorybookApp(
     val temperature: Double? = 0.5,
     val imageModel: ImageModels? = ImageModels.DallE3,
     val voice : String? = "alloy",
-    val voiceSpeed : Double? = 1.0,
+    val voiceSpeed : Double? = 1.1,
   )
   override val settingsClass: Class<*> get() = Settings::class.java
   @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T

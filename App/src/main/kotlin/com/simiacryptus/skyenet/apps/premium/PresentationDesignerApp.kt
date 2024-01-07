@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 
 open class PresentationDesignerApp(
-  applicationName: String = "Presentation Generator v1.0",
+  applicationName: String = "Presentation Generator v1.1",
 ) : ApplicationServer(
   applicationName = applicationName,
 ) {

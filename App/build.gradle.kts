@@ -123,7 +123,7 @@ val fullShadowJar by tasks.register("fullShadowJar", ShadowJar::class) {
   isZip64 = true
   mergeServiceFiles()
   append("META-INF/kotlin_module")
-  dependsOn("jar")
+  from(project.tasks.jar)
   configurations = listOf(project.configurations.getByName("runtimeClasspath"))
 }
 
@@ -133,7 +133,7 @@ val optimizedJar by tasks.register("optimizedJar",ShadowJar::class) {
   archiveClassifier.set("optimized")
   isZip64 = true
   mergeServiceFiles()
-  dependsOn("jar")
+  from(project.tasks.jar)
   configurations = listOf(project.configurations.getByName("runtimeClasspath"))
 
   manifest {

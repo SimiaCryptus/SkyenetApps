@@ -1,8 +1,8 @@
 package com.simiacryptus.skyenet
 
 import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.skyenet.apps.coding.AwsCodingApp
 import com.simiacryptus.skyenet.apps.coding.BashCodingApp
-import com.simiacryptus.skyenet.apps.coding.CodingApp
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
@@ -10,30 +10,27 @@ import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
 import com.simiacryptus.skyenet.apps.premium.DebateApp
 import com.simiacryptus.skyenet.apps.premium.MetaAgentApp
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.skyenet.core.platform.AuthorizationInterface.OperationType
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.core.util.AwsUtil
-import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.platform.DatabaseServices
+import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 import com.simiacryptus.skyenet.webui.servlet.WelcomeServlet
 import org.intellij.lang.annotations.Language
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest
-import java.io.File
 
 
 open class AppServer(
   localName: String, publicName: String, port: Int
-) : com.simiacryptus.skyenet.webui.application.ApplicationDirectory(
+) : ApplicationDirectory(
   localName = localName, publicName = publicName, port = port
 ) {
 
@@ -54,16 +51,8 @@ open class AppServer(
       ChildWebApp("/present2", PresentationDesignerApp()),
       ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName)),
       ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName)),
-      ChildWebApp(
-        "/aws_coder", CodingApp(
-          "AWS Coding Assistant",
-          KotlinInterpreter::class,
-          mapOf(
-            "region" to DefaultAwsRegionProviderChain().getRegion(),
-          )
-        )
-      ),
-      ChildWebApp("/bash", BashCodingApp(workingDir = File("."))),
+      ChildWebApp("/aws_coder", AwsCodingApp()),
+      ChildWebApp("/bash", BashCodingApp()),
     )
   }
 
@@ -76,7 +65,7 @@ open class AppServer(
   )
 
   override fun setupPlatform() {
-    ApplicationServices.authorizationManager = object : AuthorizationManager() {
+    authorizationManager = object : AuthorizationManager() {
       override fun matches(user: User?, line: String): Boolean {
         if (line == "patreon") {
           return OAuthPatreon.users[user?.email]?.data?.relationships?.pledges?.data?.isNotEmpty() ?: false
