@@ -69,12 +69,13 @@ open class IllustratedStorybookAgent(
 
       task.add("Generating narration for the story...")
       val narrations = (storyData.paragraphs?.withIndex()?.map { (idx, paragraph) ->
+        if(paragraph.isBlank()) return@map null
         pool.submit<String> { narratorActor.answer(listOf(paragraph), api).mp3data?.let {
           val fileLocation = task.saveFile("narration$idx.mp3", it)
           task.add("<audio controls><source src='$fileLocation' type='audio/mpeg'></audio>")
           fileLocation
         } }
-      }?.toTypedArray() ?: emptyArray()).map { it.get() }
+      }?.toTypedArray() ?: emptyArray()).map { it?.get() }
 
       // Step 3: Format the story and illustrations into an HTML document
       task.add("Formatting the storybook into HTML...")

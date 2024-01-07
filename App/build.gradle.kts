@@ -129,7 +129,7 @@ val fullShadowJar by tasks.register("fullShadowJar", ShadowJar::class) {
 
 
 // Filtering and assembly
-val optimizedJar by tasks.registering(ShadowJar::class) {
+val optimizedJar by tasks.register("optimizedJar",ShadowJar::class) {
   archiveClassifier.set("optimized")
   isZip64 = true
   mergeServiceFiles()
@@ -147,29 +147,35 @@ val optimizedJar by tasks.registering(ShadowJar::class) {
   exclude("**/META-INF/*.MF")
   exclude("META-INF/versions/9/module-info.class")
 
-  doFirst {
-    this@registering.includedDependencies.forEach { file ->
-      try {
-        zipTree(file).visit {
-          if (this.isDirectory) return@visit
-          when {
-            isPruned(this.path) -> {
-              if (verbose) println("${this.path} pruned from plugin:${file.name} as $path")
-              exclude(this.path)
-            }
-
-            else -> {
-              if (verbose) println("${this.path} included in plugin:${file.name} as $path")
-            }
-          }
-        }
-      } catch (e: Exception) {
-        println("Error processing $file")
-        e.printStackTrace()
-        throw e
-      }
+  dependencies {
+    this.exclude { dependency: ResolvedDependency ->
+      !dependency.moduleGroup.contains("simiacryptus")
     }
   }
+
+//  doFirst {
+//    this@registering.includedDependencies.forEach { file ->
+//      try {
+//        zipTree(file).visit {
+//          if (this.isDirectory) return@visit
+//          when {
+//            isPruned(this.path) -> {
+//              if (verbose) println("${this.path} pruned from plugin:${file.name} as $path")
+//              exclude(this.path)
+//            }
+//
+//            else -> {
+//              if (verbose) println("${this.path} included in plugin:${file.name} as $path")
+//            }
+//          }
+//        }
+//      } catch (e: Exception) {
+//        println("Error processing $file")
+//        e.printStackTrace()
+//        throw e
+//      }
+//    }
+//  }
 }
 
 tasks.named("build") {
