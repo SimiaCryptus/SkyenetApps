@@ -11,6 +11,8 @@ import java.util.function.Function
 class PresentationDesignerActors(
   val model: ChatModels = ChatModels.GPT4Turbo,
   val temperature: Double = 0.3,
+  voice: String = "alloy",
+  voiceSpeed: Double = 1.0,
 ) {
 
 
@@ -162,7 +164,7 @@ class PresentationDesignerActors(
     temperature = 0.3
   )
 
-  val narrator = TextToSpeechActor()
+  val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed)
 
   enum class ActorType {
     INITIAL_AUTHOR,

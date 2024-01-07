@@ -30,11 +30,15 @@ open class IllustratedStorybookAgent(
   model: ChatModels = ChatModels.GPT4Turbo,
   temperature: Double = 0.3,
   imageModel: ImageModels = ImageModels.DallE2,
+  val voice: String = "alloy",
+  val voiceSpeed: Double = 1.0,
 ) : ActorSystem<ActorType>(
   IllustratedStorybookActors(
     model = model,
     temperature = temperature,
     imageModel = imageModel,
+    voice = voice,
+    voiceSpeed = voiceSpeed,
   ).actorMap, dataStorage, user, session
 ) {
 
@@ -145,13 +149,15 @@ open class IllustratedStorybookAgent(
         |        height: auto;
         |    }
         |</style>
-        |<div class='story-title'>${storyText.title}</div>
-        |<button id='playAll'>Play All Slides</button>
+        |<div class='story-title'>
+        |  ${storyText.title}
+        |  <button id='playAll'>Play All</button>
+        |</div>
         |<script>
         |document.getElementById('playAll').addEventListener('click', function() {
         |  const slides = document.querySelectorAll('.story-page');
         |  let currentSlide = 0;
-        |  function playNextSlide() {
+        |  function playNext() {
         |    if (currentSlide >= slides.length) return;
         |    const slide = slides[currentSlide];
         |    const audio = slide.querySelector('audio');
@@ -161,14 +167,14 @@ open class IllustratedStorybookAgent(
         |      audio.play();
         |      audio.onended = function() {
         |        currentSlide++;
-        |        playNextSlide();
+        |        playNext();
         |      };
         |    } else {
         |      currentSlide++;
-        |      playNextSlide();
+        |      playNext();
         |    }
         |  }
-        |  playNextSlide();
+        |  playNext();
         |});
         |</script>
         """.trimMargin()
@@ -185,8 +191,8 @@ open class IllustratedStorybookAgent(
         htmlContent.append(
           """
             |<div class='story-page'>
-            |    <div class='story-illustration'>${illustration.removePrefix(prefix)}</div>
-            |    <audio controls><source src='${narration.removePrefix(prefix)}' type='audio/mpeg'></audio>
+            |    <div class='story-illustration'>${illustration.replace(prefix, "")}</div>
+            |    <audio controls><source src='${narration.replace(prefix, "")}' type='audio/mpeg'></audio>
             |    <div class='story-paragraph'>$paragraph</div>
             |</div>
             |""".trimMargin()

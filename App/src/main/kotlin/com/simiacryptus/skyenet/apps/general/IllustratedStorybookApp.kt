@@ -29,9 +29,11 @@ open class IllustratedStorybookApp(
     ) + "</div>"
 
   data class Settings(
-    val model: ChatModels = ChatModels.GPT4Turbo,
-    val temperature: Double = 0.5,
-    val imageModel: ImageModels = ImageModels.DallE3
+    val model: ChatModels? = ChatModels.GPT4Turbo,
+    val temperature: Double? = 0.5,
+    val imageModel: ImageModels? = ImageModels.DallE3,
+    val voice : String? = "alloy",
+    val voiceSpeed : Double? = 1.0,
   )
   override val settingsClass: Class<*> get() = Settings::class.java
   @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
@@ -54,6 +56,8 @@ open class IllustratedStorybookApp(
         model = settings?.model ?: ChatModels.GPT35Turbo,
         temperature = settings?.temperature ?: 0.3,
         imageModel = settings?.imageModel ?: ImageModels.DallE2,
+        voice = settings?.voice ?: "alloy",
+        voiceSpeed = settings?.voiceSpeed ?: 1.0,
       ).inputHandler(userMessage)
     } catch (e: Throwable) {
       log.warn("Error", e)

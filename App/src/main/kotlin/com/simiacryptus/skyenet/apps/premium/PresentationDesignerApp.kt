@@ -30,6 +30,8 @@ open class PresentationDesignerApp(
   data class Settings(
     val model: ChatModels = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
+    val voice : String? = "alloy",
+    val voiceSpeed : Double? = 1.0,
   )
 
   override val settingsClass: Class<*> get() = Settings::class.java
@@ -50,10 +52,12 @@ open class PresentationDesignerApp(
         user = user,
         session = session,
         dataStorage = dataStorage,
-        api = api,
         ui = ui,
+        api = api,
         model = settings?.model ?: ChatModels.GPT35Turbo,
         temperature = settings?.temperature ?: 0.3,
+        voice = settings?.voice ?: "alloy",
+        voiceSpeed = settings?.voiceSpeed ?: 1.0,
       ).main(userMessage)
     } catch (e: Throwable) {
       log.warn("Error", e)

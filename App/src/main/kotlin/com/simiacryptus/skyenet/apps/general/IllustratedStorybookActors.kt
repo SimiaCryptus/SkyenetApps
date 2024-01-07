@@ -15,6 +15,8 @@ class IllustratedStorybookActors(
   val model: ChatModels = ChatModels.GPT4Turbo,
   val temperature: Double = 0.3,
   val imageModel: ImageModels = ImageModels.DallE2,
+  voice: String = "alloy",
+  voiceSpeed: Double = 1.0,
 ) {
 
   data class StoryData(
@@ -74,7 +76,7 @@ class IllustratedStorybookActors(
     height = 1024 // Height of the generated image
   )
 
-  private val narrator = TextToSpeechActor()
+  private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed)
 
   enum class ActorType {
     REQUIREMENTS_ACTOR,

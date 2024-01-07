@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet
 
 import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.skyenet.apps.coding.BashCodingApp
 import com.simiacryptus.skyenet.apps.coding.CodingApp
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
@@ -16,7 +17,6 @@ import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.core.util.AwsUtil
-import com.simiacryptus.skyenet.interpreter.BashInterpreter
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
@@ -28,6 +28,7 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest
+import java.io.File
 
 
 open class AppServer(
@@ -62,13 +63,7 @@ open class AppServer(
           )
         )
       ),
-      ChildWebApp(
-        "/bash", CodingApp(
-          "Bash Coding Assistant",
-          BashInterpreter::class,
-          mapOf()
-        )
-      ),
+      ChildWebApp("/bash", BashCodingApp(workingDir = File("."))),
     )
   }
 

@@ -19,10 +19,14 @@ open class PresentationDesignerAgent(
   val api: API,
   model: ChatModels = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
+  val voice: String = "alloy",
+  val voiceSpeed: Double = 1.0,
 ) : ActorSystem<ActorType>(
   PresentationDesignerActors(
     model = model,
     temperature = temperature,
+    voice = voice,
+    voiceSpeed = voiceSpeed,
   ).actorMap, dataStorage, user, session
 ) {
 
