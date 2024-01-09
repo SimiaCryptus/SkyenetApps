@@ -45,17 +45,19 @@ open class OAuthPatreon(
   private inner class LoginServlet : HttpServlet() {
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
       resp.sendRedirect(
-        patreonAuthorizationUrl + "?" + mapOf(
-          "state" to req.getParameter("redirect"),
-          "client_id" to config?.clientId,
-          "redirect_uri" to redirectUri,
-          "response_type" to "code",
-          "scope" to listOf(
-            "identity",
-            "identity[email]",
-            "identity.memberships",
-          ).joinToString(" "),
-        ).toList().joinToString("&") { it.first + "=" + (it.second?.urlEncode ?: "") })
+        patreonAuthorizationUrl + "?" +
+          (
+            mapOf(
+              "client_id" to config?.clientId,
+              "redirect_uri" to redirectUri,
+              "response_type" to "code",
+              "scope" to listOf(
+                "identity",
+                "identity[email]",
+                "identity.memberships",
+              ).joinToString(" "),
+            ) + if (req.parameterMap.containsKey("redirect")) mapOf("state" to req.getParameter("redirect")) else emptyMap()
+          ).toList().joinToString("&") { it.first + "=" + (it.second?.urlEncode ?: "") })
     }
   }
 
@@ -98,7 +100,11 @@ open class OAuthPatreon(
         sessionCookie.maxAge = TimeUnit.HOURS.toSeconds(1).toInt()
         sessionCookie.comment = "Authentication Session ID"
         resp.addCookie(sessionCookie)
-        val redirect = req.getParameter("state")?.urlDecode() ?: "/"
+        var redirect = req.getParameter("state")?.urlDecode() ?: "/"
+        if(redirect.endsWith("None")) {
+          log.info("Redirect Bug Workaround: $redirect")
+          redirect = redirect.removeSuffix("None")
+        }
         resp.sendRedirect(redirect)
       } else {
         resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Authorization code not found")
@@ -136,7 +142,7 @@ open class OAuthPatreon(
   data class PatreonUserInfo(
     val data: Data? = null,
     val included: List<Included>? = null,
-    val links: Map<String,String>? = null
+    val links: Map<String, String>? = null
   )
 
   data class Data(

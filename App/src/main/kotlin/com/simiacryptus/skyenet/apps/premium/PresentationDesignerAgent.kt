@@ -7,6 +7,7 @@ import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.util.StringSplitter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
@@ -71,22 +72,15 @@ open class PresentationDesignerAgent(
             )
             val speakingNotes = speakerNotes.answer(list, api = api).obj.content ?: ""
             slideTask.verbose(renderMarkdown(speakingNotes), tag = "div")
-            val mp3data = narrator.answer(listOf(speakingNotes), api = api).mp3data
-            val mp3link = if (null != mp3data) {
-              val mp3link = slideTask.saveFile(
-                "slide$idx.mp3",
-                mp3data
-              )
-              slideTask.add(
-                "<audio controls><source src='$mp3link' type='audio/mpeg'></audio>"
-              )
-              mp3link
-            } else null
+            val mp3data = partition(speakingNotes).map { narrator.answer(listOf(it), api = api).mp3data }
+            val mp3links =
+              mp3data.withIndex().map { (i, it) -> if (null != it) slideTask.saveFile("slide$idx-$i.mp3", it) else "" }
+            mp3links.forEach { slideTask.add("<audio controls><source src='$it' type='audio/mpeg'></audio>") }
             StyledSlideAndNotes(
               styledContent = layout,
               speakingNotes = speakingNotes,
               image = imageStr,
-              mp3link = mp3link,
+              mp3links = mp3links,
             )
           } catch (e: Throwable) {
             slideTask.error(e)
@@ -99,56 +93,42 @@ open class PresentationDesignerAgent(
 
       // Step 4: Present the results
       val fileRefBase = "fileIndex/$session/"
-      dataStorage.getSessionDir(user, session).resolve("slides.html").writeText("""
+      dataStorage.getSessionDir(user, session).resolve("slides.html").writeText(
+        """
         |<html>
         |<head>
-        |<style>
-        |.slide {
-        |  display: inline-block;
-        |  width: 50%;
-        |  vertical-align: top;
-        |}
-        |</style>
+        |    <style>
+        |        .slide {
+        |            display: inline-block;
+        |            width: 50%;
+        |            vertical-align: top;
+        |        }
+        |    </style>
         |</head>
         |<body>
-        |<button id='playAll'>Play All Slides</button>
-        |<script>
-        |document.getElementById('playAll').addEventListener('click', function() {
-        |  const slides = document.querySelectorAll('.slide');
-        |  let currentSlide = 0;
-        |  function playNextSlide() {
-        |    if (currentSlide >= slides.length) return;
-        |    const slide = slides[currentSlide];
-        |    const audio = slide.querySelector('audio');
-        |    const image = slide.querySelector('.slide-image');
-        |    if (audio) {
-        |      image.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        |      audio.play();
-        |      audio.onended = function() {
-        |        currentSlide++;
-        |        playNextSlide();
-        |      };
-        |    } else {
-        |      currentSlide++;
-        |      playNextSlide();
-        |    }
-        |  }
-        |  playNextSlide();
-        |});
-        |</script>
+        |$playAll
         |${
-        styledSlidesAndNotes.withIndex().joinToString("\n") { (i, it) ->
-          """
+          styledSlidesAndNotes.withIndex().joinToString("\n") { (i, it) ->
+            """
         |
         |<div class='slide' id='slide$i'>
         |  <div class='slide-image'>${it.image.replace(fileRefBase, "")}</div>
-        |  <audio controls><source src='${it.mp3link?.replace(fileRefBase, "") ?: ""}' type='audio/mpeg'></audio>
+        |  ${
+              it.mp3links?.joinToString("\n") { mp3link ->
+                """<audio controls><source src='${
+                  mp3link.replace(
+                    fileRefBase,
+                    ""
+                  )
+                }' type='audio/mpeg'></audio>"""
+              } ?: ""
+            }
         |  <div class='slide-content'>${it.styledContent}</div>
         |</div>
         |
         """.trimMargin()
+          }
         }
-      }
         |</body>
         |</html>
         """.trimMargin())
@@ -166,43 +146,32 @@ open class PresentationDesignerAgent(
         |</style>
         |</head>
         |<body>
-        |<button id='playAll'>Play All Slides</button>
-        |<script>
-        |document.getElementById('playAll').addEventListener('click', function() {
-        |  const slides = document.querySelectorAll('.slide');
-        |  let currentSlide = 0;
-        |  function playNextSlide() {
-        |    if (currentSlide >= slides.length) return;
-        |    const slide = slides[currentSlide];
-        |    const audio = slide.querySelector('audio');
-        |    const image = slide.querySelector('.slide-image');
-        |    if (audio) {
-        |      image.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        |      audio.play();
-        |      audio.onended = function() {
-        |        currentSlide++;
-        |        playNextSlide();
-        |      };
-        |    } else {
-        |      currentSlide++;
-        |      playNextSlide();
-        |    }
-        |  }
-        |  playNextSlide();
-        |});
-        |</script>
+        |$playAll
         |
         |${
         styledSlidesAndNotes.withIndex().joinToString("\n") { (i, it) ->
           """
         |
         |<div class='slide' id='slide$i'>
-        |  <audio controls><source src='${it.mp3link?.replace(fileRefBase, "") ?: ""}' type='audio/mpeg'></audio>
+        |  ${
+            it.mp3links?.joinToString("\n") { mp3link ->
+              """<audio controls><source src='${
+                mp3link.replace(
+                  fileRefBase,
+                  ""
+                )
+              }' type='audio/mpeg'></audio>"""
+            } ?: ""
+          }
         |  <div class='slide-notes'>
-        |  ${renderMarkdown("""
+        |  ${
+            renderMarkdown(
+              """
         |```markdown
         |${it.speakingNotes}
-        |```""".trimMargin())}
+        |```""".trimMargin()
+            )
+          }
         |</div>
         |  <div class='slide-content'>${it.styledContent}</div>
         |</div>
@@ -227,31 +196,7 @@ open class PresentationDesignerAgent(
         |</style>
         |</head>
         |<body>
-        |<button id='playAll'>Play All Slides</button>
-        |<script>
-        |document.getElementById('playAll').addEventListener('click', function() {
-        |  const slides = document.querySelectorAll('.slide');
-        |  let currentSlide = 0;
-        |  function playNextSlide() {
-        |    if (currentSlide >= slides.length) return;
-        |    const slide = slides[currentSlide];
-        |    const audio = slide.querySelector('audio');
-        |    const image = slide.querySelector('.slide-image');
-        |    if (audio) {
-        |      image.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        |      audio.play();
-        |      audio.onended = function() {
-        |        currentSlide++;
-        |        playNextSlide();
-        |      };
-        |    } else {
-        |      currentSlide++;
-        |      playNextSlide();
-        |    }
-        |  }
-        |  playNextSlide();
-        |});
-        |</script>
+        |$playAll
         |
         |${
         styledSlidesAndNotes.withIndex().joinToString("\n") { (i, it) ->
@@ -259,7 +204,16 @@ open class PresentationDesignerAgent(
         |
         |<div class='slide' id='slide$i'>
         |  <div class='slide-image'>${it.image.replace(fileRefBase, "")}</div>
-        |  <audio controls><source src='${it.mp3link?.replace(fileRefBase, "") ?: ""}' type='audio/mpeg'></audio>
+        |  ${
+            it.mp3links?.joinToString("\n") { mp3link ->
+              """<audio controls><source src='${
+                mp3link.replace(
+                  fileRefBase,
+                  ""
+                )
+              }' type='audio/mpeg'></audio>"""
+            } ?: ""
+          }
         |  <div class='slide-content'>${it.styledContent}</div>
         |  <div class='slide-notes'>${renderMarkdown(it.speakingNotes)}</div>
         |</div>
@@ -280,11 +234,59 @@ open class PresentationDesignerAgent(
     }
   }
 
+  val playAll = """
+        |<button id='playAll'>Play All Slides</button>
+        |<script>
+        |    document.getElementById('playAll').addEventListener('click', function () {
+        |        const slides = document.querySelectorAll('.slide');
+        |        let currentSlide = 0;
+        |        let currentAudio = 0;
+        |        
+        |        function playNextSlide() {
+        |            if (currentSlide >= slides.length) return;
+        |            const slide = slides[currentSlide];
+        |            const audios = slide.querySelectorAll('audio');
+        |            if (currentAudio >= audios.length) {
+        |                currentSlide++;
+        |                currentAudio = 0;
+        |                playNextSlide();
+        |                return;
+        |            }
+        |            const audio = audios[currentAudio];
+        |            const image = slide.querySelector('.slide-image');
+        |            if (audio) {
+        |                image.scrollIntoView({behavior: 'smooth', block: 'center'});
+        |                audio.play();
+        |                audio.onended = function () {
+        |                    currentAudio++;
+        |                    playNextSlide();
+        |                };
+        |            } else {
+        |                currentAudio++;
+        |                playNextSlide();
+        |            }
+        |        }
+        |
+        |        playNextSlide();
+        |    });
+        |</script>""".trimMargin()
+
+  private fun partition(speakingNotes: String): List<String> = when {
+    speakingNotes.length < 4000 -> listOf(speakingNotes)
+    else -> StringSplitter.split(
+      speakingNotes, mapOf(
+        "." to 2.0,
+        " " to 1.0,
+        ", " to 2.0,
+      )
+    ).toList().flatMap { partition(it) }
+  }
+
   data class StyledSlideAndNotes(
     val styledContent: String,
     val speakingNotes: String,
     val image: String,
-    val mp3link: String? = null,
+    val mp3links: List<String>? = null,
   )
 
   data class UserRequest(

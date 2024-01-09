@@ -8,11 +8,12 @@ import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.core.util.AwsUtil
 import com.simiacryptus.skyenet.webui.servlet.OAuthGoogle
+import kotlin.random.Random
 
 object TestAppServer : AppServer(
   publicName = "localhost",
   localName = "localhost",
-  port = 37600,/*Random.nextInt(1024, 65535)*/
+  port = Random.nextInt(1024, 8 * 1024 /*65535*/), /*37600*/
 ) {
 
   @JvmStatic
