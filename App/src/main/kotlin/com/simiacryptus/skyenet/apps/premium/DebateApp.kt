@@ -1,6 +1,8 @@
 package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -10,12 +12,19 @@ import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
 open class DebateApp(
-    applicationName: String = "Automated Debate Concept Map v1.0",
+    applicationName: String = "Automated Debate Concept Map v1.1",
     temperature: Double = 0.3,
     val domainName: String,
 ) : ApplicationServer(
   applicationName = applicationName,
 ) {
+    data class Settings(
+        val model: ChatModels = ChatModels.GPT35Turbo,
+        val temperature: Double = 0.2,
+    )
+    override val settingsClass: Class<*> get() = Settings::class.java
+    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
+
     override val description: String
         @Language("HTML")
         get() = "<div>" + MarkdownUtil.renderMarkdown(
@@ -39,13 +48,16 @@ open class DebateApp(
         api: API
     ) {
         try {
+            val settings = getSettings<Settings>(session, user)
             DebateAgent(
                 api = api,
                 dataStorage = dataStorage,
                 userId = user,
                 session = session,
                 ui = ui,
-                domainName = domainName
+                domainName = domainName,
+                model = settings?.model ?: ChatModels.GPT35Turbo,
+                temperature = settings?.temperature ?: 0.3,
             ).debate(userMessage)
         } catch (e: Throwable) {
             log.warn("Error", e)
