@@ -7,7 +7,9 @@ import com.simiacryptus.skyenet.core.platform.AuthorizationInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.core.util.AwsUtil
+import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthGoogle
+import org.eclipse.jetty.webapp.WebAppContext
 import kotlin.random.Random
 
 object TestAppServer : AppServer(
@@ -19,6 +21,10 @@ object TestAppServer : AppServer(
   @JvmStatic
   fun main(args: Array<String>) {
     super._main(args)
+  }
+
+  override fun authenticatedWebsite() = object : OAuthBase("") {
+    override fun configure(context: WebAppContext, addFilter: Boolean) = context
   }
 
 //  override fun authenticatedWebsite() = OAuthGoogle(
