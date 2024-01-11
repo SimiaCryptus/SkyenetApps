@@ -2,7 +2,6 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
-import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory
 
 open class DebateApp(
     applicationName: String = "Automated Debate Concept Map v1.1",
-    temperature: Double = 0.3,
     val domainName: String,
 ) : ApplicationServer(
   applicationName = applicationName,

@@ -113,17 +113,29 @@ class PresentationDesignerActors(
   val contentExpander = ParsedActor(
     model = ChatModels.GPT4Turbo,
     prompt = """
-            You are an assistant that expands outlines into detailed content. 
-            Given an outline for a slide in a presentation, provide a comprehensive explanation or description for it.
-        """.trimIndent(),
+      You are an assistant that expands outlines into detailed content. 
+      Given an outline for a slide in a presentation, provide a comprehensive explanation or description for it.
+      """.trimIndent(),
     parserClass = SlideDetailsParser::class.java
   )
 
 
-  val styleFormatter = SimpleActor(
+  val slideFormatter = SimpleActor(
     prompt = """
-            You are a style formatter. Your task is to apply visual styling to the content provided to you. 
-            When you receive content, format it using HTML and CSS to create a professional and polished look.
+        You are a presentation slide designer. Your task is to summarize content and present it in a visually appealing and consumable form. 
+        When you receive content, summarize and format it using HTML and CSS to create a professional and polished look.
+        The HTML output should be contained within a div with class="slide" with an aspect ratio of 16:9.
+        In addition, incorporate a single image into the slide named "image.png" with proper sizing and placement.
+        """.trimIndent(),
+    name = "StyleFormatter",
+    model = ChatModels.GPT35Turbo,
+    temperature = 0.3
+  )
+
+  val contentFormatter = SimpleActor(
+    prompt = """
+        You are a style formatter. Your task is to apply visual styling to the content provided to you. 
+        When you receive content, format it using HTML and CSS to create a professional and polished look.
         """.trimIndent(),
     name = "StyleFormatter",
     model = ChatModels.GPT35Turbo,
@@ -150,7 +162,8 @@ class PresentationDesignerActors(
     parserClass = RefinerParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
-            You are an assistant that refines content into speaking notes. Given a piece of content, refine it into speaking notes.
+            You are an assistant that creates speaking transcripts from content. 
+            Given a piece of content, transform it into the input for a text-to-speech system.
         """.trimIndent()
   )
 
@@ -169,6 +182,7 @@ class PresentationDesignerActors(
   enum class ActorType {
     INITIAL_AUTHOR,
     CONTENT_EXPANDER,
+    CONTENT_LAYOUT,
     SLIDE_LAYOUT,
     SPEAKER_NOTES,
     IMAGE_RENDERER,
@@ -178,7 +192,8 @@ class PresentationDesignerActors(
   val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
     ActorType.INITIAL_AUTHOR to initialAuthor,
     ActorType.CONTENT_EXPANDER to contentExpander,
-    ActorType.SLIDE_LAYOUT to styleFormatter,
+    ActorType.SLIDE_LAYOUT to slideFormatter,
+    ActorType.CONTENT_LAYOUT to contentFormatter,
     ActorType.SPEAKER_NOTES to speakerNotes,
     ActorType.IMAGE_RENDERER to imageRenderer,
     ActorType.NARRATOR to narrator,
