@@ -11,7 +11,9 @@ import com.simiacryptus.skyenet.core.util.StringSplitter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
+import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
+
 
 open class PresentationDesignerAgent(
   user: User?,
@@ -36,6 +38,7 @@ open class PresentationDesignerAgent(
   private val initialAuthor by lazy { getActor(ActorType.INITIAL_AUTHOR) as ParsedActor<Outline> }
   private val slideAuthor by lazy { getActor(ActorType.CONTENT_EXPANDER) as ParsedActor<SlideDetails> }
   private val slideLayout by lazy { getActor(ActorType.SLIDE_LAYOUT) as SimpleActor }
+  private val slideSummary by lazy { getActor(ActorType.SLIDE_SUMMARY) as SimpleActor }
   private val contentLayout by lazy { getActor(ActorType.CONTENT_LAYOUT) as SimpleActor }
   private val speakerNotes by lazy { getActor(ActorType.SPEAKER_NOTES) as ParsedActor<SpeakingNotes> }
   private val imageRenderer by lazy { getActor(ActorType.IMAGE_RENDERER) as ImageActor }
@@ -65,7 +68,7 @@ open class PresentationDesignerAgent(
             slideContents(idx, content, slideTask)
           } catch (e: Throwable) {
             slideTask.error(e)
-            throw e
+            null
           } finally {
             slideTask.complete("Slide $idx complete.")
           }
@@ -89,12 +92,18 @@ open class PresentationDesignerAgent(
   ): SlideContents {
     val list = listOf(content.html!!)
     val image = imageRenderer.answer(list, api = api).image
-    val imageStr = task.image(image).toString() // eg <div><div class="response-message"><img src="fileIndex/G-20240110-96a96b54/fb5e6766-0d57-4914-a147-2924913f4927.png" /></div></div>
+    val imageStr = task.image(image)
+      .toString() // eg <div><div class="response-message"><img src="fileIndex/G-20240110-96a96b54/fb5e6766-0d57-4914-a147-2924913f4927.png" /></div></div>
     val imageURL = imageStr.substringAfter("src=\"").substringBefore("\"")
-    val slideContent = slideLayout.answer(list, api = api)
-    val fullContent = contentLayout.answer(list, api = api)
+    val fullHtml = contentLayout.answer(list, api = api)
     //language=HTML
-    task.add("""<div>$fullContent</div>""".trimIndent())
+    task.add("""<div>$fullHtml</div>""".trimIndent())
+    val summary = slideSummary.answer(list, api = api)
+    //language=HTML
+    task.add("""<div>${renderMarkdown(summary)}</div>""".trimIndent())
+    val slideContent = slideLayout.answer(listOf(summary), api = api).replace("image.png", imageURL)
+    //language=HTML
+    task.add("""<div>$slideContent</div>""".trimIndent())
     val speakingNotes = speakerNotes.answer(list, api = api).obj.content ?: ""
     task.verbose(renderMarkdown(speakingNotes), tag = "div")
     val mp3data = partition(speakingNotes).map { narrator.answer(listOf(it), api = api).mp3data }
@@ -102,8 +111,8 @@ open class PresentationDesignerAgent(
       mp3data.withIndex().map { (i, it) -> if (null != it) task.saveFile("slide$idx-$i.mp3", it) else "" }
     mp3links.forEach { task.add("<audio controls><source src='$it' type='audio/mpeg'></audio>") }
     return SlideContents(
-      slideContent = slideContent.replace("image.png", imageURL),
-      fullContent = fullContent,
+      slideContent = slideContent,
+      fullContent = fullHtml,
       speakingNotes = speakingNotes,
       image = imageStr,
       mp3links = mp3links,
@@ -111,42 +120,32 @@ open class PresentationDesignerAgent(
   }
 
   private fun writeReports(
-    styledSlidesAndNotes: List<SlideContents>,
+    slideContents: List<SlideContents>,
     task: SessionTask
   ) {
-    val fileRefBase = "fileIndex/$session/"
+    val refBase = "fileIndex/$session/"
     dataStorage.getSessionDir(user, session).resolve("slides.html").writeText(
       """
           |<html>
           |<head>
-          |    <style>
-          |        .slide {
-          |            display: inline-block;
-          |            width: 50%;
-          |            vertical-align: top;
-          |        }
-          |    </style>
+          |<style>
+          |$css
+          |</style>
           |</head>
           |<body>
           |$playAll
+          |
           |${
-        styledSlidesAndNotes.withIndex().joinToString("\n") { (i, it) ->
+        slideContents.withIndex().joinToString("\n") { (i, it) ->
           """
           |
-          |<div class='slide' id='slide$i'>
-          |  <div class='slide-image'>${it.image.replace(fileRefBase, "")}</div>
+          |<div class='slide-container' id='slide$i'>
           |  ${
             it.mp3links?.joinToString("\n") { mp3link ->
-              """<audio controls><source src='${
-                mp3link.replace(
-                  fileRefBase,
-                  ""
-                )
-              }' type='audio/mpeg'></audio>"""
+              """<audio controls><source src='${mp3link.replace(refBase, "")}' type='audio/mpeg'></audio>"""
             } ?: ""
           }
-          |  <div class='slide-content'>${it.slideContent}</div>
-          |  <div class='slide-content'>${it.fullContent}</div>
+          |  <div class='slide-content'>${it.slideContent.replace(refBase, "")}</div>
           |</div>
           |
           """.trimMargin()
@@ -155,35 +154,26 @@ open class PresentationDesignerAgent(
           |</body>
           |</html>
           """.trimMargin())
-    task.add("<a href='${fileRefBase}slides.html'>Slides generated</a>")
+    task.add("<a href='${refBase}slides.html'>Slides generated</a>")
 
     dataStorage.getSessionDir(user, session).resolve("notes.html").writeText("""
           |<html>
           |<head>
           |<style>
-          |.slide {
-          |  display: inline-block;
-          |  width: 50%;
-          |  vertical-align: top;
-          |}
+          |$css
           |</style>
           |</head>
           |<body>
           |$playAll
           |
           |${
-      styledSlidesAndNotes.withIndex().joinToString("\n") { (i, it) ->
+      slideContents.withIndex().joinToString("\n") { (i, it) ->
         """
           |
-          |<div class='slide' id='slide$i'>
+          |<div class='slide-container' id='slide$i'>
           |  ${
           it.mp3links?.joinToString("\n") { mp3link ->
-            """<audio controls><source src='${
-              mp3link.replace(
-                fileRefBase,
-                ""
-              )
-            }' type='audio/mpeg'></audio>"""
+            """<audio controls><source src='${mp3link.replace(refBase, "")}' type='audio/mpeg'></audio>"""
           } ?: ""
         }
           |  <div class='slide-notes'>
@@ -196,8 +186,8 @@ open class PresentationDesignerAgent(
           )
         }
           |</div>
-          |  <div class='slide-content'>${it.slideContent}</div>
-          |  <div class='slide-content'>${it.fullContent}</div>
+          |  <div class='slide-content'>${it.slideContent.replace(refBase, "")}</div>
+          |  <div class='slide-content'>${it.fullContent.replace(refBase, "")}</div>
           |</div>
           |
           """.trimMargin()
@@ -206,40 +196,31 @@ open class PresentationDesignerAgent(
           |</body>
           |</html>
           """.trimMargin())
-    task.add("<a href='${fileRefBase}notes.html'>Notes generated</a>")
+    task.add("<a href='${refBase}notes.html'>Notes generated</a>")
 
     dataStorage.getSessionDir(user, session).resolve("combined.html").writeText("""
           |<html>
           |<head>
           |<style>
-          |.slide {
-          |  display: inline-block;
-          |  width: 50%;
-          |  vertical-align: top;
-          |}
+          |$css
           |</style>
           |</head>
           |<body>
           |$playAll
           |
           |${
-      styledSlidesAndNotes.withIndex().joinToString("\n") { (i, it) ->
+      slideContents.withIndex().joinToString("\n") { (i, it) ->
         """
           |
-          |<div class='slide' id='slide$i'>
-          |  <div class='slide-image'>${it.image.replace(fileRefBase, "")}</div>
+          |<div class='slide-container' id='slide$i'>
+          |  <div class='slide-image'>${it.image.replace(refBase, "")}</div>
           |  ${
           it.mp3links?.joinToString("\n") { mp3link ->
-            """<audio controls><source src='${
-              mp3link.replace(
-                fileRefBase,
-                ""
-              )
-            }' type='audio/mpeg'></audio>"""
+            """<audio controls><source src='${mp3link.replace(refBase, "")}' type='audio/mpeg'></audio>"""
           } ?: ""
         }
-          |  <div class='slide-content'>${it.slideContent}</div>
-          |  <div class='slide-content'>${it.fullContent}</div>
+          |  <div class='slide-content'>${it.slideContent.replace(refBase, "")}</div>
+          |  <div class='slide-content'>${it.fullContent.replace(refBase, "")}</div>
           |  <div class='slide-notes'>${renderMarkdown(it.speakingNotes)}</div>
           |</div>
           |
@@ -250,45 +231,55 @@ open class PresentationDesignerAgent(
           |</html>
           """.trimMargin()
     )
-    task.add("<a href='${fileRefBase}combined.html'>Combined report generated</a>")
+    task.add("<a href='${refBase}combined.html'>Combined report generated</a>")
   }
 
+  private val css = """
+    |.slide-container {
+    |  display: inline-block;
+    |  width: 50%;
+    |  vertical-align: top;
+    |}
+    |""".trimMargin()
+
+  @Language("HTML")
   private val playAll = """
-        |<button id='playAll'>Play All Slides</button>
-        |<script>
-        |    document.getElementById('playAll').addEventListener('click', function () {
-        |        const slides = document.querySelectorAll('.slide');
-        |        let currentSlide = 0;
-        |        let currentAudio = 0;
-        |        
-        |        function playNextSlide() {
-        |            if (currentSlide >= slides.length) return;
-        |            const slide = slides[currentSlide];
-        |            const audios = slide.querySelectorAll('audio');
-        |            if (currentAudio >= audios.length) {
-        |                currentSlide++;
-        |                currentAudio = 0;
-        |                playNextSlide();
-        |                return;
-        |            }
-        |            const audio = audios[currentAudio];
-        |            const image = slide.querySelector('.slide-image');
-        |            if (audio) {
-        |                image.scrollIntoView({behavior: 'smooth', block: 'center'});
-        |                audio.play();
-        |                audio.onended = function () {
-        |                    currentAudio++;
-        |                    playNextSlide();
-        |                };
-        |            } else {
-        |                currentAudio++;
-        |                playNextSlide();
-        |            }
-        |        }
-        |
-        |        playNextSlide();
-        |    });
-        |</script>""".trimMargin()
+    |<button id='playAll'>Play All Slides</button>
+    |<script>
+    |    document.getElementById('playAll').addEventListener('click', function () {
+    |        const slides = document.querySelectorAll('.slide-container');
+    |        let currentSlide = 0;
+    |        let currentAudio = 0;
+    |        
+    |        function playNextSlide() {
+    |            if (currentSlide >= slides.length) return;
+    |            const slide = slides[currentSlide];
+    |            const audios = slide.querySelectorAll('audio');
+    |            if (currentAudio >= audios.length) {
+    |                currentSlide++;
+    |                currentAudio = 0;
+    |                playNextSlide();
+    |                return;
+    |            }
+    |            const audio = audios[currentAudio];
+    |            const image = slide.querySelector('.slide-content');
+    |            if (audio) {
+    |                image.scrollIntoView({behavior: 'smooth', block: 'start', inline: 'start'});
+    |                audio.play();
+    |                audio.onended = function () {
+    |                    currentAudio++;
+    |                    playNextSlide();
+    |                };
+    |            } else {
+    |                currentAudio++;
+    |                playNextSlide();
+    |            }
+    |        }
+    |
+    |        playNextSlide();
+    |    });
+    |</script>
+    |""".trimMargin()
 
   private fun partition(speakingNotes: String): List<String> = when {
     speakingNotes.length < 4000 -> listOf(speakingNotes)

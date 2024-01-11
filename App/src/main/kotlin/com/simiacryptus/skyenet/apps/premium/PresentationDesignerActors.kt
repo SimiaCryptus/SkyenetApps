@@ -120,10 +120,20 @@ class PresentationDesignerActors(
   )
 
 
+  val slideSummarizer = SimpleActor(
+    prompt = """
+        You are a writing assistant. Your task is to summarize content from a speech. 
+        When you receive content, summarize it into about 100 words.
+        """.trimIndent(),
+    name = "StyleFormatter",
+    model = ChatModels.GPT35Turbo,
+    temperature = 0.3
+  )
+
   val slideFormatter = SimpleActor(
     prompt = """
-        You are a presentation slide designer. Your task is to summarize content and present it in a visually appealing and consumable form. 
-        When you receive content, summarize and format it using HTML and CSS to create a professional and polished look.
+        You are a presentation slide designer. Your task is to present content it in a visually appealing and consumable form. 
+        When you receive content, format it using HTML and CSS to create a professional and polished look.
         The HTML output should be contained within a div with class="slide" with an aspect ratio of 16:9.
         In addition, incorporate a single image into the slide named "image.png" with proper sizing and placement.
         """.trimIndent(),
@@ -141,7 +151,6 @@ class PresentationDesignerActors(
     model = ChatModels.GPT35Turbo,
     temperature = 0.3
   )
-
 
   data class SpeakingNotes(
     @Description("The markdown-formatted speaking notes.")
@@ -164,6 +173,7 @@ class PresentationDesignerActors(
     prompt = """
             You are an assistant that creates speaking transcripts from content. 
             Given a piece of content, transform it into the input for a text-to-speech system.
+            Do not use formatting or HTML tags. Use capitalization and punctuation for emphasis.
         """.trimIndent()
   )
 
@@ -183,6 +193,7 @@ class PresentationDesignerActors(
     INITIAL_AUTHOR,
     CONTENT_EXPANDER,
     CONTENT_LAYOUT,
+    SLIDE_SUMMARY,
     SLIDE_LAYOUT,
     SPEAKER_NOTES,
     IMAGE_RENDERER,
@@ -193,6 +204,7 @@ class PresentationDesignerActors(
     ActorType.INITIAL_AUTHOR to initialAuthor,
     ActorType.CONTENT_EXPANDER to contentExpander,
     ActorType.SLIDE_LAYOUT to slideFormatter,
+    ActorType.SLIDE_SUMMARY to slideSummarizer,
     ActorType.CONTENT_LAYOUT to contentFormatter,
     ActorType.SPEAKER_NOTES to speakerNotes,
     ActorType.IMAGE_RENDERER to imageRenderer,

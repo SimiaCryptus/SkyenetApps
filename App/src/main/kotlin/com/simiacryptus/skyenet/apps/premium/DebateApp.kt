@@ -11,7 +11,7 @@ import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
 open class DebateApp(
-    applicationName: String = "Automated Debate Concept Map v1.1",
+    applicationName: String = "Automated Debate Concept Map v1.2",
     val domainName: String,
 ) : ApplicationServer(
   applicationName = applicationName,
