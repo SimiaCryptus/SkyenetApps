@@ -10,12 +10,12 @@ import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
 import com.simiacryptus.skyenet.apps.premium.DebateApp
 import com.simiacryptus.skyenet.apps.premium.MetaAgentApp
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.skyenet.core.platform.AuthorizationInterface.OperationType
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
-import com.simiacryptus.skyenet.core.util.AwsUtil
 import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
@@ -56,13 +56,16 @@ open class AppServer(
     )
   }
 
-  override fun authenticatedWebsite(): OAuthBase = OAuthPatreon(
-    redirectUri = "$domainName/patreonOAuth2callback",
-    config = JsonUtil.fromJson(
-      AwsUtil.decryptResource("patreon.json.kms", javaClass.classLoader),
-      OAuthPatreon.PatreonOAuthInfo::class.java
+  override fun authenticatedWebsite(): OAuthBase {
+    val encryptedData = javaClass.classLoader.getResourceAsStream("patreon.json.kms")?.readAllBytes() ?: throw RuntimeException("Unable to load resource: ${"patreon.json.kms"}")
+    return OAuthPatreon(
+      redirectUri = "$domainName/patreonOAuth2callback",
+      config = JsonUtil.fromJson(
+        ApplicationServices.cloud!!.decrypt(encryptedData),
+        OAuthPatreon.PatreonOAuthInfo::class.java
+      )
     )
-  )
+  }
 
   override fun setupPlatform() {
     authorizationManager = object : AuthorizationManager() {
