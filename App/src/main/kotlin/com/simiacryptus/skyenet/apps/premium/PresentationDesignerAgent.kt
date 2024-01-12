@@ -236,9 +236,9 @@ open class PresentationDesignerAgent(
 
   private val css = """
     |.slide-container {
-    |  display: inline-block;
-    |  width: 50%;
-    |  vertical-align: top;
+    |  overflow: auto;
+    |  width: 100%;
+    |  height: -webkit-fill-available;
     |}
     |""".trimMargin()
 
