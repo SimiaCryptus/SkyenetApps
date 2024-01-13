@@ -10,7 +10,7 @@ import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import org.eclipse.jetty.webapp.WebAppContext
 import kotlin.random.Random
 
-object TestAppServer : AppServer(
+object TestNoauthAppServer : AppServer(
   publicName = "localhost",
   localName = "localhost",
   port = Random.nextInt(1024, 8 * 1024 /*65535*/), /*37600*/
@@ -24,13 +24,6 @@ object TestAppServer : AppServer(
   override fun authenticatedWebsite() = object : OAuthBase("") {
     override fun configure(context: WebAppContext, addFilter: Boolean) = context
   }
-
-//  override fun authenticatedWebsite() = OAuthGoogle(
-//    redirectUri = "$domainName/oauth2callback",
-//    applicationName = "Demo",
-//    key = { AwsUtil.decryptResource("client_secret_google_oauth.json.kms").byteInputStream() }
-//  )
-
   override fun setupPlatform() {
     val mockUser = User(
       "1",

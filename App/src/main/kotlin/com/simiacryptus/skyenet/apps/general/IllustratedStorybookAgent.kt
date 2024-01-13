@@ -72,7 +72,7 @@ open class IllustratedStorybookAgent(
         if(paragraph.isBlank()) return@map null
         pool.submit<String> { narratorActor.answer(listOf(paragraph), api).mp3data?.let {
           val fileLocation = task.saveFile("narration$idx.mp3", it)
-          task.add("<audio controls><source src='$fileLocation' type='audio/mpeg'></audio>")
+          task.add("""<audio preload="none" controls><source src='$fileLocation' type='audio/mpeg'></audio>""")
           fileLocation
         } }
       }?.toTypedArray() ?: emptyArray()).map { it?.get() }
@@ -193,7 +193,7 @@ open class IllustratedStorybookAgent(
           """
             |<div class='story-page'>
             |    <div class='story-illustration'>${illustration.replace(prefix, "")}</div>
-            |    <audio controls><source src='${narration.replace(prefix, "")}' type='audio/mpeg'></audio>
+            |    <audio preload="none" controls><source src='${narration.replace(prefix, "")}' type='audio/mpeg'></audio>
             |    <div class='story-paragraph'>$paragraph</div>
             |</div>
             |""".trimMargin()

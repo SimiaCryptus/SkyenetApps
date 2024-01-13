@@ -109,7 +109,7 @@ open class PresentationDesignerAgent(
     val mp3data = partition(speakingNotes).map { narrator.answer(listOf(it), api = api).mp3data }
     val mp3links =
       mp3data.withIndex().map { (i, it) -> if (null != it) task.saveFile("slide$idx-$i.mp3", it) else "" }
-    mp3links.forEach { task.add("<audio controls><source src='$it' type='audio/mpeg'></audio>") }
+    mp3links.forEach { task.add("""<audio preload="none" controls><source src='$it' type='audio/mpeg'></audio>""") }
     return SlideContents(
       slideContent = slideContent,
       fullContent = fullHtml,
@@ -142,7 +142,7 @@ open class PresentationDesignerAgent(
           |<div class='slide-container' id='slide$i'>
           |  ${
             it.mp3links?.joinToString("\n") { mp3link ->
-              """<audio controls><source src='${mp3link.replace(refBase, "")}' type='audio/mpeg'></audio>"""
+              """<audio preload="none" controls><source src='${mp3link.replace(refBase, "")}' type='audio/mpeg'></audio>"""
             } ?: ""
           }
           |  <div class='slide-content'>${it.slideContent.replace(refBase, "")}</div>
@@ -173,7 +173,7 @@ open class PresentationDesignerAgent(
           |<div class='slide-container' id='slide$i'>
           |  ${
           it.mp3links?.joinToString("\n") { mp3link ->
-            """<audio controls><source src='${mp3link.replace(refBase, "")}' type='audio/mpeg'></audio>"""
+            """<audio preload="none" controls><source src='${mp3link.replace(refBase, "")}' type='audio/mpeg'></audio>"""
           } ?: ""
         }
           |  <div class='slide-notes'>
@@ -216,7 +216,7 @@ open class PresentationDesignerAgent(
           |  <div class='slide-image'>${it.image.replace(refBase, "")}</div>
           |  ${
           it.mp3links?.joinToString("\n") { mp3link ->
-            """<audio controls><source src='${mp3link.replace(refBase, "")}' type='audio/mpeg'></audio>"""
+            """<audio preload="none" controls><source src='${mp3link.replace(refBase, "")}' type='audio/mpeg'></audio>"""
           } ?: ""
         }
           |  <div class='slide-content'>${it.slideContent.replace(refBase, "")}</div>
