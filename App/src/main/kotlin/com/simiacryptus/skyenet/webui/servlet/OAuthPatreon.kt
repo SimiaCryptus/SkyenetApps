@@ -97,7 +97,7 @@ open class OAuthPatreon(
         sessionCookie.path = "/"
         sessionCookie.isHttpOnly = true
         sessionCookie.secure = true
-        sessionCookie.maxAge = TimeUnit.HOURS.toSeconds(1).toInt()
+        sessionCookie.maxAge = TimeUnit.DAYS.toSeconds(1).toInt()
         sessionCookie.comment = "Authentication Session ID"
         resp.addCookie(sessionCookie)
         var redirect = req.getParameter("state")?.urlDecode() ?: "/"
