@@ -12,6 +12,7 @@ import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.TextToSpeechActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
+import com.simiacryptus.skyenet.core.platform.StorageInterface.Companion.long64
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil
@@ -218,7 +219,7 @@ open class IllustratedStorybookAgent(
       task.header("Saving Storybook File")
 
       // Generate a unique file name for the storybook
-      val fileName = "storybook_${UUID.randomUUID()}.html"
+      val fileName = "storybook_${long64()}.html"
       val directoryPath = dataStorage.getSessionDir(user, session).toPath()
       val filePath = directoryPath.resolve(fileName)
 
