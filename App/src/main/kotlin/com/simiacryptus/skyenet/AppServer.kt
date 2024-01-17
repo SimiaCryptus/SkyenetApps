@@ -12,6 +12,7 @@ import com.simiacryptus.skyenet.apps.premium.MetaAgentApp
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authorizationManager
+import com.simiacryptus.skyenet.core.platform.ApplicationServices.seleniumFactory
 import com.simiacryptus.skyenet.core.platform.AuthorizationInterface.OperationType
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
@@ -21,6 +22,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 import com.simiacryptus.skyenet.webui.servlet.WelcomeServlet
+import com.simiacryptus.skyenet.webui.util.Selenium2S3
 import org.intellij.lang.annotations.Language
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
@@ -47,8 +49,8 @@ open class AppServer(
       ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName)),
       ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName)),
       ChildWebApp("/meta_agent", MetaAgentApp()),
-      ChildWebApp("/debate_mapper", DebateApp(domainName = domainName)),
-      ChildWebApp("/present2", PresentationDesignerApp()),
+      ChildWebApp("/debate", DebateApp(domainName = domainName)),
+      ChildWebApp("/presentation", PresentationDesignerApp()),
       ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName)),
       ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName)),
       ChildWebApp("/aws_coder", AwsCodingApp()),
@@ -68,12 +70,48 @@ open class AppServer(
   }
 
   override fun setupPlatform() {
+    super.setupPlatform()
     authorizationManager = object : AuthorizationManager() {
       override fun matches(user: User?, line: String): Boolean {
         if (line == "patreon") {
           return OAuthPatreon.users[user?.email]?.data?.relationships?.pledges?.data?.isNotEmpty() ?: false
         }
         return super.matches(user, line)
+      }
+    }
+    seleniumFactory = { pool, cookies ->
+      object : Selenium2S3(
+        pool,
+        cookies,
+      ) {
+        override fun saveHTML(html: String, saveRoot: String, filename: String) {
+          var newHTML = html
+          newHTML = newHTML.replace("</body>", """
+            <style>
+            #footer {
+                position: fixed;
+                bottom: 0;
+                right: 20px;
+                width: 100%;
+                text-align: right;
+                z-index: 1000;
+            }
+            #footer a {
+                color: #4f80a4;
+                text-decoration: none;
+                font-weight: bold;
+            }
+            #footer a:hover {
+                text-decoration: underline;
+            }
+            </style>
+            <footer id="footer">
+                <a href="https://apps.simiacrypt.us/" target="_blank">Powered by Apps.Simiacrypt.us</a>
+            </footer>
+            </body>
+          """.trimIndent())
+          super.saveHTML(newHTML, saveRoot, filename)
+        }
       }
     }
     val jdbc = System.getProperties()["db.url"]
@@ -114,9 +152,9 @@ open class AppServer(
 
       @Language("Markdown")
       override val welcomeMarkdown = """
-            # SimiaCryptus SkyeNet App Server
+            # Welcome to `apps.simiacrypt.us`!
             
-            Welcome to the SimiaCryptus SkyeNet App Server! Here you will find a variety of AI applications using LLMs (i.e., ChatGPT)
+            Welcome to the SimiaCryptus App Server! Here you will find a variety of AI applications using LLMs (i.e., ChatGPT)
             
             Users are welcome to browse this server anonymously. No cookies or ads here! 
             As you enjoy our site, be sure to check out our Privacy Policy and Terms of Service in the "about" menu.
@@ -151,6 +189,7 @@ open class AppServer(
             | **Sharing / Archival** | &nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ |
             | **Premium Apps**       | &nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ |
             | **Beta Apps**          | &nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ |
+            
             
         """.trimIndent()
 

@@ -25,6 +25,7 @@ object TestNoauthAppServer : AppServer(
     override fun configure(context: WebAppContext, addFilter: Boolean) = context
   }
   override fun setupPlatform() {
+    super.setupPlatform()
     val mockUser = User(
       "1",
       "user@mock.test",
