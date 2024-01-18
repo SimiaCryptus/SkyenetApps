@@ -6,6 +6,7 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
@@ -28,6 +29,7 @@ open class LibraryGeneratorApp(
   data class Settings(
     val model: ChatModels = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
+    val budget : Double = 2.0,
   )
   override val settingsClass: Class<*> get() = Settings::class.java
   @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
@@ -41,6 +43,7 @@ open class LibraryGeneratorApp(
   ) {
     try {
       val settings = getSettings<Settings>(session, user)
+      (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
       LibraryGeneratorAgent(
         user = user,
         session = session,

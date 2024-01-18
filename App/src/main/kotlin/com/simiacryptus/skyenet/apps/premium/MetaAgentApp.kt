@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -39,6 +40,7 @@ open class MetaAgentApp(
         val model: ChatModels = ChatModels.GPT4Turbo,
         val validateCode: Boolean = true,
         val temperature: Double = 0.2,
+        val budget : Double = 2.0,
     )
     override val settingsClass: Class<*> get() = Settings::class.java
     @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
@@ -52,6 +54,7 @@ open class MetaAgentApp(
     ) {
         try {
             val settings = getSettings<Settings>(session, user)
+            (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
             MetaAgentAgent(
                 user = user,
                 session = session,

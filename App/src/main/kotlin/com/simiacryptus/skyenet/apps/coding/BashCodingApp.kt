@@ -5,6 +5,7 @@ import com.simiacryptus.jopenai.ApiModel
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.interpreter.ProcessInterpreter
@@ -25,6 +26,7 @@ class BashCodingApp(
     val temperature: Double = 0.1,
     val language: String = "bash",
     val command: List<String> = listOf("bash"),
+    val budget : Double = 2.0,
   )
   override val settingsClass: Class<*> get() = Settings::class.java
   @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
@@ -37,6 +39,7 @@ class BashCodingApp(
     api: API
   ) {
     val settings = getSettings<Settings>(session, user)
+    (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
     object : CodingAgent<ProcessInterpreter>(
       api = api,
       dataStorage = dataStorage,

@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -39,6 +40,7 @@ open class OutlineApp(
         val minTokensForExpansion : Int = 16,
         val showProjector: Boolean = true,
         val writeFinalEssay: Boolean = false,
+        val budget : Double = 2.0,
     )
     override val settingsClass: Class<*> get() = Settings::class.java
     @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
@@ -51,6 +53,7 @@ open class OutlineApp(
         api: API
     ) {
         val settings = getSettings<Settings>(session, user)!!
+        (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
         OutlineAgent(
             api = api,
             dataStorage = dataStorage,

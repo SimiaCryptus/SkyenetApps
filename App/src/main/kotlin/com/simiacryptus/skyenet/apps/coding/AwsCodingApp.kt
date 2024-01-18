@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.coding
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
@@ -21,6 +22,7 @@ class AwsCodingApp : ApplicationServer(
     api: API
   ) {
     val settings = getSettings<Settings>(session, user)
+    (api as ClientManager.MonitoredClient).budget = 2.00
     CodingAgent(
       api = api,
       dataStorage = dataStorage,

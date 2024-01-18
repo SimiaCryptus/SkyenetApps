@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.apps.general
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
+import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -34,6 +35,7 @@ open class IllustratedStorybookApp(
     val imageModel: ImageModels? = ImageModels.DallE3,
     val voice : String? = "alloy",
     val voiceSpeed : Double? = 1.1,
+    val budget : Double = 2.0,
   )
   override val settingsClass: Class<*> get() = Settings::class.java
   @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
@@ -47,6 +49,7 @@ open class IllustratedStorybookApp(
   ) {
     try {
       val settings = getSettings<Settings>(session, user)
+      (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
       IllustratedStorybookAgent(
         user = user,
         session = session,

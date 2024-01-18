@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -32,6 +33,7 @@ open class PresentationDesignerApp(
     val temperature: Double = 0.1,
     val voice : String? = "alloy",
     val voiceSpeed : Double? = 1.0,
+    val budget : Double = 2.0,
   )
 
   override val settingsClass: Class<*> get() = Settings::class.java
@@ -48,6 +50,7 @@ open class PresentationDesignerApp(
   ) {
     try {
       val settings = getSettings<Settings>(session, user)
+      (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
       PresentationDesignerAgent(
         user = user,
         session = session,

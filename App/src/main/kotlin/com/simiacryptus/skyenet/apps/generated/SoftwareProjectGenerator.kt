@@ -4,6 +4,7 @@ import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
@@ -24,6 +25,7 @@ open class SoftwareProjectGeneratorApp(
   data class Settings(
     val model: ChatModels = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
+    val budget : Double = 2.0,
   )
 
   override val settingsClass: Class<*> get() = Settings::class.java
@@ -39,6 +41,7 @@ open class SoftwareProjectGeneratorApp(
   ) {
     try {
       val settings = getSettings<Settings>(session, user)
+      (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
       SoftwareProjectGeneratorAgent(
         user = user,
         session = session,
