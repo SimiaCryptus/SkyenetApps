@@ -150,9 +150,16 @@ open class AppServer(
   override val welcomeServlet: WelcomeServlet
     get() = object : WelcomeServlet(this) {
 
+      val videoHtml = """<div style="width: 30%; float: right; margin: 1em;">
+                <video controls width='100%'>
+                    <source src="https://share.simiacrypt.us/Apps_Demo_03.mp4" type="video/mp4" />
+                </video>
+            </div>"""
+
       @Language("Markdown")
       override val welcomeMarkdown = """
             # Welcome to `apps.simiacrypt.us`!
+            $videoHtml
             
             Welcome to the SimiaCryptus App Server! Here you will find a variety of AI applications using LLMs (i.e., ChatGPT)
             
@@ -198,7 +205,6 @@ open class AppServer(
         else -> {
           val type = app.server.javaClass.packageName.split(".").last()
           """
-            <a
             <tr>
                 <td>
                     ${app.server.applicationName} <span class="app-type" style='background-color: ${typeColor(type)}'>$type</span>
