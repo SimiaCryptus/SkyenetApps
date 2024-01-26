@@ -3,3 +3,4 @@ build
 *.key
 *.hprof
 /App/App-1.0.0-full.jar
+google-credentials.json

@@ -12,10 +12,32 @@ import java.util.*
 open class DatabaseServices(
   private val jdbcUrl: String,
   private val username: String = "sa",
-  private val password: String = ""
+  private val password: () -> String = { "" }
 ) {
-  private fun getConnection(): Connection {
-    return DriverManager.getConnection(jdbcUrl, username, password)
+
+  private val connectionPool = mutableSetOf<Connection>()
+
+  private fun <T : Any> useConnection(fn: (Connection) -> T): T {
+    var connection: Connection? = null
+    synchronized(connectionPool) {
+      while (connectionPool.isNotEmpty()) {
+        connection = connectionPool.first()
+        connectionPool.remove(connection)
+        if (connection?.isClosed == false) break
+        else connection = null
+      }
+    }
+    if(null == connection) {
+      connection = DriverManager.getConnection(jdbcUrl, username, password())
+    }
+    try {
+      val result = connection!!.use(fn)
+      connectionPool.add(connection!!)
+      return result
+    } catch (e: Exception) {
+      connection?.close()
+      throw e
+    }
   }
 
   fun register() {
@@ -28,7 +50,7 @@ open class DatabaseServices(
   }
 
   fun initializeSchema() {
-    getConnection().use { connection ->
+    useConnection { connection ->
       connection.autoCommit = false
       try {
         connection.createStatement().use { statement ->
@@ -137,7 +159,7 @@ open class DatabaseServices(
   }
 
   fun teardownSchema() {
-    getConnection().use { connection ->
+    useConnection { connection ->
       connection.autoCommit = false
       try {
         connection.createStatement().use { statement ->
@@ -193,7 +215,7 @@ open class DatabaseServices(
 
   val usageManager: UsageInterface = object : UsageInterface {
     override fun incrementUsage(session: Session, user: User?, model: OpenAIModel, tokens: ApiModel.Usage) {
-      getConnection().use { connection ->
+      useConnection { connection ->
         connection.autoCommit = false
         try {
           upsertUser(connection, user!!)
@@ -221,7 +243,7 @@ open class DatabaseServices(
     }
 
     override fun getUserUsageSummary(user: User): Map<OpenAIModel, ApiModel.Usage> {
-      getConnection().use { connection ->
+      useConnection { connection ->
         connection.autoCommit = false
         connection.prepareStatement(
           """
@@ -245,14 +267,15 @@ open class DatabaseServices(
                 cost = cost
               )
             }
-            return map
+            return@useConnection map
           }
         }
       }
+      return emptyMap()
     }
 
     override fun getSessionUsageSummary(session: Session): Map<OpenAIModel, ApiModel.Usage> {
-      getConnection().use { connection ->
+      useConnection { connection ->
         connection.autoCommit = false
         connection.prepareStatement(
           """
@@ -276,10 +299,11 @@ open class DatabaseServices(
                 cost = cost
               )
             }
-            return map
+            return@useConnection map
           }
         }
       }
+      return emptyMap()
     }
 
     override fun clear() {
@@ -288,14 +312,14 @@ open class DatabaseServices(
   }
   val userSettingsManager: UserSettingsInterface = object : UserSettingsInterface {
     override fun getUserSettings(user: User): UserSettingsInterface.UserSettings {
-      getConnection().use { connection ->
+      useConnection { connection ->
         connection.autoCommit = false
         try {
           connection.prepareStatement("SELECT * FROM user_settings WHERE user_id = ?").apply {
             setString(1, user.id)
             executeQuery().use { resultSet ->
               if (resultSet.next()) {
-                return UserSettingsInterface.UserSettings(
+                return@useConnection UserSettingsInterface.UserSettings(
                   apiKey = resultSet.getString("api_key")
                 )
               }
@@ -309,7 +333,7 @@ open class DatabaseServices(
     }
 
     override fun updateUserSettings(user: User, settings: UserSettingsInterface.UserSettings) {
-      getConnection().use { connection ->
+      useConnection { connection ->
         connection.autoCommit = false
         try {
           upsertUser(connection, user)
@@ -333,7 +357,7 @@ open class DatabaseServices(
   }
   val authenticationManager: AuthenticationInterface = object : AuthenticationInterface {
     override fun getUser(accessToken: String?): User? {
-      getConnection().use { connection ->
+      useConnection { connection ->
         connection.autoCommit = false
         connection.prepareStatement("SELECT * FROM authentication WHERE token_id = ?").apply {
           setString(1, accessToken)
@@ -344,7 +368,7 @@ open class DatabaseServices(
                 setString(1, userId)
                 executeQuery().use { resultSet ->
                   if (resultSet.next()) {
-                    return User(
+                    return@useConnection User(
                       id = resultSet.getString("id"),
                       email = resultSet.getString("email"),
                       name = resultSet.getString("name"),
@@ -361,7 +385,7 @@ open class DatabaseServices(
     }
 
     override fun putUser(accessToken: String, user: User): User {
-      getConnection().use { connection ->
+      useConnection { connection ->
         connection.autoCommit = false
         try {
           upsertUser(connection, user)
@@ -377,7 +401,7 @@ open class DatabaseServices(
 
 
     override fun logout(accessToken: String, user: User) {
-      getConnection().use { connection ->
+      useConnection { connection ->
         connection.autoCommit = false
         try {
           connection.prepareStatement("DELETE FROM authentication WHERE token_id = ?").apply {

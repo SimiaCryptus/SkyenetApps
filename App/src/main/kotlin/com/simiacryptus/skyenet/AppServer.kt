@@ -118,7 +118,7 @@ open class AppServer(
     if (jdbc != null) DatabaseServices(
       jdbcUrl = jdbc as String,
       username = System.getProperties()["db.user"] as String,
-      password = getPassword()
+      password = { getPassword() }
     ).register()
 
   }
