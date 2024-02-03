@@ -16,6 +16,7 @@ open class DebateApp(
     val domainName: String,
 ) : ApplicationServer(
   applicationName = applicationName,
+    path = "/debate",
 ) {
     data class Settings(
         val model: ChatModels = ChatModels.GPT35Turbo,

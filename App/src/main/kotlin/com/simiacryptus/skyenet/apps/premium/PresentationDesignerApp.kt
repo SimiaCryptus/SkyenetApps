@@ -16,6 +16,7 @@ open class PresentationDesignerApp(
   applicationName: String = "Presentation Generator v1.3",
 ) : ApplicationServer(
   applicationName = applicationName,
+  path = "/presentation",
 ) {
 
   override val description: String

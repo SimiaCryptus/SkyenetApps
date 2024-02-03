@@ -1,3 +1,4 @@
+
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.skyenet.core.actors.ActorSystem
@@ -10,9 +11,9 @@ import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import org.slf4j.LoggerFactory
 import java.util.function.Consumer
 import java.util.function.Function
-import org.slf4j.LoggerFactory
 
 
 open class SoftwareProjectGeneratorApp(
@@ -20,6 +21,7 @@ open class SoftwareProjectGeneratorApp(
   temperature: Double = 0.1,
 ) : ApplicationServer(
   applicationName = applicationName,
+  path = "/softwareProjectGenerator",
 ) {
 
   data class Settings(

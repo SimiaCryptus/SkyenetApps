@@ -96,6 +96,7 @@ open class DatabaseServices(
                 CREATE TABLE IF NOT EXISTS user_settings (
                     user_id VARCHAR(255) PRIMARY KEY,
                     api_key VARCHAR(255),
+                    api_base VARCHAR(255),
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
                 );
             """.trimIndent()
@@ -214,12 +215,12 @@ open class DatabaseServices(
 
 
   val usageManager: UsageInterface = object : UsageInterface {
-    override fun incrementUsage(session: Session, user: User?, model: OpenAIModel, tokens: ApiModel.Usage) {
+    override fun incrementUsage(session: Session, apiKey: String?, model: OpenAIModel, tokens: ApiModel.Usage) {
       useConnection { connection ->
         connection.autoCommit = false
         try {
-          upsertUser(connection, user!!)
-          upsertSession(connection, session, user)
+//          upsertUser(connection, user!!)
+          upsertSession(connection, session, apiKey)
           connection.prepareStatement(
             """
                 INSERT INTO usage (session_id, user_id, model, input_tokens, output_tokens, cost)
@@ -227,7 +228,7 @@ open class DatabaseServices(
             """.trimIndent()
           ).apply {
             setString(1, session.toString())
-            setString(2, user?.id)
+            setString(2, apiKey)
             setString(3, model.modelName)
             setInt(4, tokens.prompt_tokens)
             setInt(5, tokens.completion_tokens)
@@ -242,7 +243,7 @@ open class DatabaseServices(
       }
     }
 
-    override fun getUserUsageSummary(user: User): Map<OpenAIModel, ApiModel.Usage> {
+    override fun getUserUsageSummary(apiKey: String): Map<OpenAIModel, ApiModel.Usage> {
       useConnection { connection ->
         connection.autoCommit = false
         connection.prepareStatement(
@@ -253,7 +254,7 @@ open class DatabaseServices(
               GROUP BY model;
           """.trimIndent()
         ).apply {
-          setString(1, user.id)
+          setString(1, apiKey)
           executeQuery().use { resultSet ->
             val map = HashMap<OpenAIModel, ApiModel.Usage>()
             while (resultSet.next()) {
@@ -320,7 +321,8 @@ open class DatabaseServices(
             executeQuery().use { resultSet ->
               if (resultSet.next()) {
                 return@useConnection UserSettingsInterface.UserSettings(
-                  apiKey = resultSet.getString("api_key")
+                  apiKey = resultSet.getString("api_key"),
+                  apiBase = resultSet.getString("api_base"),
                 )
               }
             }
@@ -452,7 +454,7 @@ open class DatabaseServices(
   }
 
 
-  fun upsertSession(connection: Connection, session: Session, user: User?) {
+  fun upsertSession(connection: Connection, session: Session, apiKey: String?) {
     connection.prepareStatement("""
       INSERT INTO sessions (session_id, user_id)
       VALUES (?, ?)
@@ -460,7 +462,7 @@ open class DatabaseServices(
       SET user_id = EXCLUDED.user_id
       """.trimIndent()).apply {
       setString(1, session.toString())
-      setString(2, user?.id)
+      setString(2, apiKey)
       execute()
     }
   }

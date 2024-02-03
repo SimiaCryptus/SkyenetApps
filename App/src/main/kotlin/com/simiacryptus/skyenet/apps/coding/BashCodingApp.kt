@@ -17,7 +17,8 @@ import java.io.File
 
 class BashCodingApp(
 ) : ApplicationServer(
-  "Bash Coding Assistant v1.0") {
+  "Bash Coding Assistant v1.0",
+  path = "/bash",) {
 
   data class Settings(
     val env: Map<String, String> = mapOf(),

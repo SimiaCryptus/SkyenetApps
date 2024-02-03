@@ -17,6 +17,7 @@ open class IllustratedStorybookApp(
   domainName: String
 ) : ApplicationServer(
   applicationName = applicationName,
+  path = "/illustrated_storybook",
 ) {
 
   override val description: String

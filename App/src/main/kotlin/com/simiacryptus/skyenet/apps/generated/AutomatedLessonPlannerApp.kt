@@ -25,6 +25,7 @@ open class AutomatedLessonPlannerArchitectureApp(
   domainName: String,
 ) : ApplicationServer(
   applicationName = applicationName,
+  path = "/lesson_planner"
 ) {
 
   data class Settings(

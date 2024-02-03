@@ -16,6 +16,7 @@ open class MetaAgentApp(
     temperature: Double = 0.1,
 ) : ApplicationServer(
   applicationName = applicationName,
+    path = "/meta_agent",
 ) {
     override val description: String
         @Language("Markdown")

@@ -15,6 +15,7 @@ open class OutlineApp(
     val domainName: String,
 ) : ApplicationServer(
   applicationName = applicationName,
+    path = "/idea_mapper",
 ) {
     override val description: String
         @Language("HTML")

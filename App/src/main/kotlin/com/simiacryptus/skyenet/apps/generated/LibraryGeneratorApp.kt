@@ -24,6 +24,7 @@ open class LibraryGeneratorApp(
   domainName: String,
 ) : ApplicationServer(
   applicationName = applicationName,
+  path = "/library_generator",
 ) {
 
   data class Settings(
