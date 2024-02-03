@@ -56,9 +56,9 @@ dependencies {
   implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.21.9")
   implementation("org.jsoup:jsoup:1.17.2")
 
-  implementation("com.google.api-client:google-api-client:2.0.0")
+  implementation("com.google.api-client:google-api-client:1.35.2")
   implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
-  implementation("com.google.apis:google-api-services-gmail:v1-rev20220404-2.0.0")
+  implementation("com.google.apis:google-api-services-gmail:v1-rev110-1.25.0")
 
   implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
   implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
