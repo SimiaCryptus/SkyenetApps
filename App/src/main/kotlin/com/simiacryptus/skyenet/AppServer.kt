@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.coding.AwsCodingApp
 import com.simiacryptus.skyenet.apps.coding.BashCodingApp
+import com.simiacryptus.skyenet.apps.coding.WebDevApp
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
@@ -21,6 +22,7 @@ import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
+import com.simiacryptus.skyenet.webui.servlet.ToolServlet
 import com.simiacryptus.skyenet.webui.servlet.WelcomeServlet
 import com.simiacryptus.skyenet.webui.util.Selenium2S3
 import org.intellij.lang.annotations.Language
@@ -55,6 +57,7 @@ open class AppServer(
       ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName)),
       ChildWebApp("/aws_coder", AwsCodingApp()),
       ChildWebApp("/bash", BashCodingApp()),
+      ChildWebApp("/webdev", WebDevApp()),
     )
   }
 
@@ -244,6 +247,8 @@ open class AppServer(
         else -> "blue"
       }
     }
+  override val toolServlet: ToolServlet?
+    get() = null
 
 
 }
