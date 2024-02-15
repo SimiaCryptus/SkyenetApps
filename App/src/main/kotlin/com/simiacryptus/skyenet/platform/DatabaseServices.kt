@@ -7,7 +7,6 @@ import com.simiacryptus.skyenet.core.util.getModel
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
-import java.util.*
 
 open class DatabaseServices(
   private val jdbcUrl: String,
@@ -17,7 +16,7 @@ open class DatabaseServices(
 
   private val connectionPool = mutableSetOf<Connection>()
 
-  private fun <T : Any> useConnection(fn: (Connection) -> T): T {
+  private fun <T> useConnection(fn: (Connection) -> T): T {
     var connection: Connection? = null
     synchronized(connectionPool) {
       while (connectionPool.isNotEmpty()) {
@@ -83,8 +82,7 @@ open class DatabaseServices(
             """
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id VARCHAR(255) PRIMARY KEY,
-                    user_id VARCHAR(255),
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+                    apiKey VARCHAR(255)
                 );
             """.trimIndent()
           )
@@ -109,13 +107,12 @@ open class DatabaseServices(
               CREATE TABLE IF NOT EXISTS usage (
                   usage_id SERIAL PRIMARY KEY,
                   session_id VARCHAR(255),
-                  user_id VARCHAR(255),
+                  apiKey VARCHAR(255),
                   model VARCHAR(255),
                   input_tokens INT,
                   output_tokens INT,
                   cost DOUBLE PRECISION,
-                  FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE ON UPDATE CASCADE,
-                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+                  FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE ON UPDATE CASCADE
               );
           """.trimIndent()
           )
@@ -128,7 +125,7 @@ open class DatabaseServices(
           // user_id, model index
           statement.execute(
             """
-                CREATE INDEX IF NOT EXISTS usage_user_model ON usage(user_id, model);
+                CREATE INDEX IF NOT EXISTS usage_user_model ON usage(apiKey, model);
             """.trimIndent()
           )
         }
@@ -219,11 +216,10 @@ open class DatabaseServices(
       useConnection { connection ->
         connection.autoCommit = false
         try {
-//          upsertUser(connection, user!!)
           upsertSession(connection, session, apiKey)
           connection.prepareStatement(
             """
-                INSERT INTO usage (session_id, user_id, model, input_tokens, output_tokens, cost)
+                INSERT INTO usage (session_id, apiKey, model, input_tokens, output_tokens, cost)
                 VALUES (?, ?, ?, ?, ?, ?);
             """.trimIndent()
           ).apply {
@@ -243,39 +239,37 @@ open class DatabaseServices(
       }
     }
 
-    override fun getUserUsageSummary(apiKey: String): Map<OpenAIModel, ApiModel.Usage> {
-      useConnection { connection ->
-        connection.autoCommit = false
-        connection.prepareStatement(
-          """
-              SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost) AS cost
-              FROM usage
-              WHERE user_id = ?
-              GROUP BY model;
-          """.trimIndent()
-        ).apply {
-          setString(1, apiKey)
-          executeQuery().use { resultSet ->
-            val map = HashMap<OpenAIModel, ApiModel.Usage>()
-            while (resultSet.next()) {
-              val modelName = resultSet.getString("model")
-              val inputTokens = resultSet.getInt("input_tokens")
-              val outputTokens = resultSet.getInt("output_tokens")
-              val cost = resultSet.getDouble("cost")
-              map[getModel(modelName) ?: continue] = ApiModel.Usage(
-                prompt_tokens = inputTokens,
-                completion_tokens = outputTokens,
-                cost = cost
-              )
-            }
-            return@useConnection map
+    override fun getUserUsageSummary(apiKey: String) = useConnection { connection ->
+      connection.autoCommit = false
+      connection.prepareStatement(
+        """
+            SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost) AS cost
+            FROM usage
+            WHERE apiKey = ?
+            GROUP BY model;
+        """.trimIndent()
+      ).apply {
+        setString(1, apiKey)
+        executeQuery().use { resultSet ->
+          val map = HashMap<OpenAIModel, ApiModel.Usage>()
+          while (resultSet.next()) {
+            val modelName = resultSet.getString("model")
+            val inputTokens = resultSet.getInt("input_tokens")
+            val outputTokens = resultSet.getInt("output_tokens")
+            val cost = resultSet.getDouble("cost")
+            map[getModel(modelName) ?: continue] = ApiModel.Usage(
+              prompt_tokens = inputTokens,
+              completion_tokens = outputTokens,
+              cost = cost
+            )
           }
+          return@useConnection map
         }
       }
-      return emptyMap()
+      return@useConnection emptyMap()
     }
 
-    override fun getSessionUsageSummary(session: Session): Map<OpenAIModel, ApiModel.Usage> {
+    override fun getSessionUsageSummary(session: Session) =
       useConnection { connection ->
         connection.autoCommit = false
         connection.prepareStatement(
@@ -303,35 +297,33 @@ open class DatabaseServices(
             return@useConnection map
           }
         }
+        @Suppress("UNREACHABLE_CODE")
+        return@useConnection emptyMap()
       }
-      return emptyMap()
-    }
 
     override fun clear() {
       throw UnsupportedOperationException()
     }
   }
   val userSettingsManager: UserSettingsInterface = object : UserSettingsInterface {
-    override fun getUserSettings(user: User): UserSettingsInterface.UserSettings {
-      useConnection { connection ->
-        connection.autoCommit = false
-        try {
-          connection.prepareStatement("SELECT * FROM user_settings WHERE user_id = ?").apply {
-            setString(1, user.id)
-            executeQuery().use { resultSet ->
-              if (resultSet.next()) {
-                return@useConnection UserSettingsInterface.UserSettings(
-                  apiKey = resultSet.getString("api_key"),
-                  apiBase = resultSet.getString("api_base"),
-                )
-              }
+    override fun getUserSettings(user: User) = useConnection { connection ->
+      connection.autoCommit = false
+      try {
+        connection.prepareStatement("SELECT * FROM user_settings WHERE user_id = ?").apply {
+          setString(1, user.id)
+          executeQuery().use { resultSet ->
+            if (resultSet.next()) {
+              return@useConnection UserSettingsInterface.UserSettings(
+                apiKey = resultSet.getString("api_key"),
+                apiBase = resultSet.getString("api_base"),
+              )
             }
           }
-        } catch (e: Exception) {
-          throw e
         }
+        return@useConnection  UserSettingsInterface.UserSettings()
+      } catch (e: Exception) {
+        throw e
       }
-      return UserSettingsInterface.UserSettings()
     }
 
     override fun updateUserSettings(user: User, settings: UserSettingsInterface.UserSettings) {
@@ -357,9 +349,10 @@ open class DatabaseServices(
       }
     }
   }
+
   val authenticationManager: AuthenticationInterface = object : AuthenticationInterface {
     override fun getUser(accessToken: String?): User? {
-      useConnection { connection ->
+      return useConnection { connection ->
         connection.autoCommit = false
         connection.prepareStatement("SELECT * FROM authentication WHERE token_id = ?").apply {
           setString(1, accessToken)
@@ -382,8 +375,8 @@ open class DatabaseServices(
             }
           }
         }
+        return@useConnection null
       }
-      return null
     }
 
     override fun putUser(accessToken: String, user: User): User {
@@ -456,10 +449,10 @@ open class DatabaseServices(
 
   fun upsertSession(connection: Connection, session: Session, apiKey: String?) {
     connection.prepareStatement("""
-      INSERT INTO sessions (session_id, user_id)
+      INSERT INTO sessions (session_id, apiKey)
       VALUES (?, ?)
       ON CONFLICT (session_id) DO UPDATE
-      SET user_id = EXCLUDED.user_id
+      SET apiKey = EXCLUDED.apiKey
       """.trimIndent()).apply {
       setString(1, session.toString())
       setString(2, apiKey)
@@ -467,53 +460,7 @@ open class DatabaseServices(
     }
   }
 
-  val dataStorageFactory: (File) -> StorageInterface = { storageRoot ->
-    object : DataStorage(storageRoot) {
-      override fun <T> getJson(user: User?, session: Session, filename: String, clazz: Class<T>): T? {
-        return super.getJson(user, session, filename, clazz)
-      }
-
-      override fun getMessages(user: User?, session: Session): LinkedHashMap<String, String> {
-        return super.getMessages(user, session)
-      }
-
-      override fun getSessionDir(user: User?, session: Session): File {
-        return super.getSessionDir(user, session)
-      }
-
-      override fun getSessionName(user: User?, session: Session): String {
-        return super.getSessionName(user, session)
-      }
-
-      override fun getSessionTime(user: User?, session: Session): Date? {
-        return super.getSessionTime(user, session)
-      }
-
-      override fun listSessions(user: User?): List<Session> {
-        return super.listSessions(user)
-      }
-
-      override fun listSessions(dir: File): List<String> {
-        return super.listSessions(dir)
-      }
-
-      override fun <T : Any> setJson(user: User?, session: Session, filename: String, settings: T): T {
-        return super.setJson(user, session, filename, settings)
-      }
-
-      override fun updateMessage(user: User?, session: Session, messageId: String, value: String) {
-        return super.updateMessage(user, session, messageId, value)
-      }
-
-      override fun userRoot(user: User?): File {
-        return super.userRoot(user)
-      }
-
-      override fun deleteSession(user: User?, session: Session) {
-        return super.deleteSession(user, session)
-      }
-    }
-  }
+  val dataStorageFactory: (File) -> StorageInterface = { storageRoot -> DataStorage(storageRoot)  }
 
   companion object {
     @JvmStatic
