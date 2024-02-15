@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.coding.AwsCodingApp
 import com.simiacryptus.skyenet.apps.coding.BashCodingApp
+import com.simiacryptus.skyenet.apps.coding.PowershellCodingApp
 import com.simiacryptus.skyenet.apps.coding.WebDevApp
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
@@ -55,8 +56,9 @@ open class AppServer(
       ChildWebApp("/presentation", PresentationDesignerApp()),
       ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName)),
       ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName)),
-      ChildWebApp("/aws_coder", AwsCodingApp()),
+      ChildWebApp("/aws", AwsCodingApp()),
       ChildWebApp("/bash", BashCodingApp()),
+      ChildWebApp("/powershell", PowershellCodingApp()),
       ChildWebApp("/webdev", WebDevApp()),
     )
   }
