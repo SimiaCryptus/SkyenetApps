@@ -8,12 +8,11 @@ import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import org.eclipse.jetty.webapp.WebAppContext
-import kotlin.random.Random
 
 object TestNoauthAppServer : AppServer(
   publicName = "localhost",
   localName = "localhost",
-  port = Random.nextInt(1024, 8 * 1024 /*65535*/), /*37600*/
+  port = 27000 //Random.nextInt(1024,  /*8 * 1024*/ /*65535*/), /*37600*/
 ) {
 
   @JvmStatic

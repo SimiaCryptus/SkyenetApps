@@ -154,7 +154,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       task.complete("Automated lesson planner process completed.")
     } catch (e: Throwable) {
       // If an error occurs, display it in the task output
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -191,7 +191,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       task.add("Please enter your customization requests for the lesson plan in the text box above and submit.")
     } catch (e: Throwable) {
       // If an error occurs, display it in the task output
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -215,7 +215,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       val validationResult = feedbackAnalysis.validate()
       if (validationResult != null) {
         // If the response is not valid, display an error message
-        task.error(Exception(validationResult))
+        task.error(ui, Exception(validationResult))
       } else {
         // If the response is valid, display the suggestions for improvement
         task.add("Feedback analysis completed successfully. Suggestions for improvement:")
@@ -228,7 +228,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       task.complete("Feedback analysis process completed.")
     } catch (e: Throwable) {
       // If an error occurs, display it in the task output
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -252,7 +252,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       val validationResult = mapping.validate()
       if (validationResult != null) {
         // If the response is not valid, display an error message
-        task.error(Exception(validationResult))
+        task.error(ui, Exception(validationResult))
       } else {
         // If the response is valid, display the curriculum mapping
         task.add("Curriculum mapping completed successfully.")
@@ -265,7 +265,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       task.complete("Curriculum mapping process completed.")
     } catch (e: Throwable) {
       // If an error occurs, display it in the task output
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -292,7 +292,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       val validationResult = timeline.validate()
       if (validationResult != null) {
         // If the response is not valid, display an error message
-        task.error(Exception(validationResult))
+        task.error(ui, Exception(validationResult))
       } else {
         // If the response is valid, display the lesson timeline
         task.add("Lesson timeline created successfully.")
@@ -305,7 +305,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       task.complete("Lesson timeline creation process completed.")
     } catch (e: Throwable) {
       // If an error occurs, display it in the task output
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -329,7 +329,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       val validationResult = assessmentPlan.validate()
       if (validationResult != null) {
         // If the response is not valid, display an error message
-        task.error(Exception(validationResult))
+        task.error(ui, Exception(validationResult))
       } else {
         // If the response is valid, display the suggested assessment methods
         task.add("Assessment methods suggested successfully.")
@@ -342,7 +342,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       task.complete("Assessment methods suggestion process completed.")
     } catch (e: Throwable) {
       // If an error occurs, display it in the task output
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -366,7 +366,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       val validationResult = allocation.validate()
       if (validationResult != null) {
         // If the response is not valid, display an error message
-        task.error(Exception(validationResult))
+        task.error(ui, Exception(validationResult))
       } else {
         // If the response is valid, display the suggested activities
         task.add("Suggested activities based on the available resources:")
@@ -379,7 +379,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
       task.complete("Activity suggestion process completed.")
     } catch (e: Throwable) {
       // If an error occurs, display it in the task output
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }

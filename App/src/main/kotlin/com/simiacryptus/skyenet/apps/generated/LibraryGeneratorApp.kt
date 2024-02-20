@@ -152,7 +152,7 @@ open class LibraryGeneratorAgent(
 
       task.complete("Pseudocode breakdown complete.")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -178,7 +178,7 @@ open class LibraryGeneratorAgent(
       task.complete("Function outline complete.")
       return outlineResult.obj
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -216,7 +216,7 @@ open class LibraryGeneratorAgent(
       task.complete("Code synthesis for function complete.")
       return codeResult.code
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -260,7 +260,7 @@ open class LibraryGeneratorAgent(
       task.complete("Output formatting complete.")
       return formattedOutput
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -283,7 +283,7 @@ open class LibraryGeneratorAgent(
       task.complete("Test case creation complete.")
       return listOf(testCases)
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -304,7 +304,7 @@ open class LibraryGeneratorAgent(
       task.complete("Requirements extraction complete.")
       return interpretationResult.obj
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -348,7 +348,7 @@ open class LibraryGeneratorAgent(
       task.complete("Code synthesis for data structure complete.")
       return codeResult.code
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -372,7 +372,7 @@ open class LibraryGeneratorAgent(
       task.complete("Documentation composition complete.")
       return documentation
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -408,7 +408,7 @@ open class LibraryGeneratorAgent(
       task.complete("Quality assessment complete.")
       return qualityReview.obj
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -439,7 +439,7 @@ open class LibraryGeneratorAgent(
       task.add("Formatted output has been successfully saved to: $outputFile")
       task.complete("Output saving complete.")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -459,7 +459,7 @@ open class LibraryGeneratorAgent(
       task.complete("Data structure design complete.")
       return designResult.obj
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }

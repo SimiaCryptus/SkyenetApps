@@ -72,7 +72,7 @@ class DebateAgent(
           questionTask.complete()
           result.flatten().stream()
         } catch (e: Exception) {
-          questionTask.error(e)
+          questionTask.error(ui, e)
           throw e
         }
       }.toList() + (moderatorResponse.obj.questions?.list?.mapNotNull { it.text }

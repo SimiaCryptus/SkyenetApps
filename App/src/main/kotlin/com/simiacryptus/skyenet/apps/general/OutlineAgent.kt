@@ -57,7 +57,7 @@ class OutlineAgent(
             message.complete()
             OutlineManager(OutlinedText(root.text, root.obj))
         } catch (e: Exception) {
-            message.error(e)
+            message.error(ui, e)
             throw e
         }
 
@@ -97,7 +97,7 @@ class OutlineAgent(
                 projectorMessage.complete(response)
             } catch (e: Exception) {
                 log.warn("Error", e)
-                projectorMessage.error(e)
+                projectorMessage.error(ui, e)
             }
         }
 
@@ -110,7 +110,7 @@ class OutlineAgent(
                 finalRenderMessage.complete(renderMarkdown(finalEssay))
             } catch (e: Exception) {
                 log.warn("Error", e)
-                finalRenderMessage.error(e)
+                finalRenderMessage.error(ui, e)
             }
         }
     }
@@ -133,7 +133,7 @@ class OutlineAgent(
         if (terminalNodeMap.isEmpty()) {
             val errorMessage = "No terminal nodes: ${node.text}"
             log.warn(errorMessage)
-            ui.newTask().error(RuntimeException(errorMessage))
+            ui.newTask().error(ui, RuntimeException(errorMessage))
             return
         }
         for ((item, childNode) in terminalNodeMap) {
@@ -149,14 +149,14 @@ class OutlineAgent(
                             val existingNode = manager.expansionMap[childNode]!!
                             val errorMessage = "Conflict: ${existingNode} vs ${newNode}"
                             log.warn(errorMessage)
-                            ui.newTask().error(RuntimeException(errorMessage))
+                            ui.newTask().error(ui, RuntimeException(errorMessage))
                         }
                     }
                     message.complete()
                     if (models.size > 1) processRecursive(manager, newNode, models.drop(1))
                 } catch (e: Exception) {
                     log.warn("Error in processRecursive", e)
-                    message.error(e)
+                    message.error(ui, e)
                 } finally {
                     activeThreadCounter.decrementAndGet()
                 }

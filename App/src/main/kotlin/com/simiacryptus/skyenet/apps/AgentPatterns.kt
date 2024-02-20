@@ -63,7 +63,7 @@ object AgentPatterns {
       onAccept.acquire()
       design
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
     return design
@@ -78,7 +78,7 @@ object AgentPatterns {
     api: API,
     ui: ApplicationInterface,
     outputFn: (SessionTask, T) -> Unit = { task, design -> task.add(MarkdownUtil.renderMarkdown(design.toString())) }
-  ) = iterate(
+  ): T = iterate(
     ui = ui,
     userMessage = input,
     heading = heading,

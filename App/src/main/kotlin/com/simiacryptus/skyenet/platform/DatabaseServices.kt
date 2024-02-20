@@ -7,6 +7,8 @@ import com.simiacryptus.skyenet.core.util.getModel
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
+import java.text.SimpleDateFormat
+import java.util.*
 
 open class DatabaseServices(
   private val jdbcUrl: String,
@@ -106,6 +108,7 @@ open class DatabaseServices(
             """
               CREATE TABLE IF NOT EXISTS usage (
                   usage_id SERIAL PRIMARY KEY,
+                  date_window VARCHAR(255),
                   session_id VARCHAR(255),
                   apiKey VARCHAR(255),
                   model VARCHAR(255),
@@ -125,7 +128,7 @@ open class DatabaseServices(
           // user_id, model index
           statement.execute(
             """
-                CREATE INDEX IF NOT EXISTS usage_user_model ON usage(apiKey, model);
+                CREATE INDEX IF NOT EXISTS usage_user_model ON usage(apiKey, date_window, model);
             """.trimIndent()
           )
         }
@@ -219,8 +222,8 @@ open class DatabaseServices(
           upsertSession(connection, session, apiKey)
           connection.prepareStatement(
             """
-                INSERT INTO usage (session_id, apiKey, model, input_tokens, output_tokens, cost)
-                VALUES (?, ?, ?, ?, ?, ?);
+                INSERT INTO usage (session_id, apiKey, model, input_tokens, output_tokens, cost, date_window)
+                VALUES (?, ?, ?, ?, ?, ?, ?);
             """.trimIndent()
           ).apply {
             setString(1, session.toString())
@@ -229,6 +232,7 @@ open class DatabaseServices(
             setInt(4, tokens.prompt_tokens)
             setInt(5, tokens.completion_tokens)
             setDouble(6, tokens.cost ?: 0.0)
+            setString(7, getDateWindow())
             execute()
           }
           connection.commit()
@@ -239,17 +243,22 @@ open class DatabaseServices(
       }
     }
 
+    private fun getDateWindow(): String {
+      return SimpleDateFormat("yyyy-MM").format(Date())
+    }
+
     override fun getUserUsageSummary(apiKey: String) = useConnection { connection ->
       connection.autoCommit = false
       connection.prepareStatement(
         """
             SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost) AS cost
             FROM usage
-            WHERE apiKey = ?
+            WHERE apiKey = ?, date_window = ?
             GROUP BY model;
         """.trimIndent()
       ).apply {
         setString(1, apiKey)
+        setString(2, getDateWindow())
         executeQuery().use { resultSet ->
           val map = HashMap<OpenAIModel, ApiModel.Usage>()
           while (resultSet.next()) {

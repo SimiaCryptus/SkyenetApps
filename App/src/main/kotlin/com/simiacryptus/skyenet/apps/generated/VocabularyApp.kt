@@ -1,0 +1,287 @@
+package com.simiacryptus.skyenet.apps.generated
+
+import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.ImageModels
+import com.simiacryptus.jopenai.util.JsonUtil.toJson
+import com.simiacryptus.skyenet.apps.AgentPatterns
+import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.platform.StorageInterface
+import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
+import org.slf4j.LoggerFactory
+import java.awt.image.BufferedImage
+import java.util.function.Function
+
+
+open class VocabularyApp(
+  applicationName: String = "Vocabulary List Generator",
+  path: String = "/vocabulary",
+) : ApplicationServer(
+  applicationName = applicationName,
+  path = path,
+) {
+
+  data class Settings(
+    val model: ChatModels = ChatModels.GPT35Turbo,
+    val temperature: Double = 0.1,
+  )
+
+  override val settingsClass: Class<*> get() = Settings::class.java
+
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : Any> initSettings(session: Session): T? = Settings() as T
+
+  override fun userMessage(
+    session: Session,
+    user: User?,
+    userMessage: String,
+    ui: ApplicationInterface,
+    api: API
+  ) {
+    try {
+      val settings = getSettings<Settings>(session, user)
+      VocabularyAgent(
+        user = user,
+        session = session,
+        dataStorage = dataStorage,
+        api = api,
+        ui = ui,
+        model = settings?.model ?: ChatModels.GPT35Turbo,
+        temperature = settings?.temperature ?: 0.3,
+      ).generate(userMessage)
+    } catch (e: Throwable) {
+      log.warn("Error", e)
+    }
+  }
+
+  companion object {
+    private val log = LoggerFactory.getLogger(VocabularyApp::class.java)
+  }
+
+}
+
+
+open class VocabularyAgent(
+  user: User?,
+  session: Session,
+  dataStorage: StorageInterface,
+  val ui: ApplicationInterface,
+  val api: API,
+  model: ChatModels = ChatModels.GPT35Turbo,
+  temperature: Double = 0.3,
+) : ActorSystem<VocabularyActors.ActorType>(
+  VocabularyActors(
+    model = model,
+    temperature = temperature,
+  ).actorMap, dataStorage, user, session
+) {
+
+  @Suppress("UNCHECKED_CAST")
+  private val inputProcessorActor by lazy { getActor(VocabularyActors.ActorType.INPUT_PROCESSOR_ACTOR) as ParsedActor<VocabularyActors.UserInput> }
+  private val aidefinitionGeneratorActor by lazy { getActor(VocabularyActors.ActorType.AIDEFINITION_GENERATOR_ACTOR) as ParsedActor<VocabularyActors.TermDefinition> }
+  private val illustrationGeneratorActor by lazy { getActor(VocabularyActors.ActorType.ILLUSTRATION_GENERATOR_ACTOR) as ImageActor }
+
+  fun generate(userInput: String) {
+    val task = ui.newTask()
+    try {
+      task.echo(userInput)
+      val parsedInput = AgentPatterns.iterate(
+        input = userInput,
+        actor = inputProcessorActor,
+        toInput = { listOf(it) },
+        api = api,
+        ui = ui,
+      ).obj
+
+      task.add(renderMarkdown("```json\n${toJson(parsedInput)}\n```"))
+
+      // Initialize lists to hold terms, definitions, and illustrations
+      val terms = parsedInput.terms
+      val definitions = mutableListOf<String>()
+      val illustrations = mutableListOf<BufferedImage>()
+
+      // Process each term to generate its definition and illustration
+      for (term in terms) {
+        val response = aidefinitionGeneratorActor.answer(
+          listOf(
+            "Generate a definition for the term '$term' tailored for a '${parsedInput.targetAudience}' audience in a '${parsedInput.definitionStyle}' style."
+          ), api = api
+        )
+        val definition = VocabularyActors.TermDefinition(term, response.text).definition
+        definitions.add(definition)
+        task.add("Generated definition for term: $term")
+        task.verbose(renderMarkdown("```json\n${toJson(definition)}\n```"))
+
+        val illustration = illustrationGeneratorActor.answer(
+          listOf(
+            "Generate an illustration that visually represents the term '$term' to ${parsedInput.targetAudience}."
+          ), api = api
+        ).image
+        illustrations.add(illustration)
+        task.add("Generated illustration for term: $term")
+        task.image(illustration)
+      }
+
+      task.complete(
+        "<a href='${
+          task.saveFile(
+            "vocabulary.html",
+            compileToHtml(terms.zip(definitions.zip(illustrations)) { term, defAndIllus ->
+              CompiledTerm(term, defAndIllus.first, defAndIllus.second)
+            }, task).toByteArray()
+          )
+        }'>vocabulary.html</a> Updated"
+      )
+    } catch (e: Throwable) {
+      task.error(ui, e)
+      throw e
+    }
+  }
+
+  data class CompiledTerm(
+    val term: String,
+    val definition: String,
+    val illustration: BufferedImage
+  )
+
+  fun compileToHtml(terms: List<CompiledTerm>, task: SessionTask): String {
+    return buildString {
+      append("<html><body><ul>")
+      terms.forEach { term ->
+        append(
+          "<li><h2>${term.term}</h2><p>${term.definition}</p><img src='${
+            term.illustration.let {
+              val relativePath = term.term + ".jpg"
+              task.saveFile(relativePath, it.toJpgBytes())
+              relativePath
+            }
+          }' alt='${term.term}'/></li>"
+        )
+      }
+      append("</ul></body></html>")
+    }
+  }
+
+  companion object {
+    private val log = org.slf4j.LoggerFactory.getLogger(VocabularyAgent::class.java)
+
+  }
+}
+
+private fun BufferedImage.toJpgBytes(): ByteArray {
+  java.io.ByteArrayOutputStream().use { os ->
+    javax.imageio.ImageIO.write(this, "jpg", os)
+    return os.toByteArray()
+  }
+}
+
+
+class VocabularyActors(
+  val model: ChatModels = ChatModels.GPT4Turbo,
+  val temperature: Double = 0.3,
+) {
+
+
+  val userInterfaceActor = SimpleActor(
+    prompt = """
+            You are an interactive user interface assistant. Your role is to help users create a vocabulary list. For each term, you will guide them to define the term in a given style for a specified target audience. Additionally, you will assist in producing an illustration to represent each term.
+        """.trimIndent(),
+    name = "UserInterfaceActor",
+    model = ChatModels.GPT35Turbo,
+    temperature = 0.3
+  )
+
+
+  interface UserInputParser : Function<String, UserInput> {
+    override fun apply(text: String): UserInput
+  }
+
+  data class UserInput(
+    val terms: List<String>,
+    val targetAudience: String,
+    val definitionStyle: String,
+    val outputFormat: String
+  )
+
+  val inputProcessorActor = ParsedActor(
+    parserClass = UserInputParser::class.java,
+    model = ChatModels.GPT35Turbo,
+    prompt = """
+            Parse and validate the input terms and user preferences for generating a vocabulary list. Ensure the terms are valid, and preferences like target audience, definition style, and output format are correctly identified.
+        """.trimIndent()
+  )
+
+
+  interface TermDefinitionParser : Function<String, TermDefinition> {
+    override fun apply(text: String): TermDefinition
+  }
+
+  data class TermDefinition(
+    val term: String,
+    val definition: String
+  )
+
+  val aidefinitionGeneratorActor = ParsedActor(
+    parserClass = TermDefinitionParser::class.java,
+    prompt = """
+            You are an AI designed to generate definitions for terms. For each term provided, produce a clear and concise definition that is easy to understand.
+        """.trimIndent(),
+    model = ChatModels.GPT35Turbo,
+    temperature = 0.3
+  )
+
+
+  val illustrationGeneratorActor = ImageActor(
+    prompt = "Generate an illustration that visually represents the given term and its definition in a creative and understandable manner.",
+    imageModel = ImageModels.DallE3,
+    temperature = 0.3,
+    width = 1024,
+    height = 1024
+  )
+
+
+  interface VocabularyListParser : Function<String, VocabularyList> {
+    override fun apply(text: String): VocabularyList
+  }
+
+  data class VocabularyList(
+    val terms: List<TermData>,
+    val preferences: UserPreferences
+  )
+
+  data class TermData(
+    val term: String,
+    val definition: String,
+    val illustration: String // Assuming illustration is represented as a URL or a path to the image
+  )
+
+  data class UserPreferences(
+    val targetAudience: String,
+    val definitionStyle: String,
+    val outputFormat: String
+  )
+
+
+  enum class ActorType {
+    USER_INTERFACE_ACTOR,
+    INPUT_PROCESSOR_ACTOR,
+    AIDEFINITION_GENERATOR_ACTOR,
+    ILLUSTRATION_GENERATOR_ACTOR,
+  }
+
+  val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
+    ActorType.USER_INTERFACE_ACTOR to userInterfaceActor,
+    ActorType.INPUT_PROCESSOR_ACTOR to inputProcessorActor,
+    ActorType.AIDEFINITION_GENERATOR_ACTOR to aidefinitionGeneratorActor,
+    ActorType.ILLUSTRATION_GENERATOR_ACTOR to illustrationGeneratorActor,
+  )
+
+  companion object {
+    val log = org.slf4j.LoggerFactory.getLogger(VocabularyActors::class.java)
+  }
+}

@@ -84,7 +84,7 @@ open class IllustratedStorybookAgent(
       val savedStorybookPath = fileManager(htmlStorybook)
       task.complete("<a href='$savedStorybookPath' target='_blank'>Storybook Ready!</a>")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -99,7 +99,7 @@ open class IllustratedStorybookAgent(
       agentSystemArchitecture(answer.obj)
       task.complete("Generation complete!")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -207,7 +207,7 @@ open class IllustratedStorybookAgent(
       task.complete("Storybook complete.")
       return htmlContent.toString()
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -234,7 +234,7 @@ open class IllustratedStorybookAgent(
       // Return the path to the saved file as a string
       return "fileIndex/$session/$fileName"
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     } finally {
       task.complete("File management complete.")
@@ -270,7 +270,7 @@ open class IllustratedStorybookAgent(
       // Return the generated AgentSystemArchitectureActors.image
       return imageHtml to illustrationResponse.image
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       return null
     }
   }
@@ -305,7 +305,7 @@ open class IllustratedStorybookAgent(
       // Return the parsed story data
       return storyResponse.obj
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     } finally {
       task.complete("Story generation complete.")

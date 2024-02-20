@@ -123,7 +123,7 @@ open class SoftwareProjectGeneratorAgent(
 
       task.complete("Software project generation is complete.")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -155,7 +155,7 @@ open class SoftwareProjectGeneratorAgent(
 
       task.complete("Project structure analysis initiated. Please enter your project description.")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -180,7 +180,7 @@ open class SoftwareProjectGeneratorAgent(
       task.complete("Code generation complete.")
       return generatedCode
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -205,7 +205,7 @@ open class SoftwareProjectGeneratorAgent(
 
       task.complete("All features have been developed.")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -247,7 +247,7 @@ open class SoftwareProjectGeneratorAgent(
 
       task.complete("Project refinement complete.")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -272,7 +272,7 @@ open class SoftwareProjectGeneratorAgent(
 
       task.complete("Project finalization is complete.")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }

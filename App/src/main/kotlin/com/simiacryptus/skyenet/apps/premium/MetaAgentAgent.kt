@@ -19,9 +19,11 @@ import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
+import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.intellij.lang.annotations.Language
 
 
@@ -41,7 +43,7 @@ open class MetaAgentAgent(
       //"session" to session,
       //"dataStorage" to dataStorage,
       "ui" to ui,
-      "api" to API(),
+      "api" to api,
       "pool" to ApplicationServices.clientManager.getPool(session, user, dataStorage),
     ),
     model = model,
@@ -63,7 +65,8 @@ open class MetaAgentAgent(
   private val flowStepDesigner by lazy { getActor(ActorType.FLOW_STEP) as CodingActor }
 
 
-  @Language("kotlin") val standardImports = """
+  @Language("kotlin")
+  val standardImports = """
         |import com.simiacryptus.jopenai.API
         |import com.simiacryptus.jopenai.models.ChatModels
         |import com.simiacryptus.skyenet.core.actors.BaseActor
@@ -132,8 +135,10 @@ open class MetaAgentAgent(
         |
         |open class ${classBaseName}App(
         |    applicationName: String = "${design.obj.name}",
+        |    path: String = "/${design.obj.path ?: ""}",
         |) : ApplicationServer(
         |    applicationName = applicationName,
+        |    path = path,
         |) {
         |
         |    data class Settings(
@@ -240,7 +245,7 @@ open class MetaAgentAgent(
       //language=HTML
       task.complete(renderMarkdown(code))
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -265,7 +270,7 @@ open class MetaAgentAgent(
         try {
           task.verbose(toJson(design.obj))
         } catch (e: Throwable) {
-          task.error(e)
+          task.error(ui, e)
         }
       }
     )
@@ -281,13 +286,14 @@ open class MetaAgentAgent(
         try {
           task.verbose(toJson(design.obj))
         } catch (e: Throwable) {
-          task.error(e)
+          task.error(ui, e)
         }
       }
     )
     return object : ParsedResponse<AgentDesign>(AgentDesign::class.java) {
       override val text get() = flowDesign.text + "\n" + actorDesignParsedResponse.text
-      override val obj get() = AgentDesign(
+      override val obj
+        get() = AgentDesign(
           name = flowDesign.obj.name,
           description = flowDesign.obj.description,
           mainInput = flowDesign.obj.mainInput,
@@ -319,7 +325,7 @@ open class MetaAgentAgent(
           .joinToString("\n\n") { it.trimIndent() }).sortCode(),
         autoEvaluate = autoEvaluate
       )
-      val mainFunction = flowStepDesigner.answer(codeRequest, api = api).code
+      val mainFunction = execWrap { flowStepDesigner.answer(codeRequest, api = api).code }
       task.verbose(
         renderMarkdown(
           """
@@ -333,10 +339,10 @@ open class MetaAgentAgent(
       return mainFunction
     } catch (e: FailedToImplementException) {
       task.verbose(e.code ?: throw e)
-      task.error(e)
+      task.error(ui, e)
       return e.code ?: throw e
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }
@@ -350,7 +356,7 @@ open class MetaAgentAgent(
       try {
         implementActor(task, actorDesign, userMessage, design)
       } catch (e: Throwable) {
-        task.error(e)
+        task.error(ui, e)
         throw e
       }
     }
@@ -382,13 +388,15 @@ open class MetaAgentAgent(
       ),
       autoEvaluate = autoEvaluate
     )
-    val response = when (type.lowercase()) {
-      "simple" -> simpleActorDesigner.answer(codeRequest, api = api)
-      "parsed" -> parsedActorDesigner.answer(codeRequest, api = api)
-      "coding" -> codingActorDesigner.answer(codeRequest, api = api)
-      "image" -> imageActorDesigner.answer(codeRequest, api = api)
-      "mp3" -> throw NotImplementedError() // TODO: Implement
-      else -> throw IllegalArgumentException("Unknown actor type: $type")
+    val response = execWrap {
+      when (type.lowercase()) {
+        "simple" -> simpleActorDesigner.answer(codeRequest, api = api)
+        "parsed" -> parsedActorDesigner.answer(codeRequest, api = api)
+        "coding" -> codingActorDesigner.answer(codeRequest, api = api)
+        "image" -> imageActorDesigner.answer(codeRequest, api = api)
+        "mp3" -> throw NotImplementedError() // TODO: Implement
+        else -> throw IllegalArgumentException("Unknown actor type: $type")
+      }
     }
     val code = response.code
     //language=HTML
@@ -405,6 +413,22 @@ open class MetaAgentAgent(
     return actorDesign.name to code
   }
 
+
+  private fun <T> execWrap(fn: () -> T): T {
+    val classLoader = Thread.currentThread().contextClassLoader
+    val prevCL = KotlinInterpreter.classLoader
+    KotlinInterpreter.classLoader = classLoader //req.javaClass.classLoader
+    return try {
+      WebAppClassLoader.runWithServerClassAccess {
+        require(null != classLoader.loadClass("org.eclipse.jetty.server.Response"))
+        require(null != classLoader.loadClass("org.eclipse.jetty.server.Request"))
+        fn()
+      }
+    } finally {
+      KotlinInterpreter.classLoader = prevCL
+    }
+  }
+
   private fun getFlowStepCode(
     userMessage: String,
     design: ParsedResponse<AgentDesign>,
@@ -414,24 +438,27 @@ open class MetaAgentAgent(
     design.obj.logicFlow?.items?.forEach { logicFlowItem ->
       val message = ui.newTask()
       try {
+
         message.header("Logic Flow: ${logicFlowItem.name}")
         val code = try {
-          flowStepDesigner.answer(
-            CodingActor.CodeRequest(
-              messages = listOf(
-                userMessage to Role.user,
-                design.text to Role.assistant,
-                "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
-                  logicFlowItem.inputs?.joinToString<DataInfo>(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
-                })`" to Role.user
-              ),
-              autoEvaluate = autoEvaluate,
-              codePrefix = (actorImpls.values + flowImpls.values)
-                .joinToString("\n\n") { it.trimIndent() }.sortCode()
-            ), api = api
-          ).code
+          execWrap {
+            flowStepDesigner.answer(
+              CodingActor.CodeRequest(
+                messages = listOf(
+                  userMessage to Role.user,
+                  design.text to Role.assistant,
+                  "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
+                    logicFlowItem.inputs?.joinToString<DataInfo>(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
+                  })`" to Role.user
+                ),
+                autoEvaluate = autoEvaluate,
+                codePrefix = (actorImpls.values + flowImpls.values)
+                  .joinToString("\n\n") { it.trimIndent() }.sortCode()
+              ), api = api
+            ).code
+          }
         } catch (e: FailedToImplementException) {
-          message.error(e)
+          message.error(ui, e)
           autoEvaluate = false
           e.code
         }
@@ -448,7 +475,7 @@ open class MetaAgentAgent(
         message.complete()
         flowImpls[logicFlowItem.name!!] = code!!
       } catch (e: Throwable) {
-        message.error(e)
+        message.error(ui, e)
         throw e
       }
     }

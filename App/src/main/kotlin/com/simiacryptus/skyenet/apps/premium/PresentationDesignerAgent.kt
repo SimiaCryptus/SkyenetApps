@@ -67,7 +67,7 @@ open class PresentationDesignerAgent(
           try {
             slideContents(idx, content, slideTask)
           } catch (e: Throwable) {
-            slideTask.error(e)
+            slideTask.error(ui, e)
             null
           } finally {
             slideTask.complete("Slide $idx complete.")
@@ -80,7 +80,7 @@ open class PresentationDesignerAgent(
 
       task.complete("Presentation generation complete.")
     } catch (e: Throwable) {
-      task.error(e)
+      task.error(ui, e)
       throw e
     }
   }

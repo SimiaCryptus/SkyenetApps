@@ -68,6 +68,7 @@ class MetaAgentActors(
 
     data class AgentDesign(
         val name: String? = null,
+        val path: String? = null,
         val description: String? = null,
         val mainInput: DataInfo? = null,
         val logicFlow: LogicFlow? = null,
@@ -294,7 +295,7 @@ class MetaAgentActors(
         """.trimMargin().trim(),
         model = model,
         temperature = temperature,
-    )
+    ).apply { evalFormat = false }
 
     @Language("Markdown")
     fun imageActorDesigner() = CodingActor(
@@ -339,7 +340,7 @@ class MetaAgentActors(
         """.trimMargin().trim(),
         model = model,
         temperature = temperature,
-    )
+    ).apply { evalFormat = false }
 
     @Language("Markdown")
     fun parsedActorDesigner() = CodingActor(
@@ -403,7 +404,7 @@ class MetaAgentActors(
         """.trimMargin().trim(),
         model = model,
         temperature = temperature,
-    )
+    ).apply { evalFormat = false }
 
     @Language("Markdown")
     fun codingActorDesigner() = CodingActor(
@@ -467,7 +468,7 @@ class MetaAgentActors(
         """.trimMargin().trim(),
         model = model,
         temperature = temperature,
-    )
+    ).apply { evalFormat = false }
 
     @Language("Markdown")
     fun flowStepDesigner() = CodingActor(
@@ -546,7 +547,7 @@ class MetaAgentActors(
         runtimeSymbols = mapOf(
             "log" to log
         ),
-    )
+    ).apply { evalFormat = false }
 
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(MetaAgentActors::class.java)
