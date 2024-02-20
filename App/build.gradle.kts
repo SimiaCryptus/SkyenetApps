@@ -51,6 +51,9 @@ dependencies {
   implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
   implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
 
+  //org.postgresql.Driver
+  implementation("org.postgresql:postgresql:42.7.1")
+
   implementation("com.zaxxer:HikariCP:5.1.0")
   implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.16.1")
   implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.21.9")

@@ -36,7 +36,7 @@ class AwsCodingApp : ApplicationServer(
       model = (settings?.model ?: ChatModels.GPT35Turbo),
     ) {
       override fun getInterpreterString(): String {
-        return AwsCodingApp::class.java.name + ":${settings?.region}, ${settings?.profile})"
+        return AwsCodingApp::class.java.name + ":${settings?.region},${settings?.profile}"
       }
 
     }.start(

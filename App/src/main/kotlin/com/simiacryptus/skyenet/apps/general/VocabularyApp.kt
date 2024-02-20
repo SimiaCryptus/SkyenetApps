@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.generated
+package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
@@ -8,10 +8,11 @@ import com.simiacryptus.skyenet.apps.AgentPatterns
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
+import com.simiacryptus.skyenet.core.platform.StorageInterface.Companion.long64
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.skyenet.webui.session.SessionTask.Companion.toPng
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
@@ -53,6 +54,7 @@ open class VocabularyApp(
         ui = ui,
         model = settings?.model ?: ChatModels.GPT35Turbo,
         temperature = settings?.temperature ?: 0.3,
+        path = path
       ).generate(userMessage)
     } catch (e: Throwable) {
       log.warn("Error", e)
@@ -74,6 +76,7 @@ open class VocabularyAgent(
   val api: API,
   model: ChatModels = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
+  val path: String,
 ) : ActorSystem<VocabularyActors.ActorType>(
   VocabularyActors(
     model = model,
@@ -89,7 +92,6 @@ open class VocabularyAgent(
   fun generate(userInput: String) {
     val task = ui.newTask()
     try {
-      task.echo(userInput)
       val parsedInput = AgentPatterns.iterate(
         input = userInput,
         actor = inputProcessorActor,
@@ -106,34 +108,53 @@ open class VocabularyAgent(
       val illustrations = mutableListOf<BufferedImage>()
 
       // Process each term to generate its definition and illustration
-      for (term in terms) {
-        val response = aidefinitionGeneratorActor.answer(
-          listOf(
-            "Generate a definition for the term '$term' tailored for a '${parsedInput.targetAudience}' audience in a '${parsedInput.definitionStyle}' style."
-          ), api = api
-        )
-        val definition = VocabularyActors.TermDefinition(term, response.text).definition
-        definitions.add(definition)
-        task.add("Generated definition for term: $term")
-        task.verbose(renderMarkdown("```json\n${toJson(definition)}\n```"))
+      try {
+        for (term in terms) {
+          val response = aidefinitionGeneratorActor.answer(
+            listOf(
+              "Generate a definition for the term '$term' tailored for a '${parsedInput.targetAudience}' audience in a '${parsedInput.style}' style."
+            ), api = api
+          )
+          val definition = VocabularyActors.TermDefinition(term, response.text).definition
+          definitions.add(definition)
+          task.add("Generated definition for term: $term")
+          task.verbose(renderMarkdown("```json\n${toJson(definition)}\n```"))
 
-        val illustration = illustrationGeneratorActor.answer(
-          listOf(
-            "Generate an illustration that visually represents the term '$term' to ${parsedInput.targetAudience}."
-          ), api = api
-        ).image
-        illustrations.add(illustration)
-        task.add("Generated illustration for term: $term")
-        task.image(illustration)
+          val illustration = illustrationGeneratorActor.answer(
+            listOf(
+              "Generate an illustration that visually represents the term '$term' to ${parsedInput.targetAudience}."
+            ), api = api
+          ).image
+          illustrations.add(illustration)
+          task.add("Generated illustration for term: $term")
+          task.image(illustration)
+        }
+      } catch (e: Throwable) {
+        task.error(ui, e)
+        throw e
       }
 
       task.complete(
         "<a href='${
           task.saveFile(
             "vocabulary.html",
-            compileToHtml(terms.zip(definitions.zip(illustrations)) { term, defAndIllus ->
-              CompiledTerm(term, defAndIllus.first, defAndIllus.second)
-            }, task).toByteArray()
+            buildString {
+              append("<html><body><ul>")
+              append(terms.zip(definitions.zip(illustrations)) { term, defAndIllus ->
+                CompiledTerm(term, defAndIllus.first, defAndIllus.second)
+              }.joinToString("\n") { term ->
+                val imgname = "${long64()}.png"
+                val saveFile = task.saveFile(imgname, term.illustration.toPng())
+                task.add("<img src='$path/$saveFile' alt='${term.term}' />")
+                """<li>
+                  |<h2>${term.term}</h2>
+                  |<p>${term.definition}</p>
+                  |<img src="$imgname" alt='${term.term}' />
+                  |</li>
+                  |""".trimMargin()
+              })
+              append("</ul></body></html>")
+            }.toByteArray()
           )
         }'>vocabulary.html</a> Updated"
       )
@@ -148,24 +169,6 @@ open class VocabularyAgent(
     val definition: String,
     val illustration: BufferedImage
   )
-
-  fun compileToHtml(terms: List<CompiledTerm>, task: SessionTask): String {
-    return buildString {
-      append("<html><body><ul>")
-      terms.forEach { term ->
-        append(
-          "<li><h2>${term.term}</h2><p>${term.definition}</p><img src='${
-            term.illustration.let {
-              val relativePath = term.term + ".jpg"
-              task.saveFile(relativePath, it.toJpgBytes())
-              relativePath
-            }
-          }' alt='${term.term}'/></li>"
-        )
-      }
-      append("</ul></body></html>")
-    }
-  }
 
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(VocabularyAgent::class.java)
@@ -204,8 +207,7 @@ class VocabularyActors(
   data class UserInput(
     val terms: List<String>,
     val targetAudience: String,
-    val definitionStyle: String,
-    val outputFormat: String
+    val style: String
   )
 
   val inputProcessorActor = ParsedActor(
@@ -243,29 +245,6 @@ class VocabularyActors(
     width = 1024,
     height = 1024
   )
-
-
-  interface VocabularyListParser : Function<String, VocabularyList> {
-    override fun apply(text: String): VocabularyList
-  }
-
-  data class VocabularyList(
-    val terms: List<TermData>,
-    val preferences: UserPreferences
-  )
-
-  data class TermData(
-    val term: String,
-    val definition: String,
-    val illustration: String // Assuming illustration is represented as a URL or a path to the image
-  )
-
-  data class UserPreferences(
-    val targetAudience: String,
-    val definitionStyle: String,
-    val outputFormat: String
-  )
-
 
   enum class ActorType {
     USER_INTERFACE_ACTOR,

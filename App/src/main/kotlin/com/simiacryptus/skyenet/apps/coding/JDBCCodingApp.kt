@@ -1,9 +1,5 @@
 package com.simiacryptus.skyenet.apps.coding
 
-import com.google.api.client.auth.oauth2.Credential
-import com.google.api.client.googleapis.apache.v2.GoogleApacheHttpTransport
-import com.google.api.client.json.gson.GsonFactory
-import com.google.api.services.gmail.Gmail
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.skyenet.core.platform.Session
@@ -12,11 +8,13 @@ import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.servlet.InterpreterAndTools
-import java.util.function.Supplier
+import java.sql.Connection
+import java.sql.DriverManager
+import java.util.function.Consumer
 
-class GmailCodingApp : ApplicationServer(
-  applicationName = "GMail Coding Assistant v1.0",
-  path = "/gmail",
+class JDBCCodingApp : ApplicationServer(
+  applicationName = "JDBC Coding Assistant v1.0",
+  path = "/jdbc",
 ) {
   override fun userMessage(
     session: Session,
@@ -26,12 +24,11 @@ class GmailCodingApp : ApplicationServer(
     api: API
   ) {
     val settings = getSettings(session, user) ?: Settings()
-
-    val gmailSvc: Gmail = Gmail
-      .Builder(GoogleApacheHttpTransport.newTrustedTransport(), GsonFactory.getDefaultInstance(), user?.credential as Credential)
-      .setApplicationName(applicationName)
-      .build()
-
+    val jdbcConnection: Connection = DriverManager.getConnection(
+      settings.jdbcUrl,
+      settings.jdbcUser,
+      settings.jdbcPassword
+    )
     object : ToolAgent<KotlinInterpreter>(
       api = api,
       dataStorage = dataStorage,
@@ -39,49 +36,54 @@ class GmailCodingApp : ApplicationServer(
       user = user,
       ui = ui,
       interpreter = KotlinInterpreter::class,
-      symbols = getSymbols(gmailSvc),
+      symbols = getSymbols(jdbcConnection),
       temperature = (settings.temperature ?: 0.1),
       model = settings.model,
     ) {
-      override fun getInterpreterString(): String = GmailCodingApp::class.java.name
+      override fun getInterpreterString(): String = JDBCCodingApp::class.java.name
 
     }.start(
       userMessage = userMessage,
     )
   }
 
-  fun getSymbols(gmailSvc: Gmail) = mapOf(
-    "gmail" to GmailSupplier(gmailSvc),
+  fun getSymbols(jdbcConnection: Connection) = mapOf(
+    "withConnection" to JDBCSupplier(jdbcConnection),
   )
 
-  class GmailSupplier(private val gmailSvc: Gmail) : Supplier<Gmail> {
-    override fun get(): Gmail {
-      return gmailSvc
+  class JDBCSupplier(private val jdbcConnection: Connection) : Consumer<(Connection) -> Unit> {
+    override fun accept(function: (Connection) -> Unit) {
+      function(jdbcConnection)
     }
   }
 
   data class Settings(
     val temperature: Double? = 0.1,
     val model: ChatModels = ChatModels.GPT4Turbo,
+    val jdbcUrl: String = "jdbc:postgresql://localhost:5432/postgres",
+    val jdbcUser: String = "postgres",
+    val jdbcPassword: String = "password",
+    val jdbcDriver: String = "org.postgresql.Driver"
   )
 
   override val settingsClass: Class<*> get() = Settings::class.java
+
   @Suppress("UNCHECKED_CAST")
-  override fun <T : Any> initSettings(session: Session): T? = Settings() as T
+  override fun <T : Any> initSettings(session: Session): T = Settings() as T
 
   companion object {
     fun fromString(user: User, string: String): InterpreterAndTools {
-      val gmailSvc: Gmail = Gmail
-        .Builder(GoogleApacheHttpTransport.newTrustedTransport(), GsonFactory.getDefaultInstance(), user?.credential as Credential)
-        .setApplicationName("GMail Coding Assistant v1.0")
-        .build()
-
       return InterpreterAndTools(
         KotlinInterpreter::class.java,
-        GmailCodingApp().getSymbols(gmailSvc),
+        JDBCCodingApp().getSymbols(
+          DriverManager.getConnection(
+            "jdbc:postgresql://localhost:5432/postgres",
+            "postgres",
+            ""
+          )
+        )
       )
     }
   }
 
 }
-

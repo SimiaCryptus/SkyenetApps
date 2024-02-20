@@ -3,13 +3,15 @@ package com.simiacryptus.skyenet
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.apps.coding.AwsCodingApp
 import com.simiacryptus.skyenet.apps.coding.BashCodingApp
+import com.simiacryptus.skyenet.apps.coding.JDBCCodingApp
 import com.simiacryptus.skyenet.apps.coding.PowershellCodingApp
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
+import com.simiacryptus.skyenet.apps.general.VocabularyApp
 import com.simiacryptus.skyenet.apps.general.WebDevApp
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
 import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
-import com.simiacryptus.skyenet.apps.generated.VocabularyApp
+import com.simiacryptus.skyenet.apps.generated.TestGeneratorApp
 import com.simiacryptus.skyenet.apps.premium.DebateApp
 import com.simiacryptus.skyenet.apps.premium.MetaAgentApp
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
@@ -57,11 +59,13 @@ open class AppServer(
       ChildWebApp("/presentation", PresentationDesignerApp()),
       ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName)),
       ChildWebApp("/vocabulary", VocabularyApp()),
+      ChildWebApp("/testgenerator", TestGeneratorApp()),
       ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName)),
       ChildWebApp("/aws", AwsCodingApp()),
       ChildWebApp("/bash", BashCodingApp()),
       ChildWebApp("/powershell", PowershellCodingApp()),
       ChildWebApp("/webdev", WebDevApp()),
+      ChildWebApp("/jdbc", JDBCCodingApp()),
     )
   }
 
