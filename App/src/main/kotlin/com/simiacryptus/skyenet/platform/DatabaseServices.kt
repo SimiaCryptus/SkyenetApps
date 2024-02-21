@@ -248,6 +248,7 @@ open class DatabaseServices(
     }
 
     override fun getUserUsageSummary(apiKey: String) = useConnection { connection ->
+      if(apiKey.isNullOrEmpty()) return@useConnection emptyMap()
       connection.autoCommit = false
       connection.prepareStatement(
         """
