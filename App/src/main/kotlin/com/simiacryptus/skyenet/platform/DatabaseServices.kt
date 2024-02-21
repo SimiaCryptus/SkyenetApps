@@ -252,9 +252,13 @@ open class DatabaseServices(
       connection.autoCommit = false
       connection.prepareStatement(
         """
-            SELECT model, SUM(input_tokens) AS input_tokens, SUM(output_tokens) AS output_tokens, SUM(cost) AS cost
+            SELECT 
+                model, 
+                SUM(input_tokens) AS input_tokens, 
+                SUM(output_tokens) AS output_tokens, 
+                SUM(cost) AS cost
             FROM usage
-            WHERE apiKey = ?, date_window = ?
+            WHERE apiKey = ? AND date_window = ?
             GROUP BY model;
         """.trimIndent()
       ).apply {
