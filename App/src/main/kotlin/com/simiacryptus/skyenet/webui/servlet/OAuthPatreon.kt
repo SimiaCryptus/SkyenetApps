@@ -30,11 +30,14 @@ open class OAuthPatreon(
 
 
   override fun configure(context: WebAppContext, addFilter: Boolean): WebAppContext {
+   log.info("Configuring OAuthPatreon with redirectUri: $redirectUri and addFilter: $addFilter")
     context.addServlet(ServletHolder("patreonLogin", LoginServlet()), "/login")
     context.addServlet(ServletHolder("patreonLogin", LoginServlet()), "/patreonLogin")
     context.addServlet(ServletHolder("patreonOAuth2callback", CallbackServlet()), "/patreonOAuth2callback")
     if (addFilter) context.addFilter(FilterHolder(SessionIdFilter({ request ->
-      setOf("/patreonLogin", "/patreonOAuth2callback").none { request.requestURI.startsWith(it) }
+      setOf("/patreonLogin", "/patreonOAuth2callback").none {
+        request.requestURI.startsWith(it)
+      }
     }, "/patreonLogin")), "/*", EnumSet.of(DispatcherType.REQUEST))
     return context
   }
@@ -44,6 +47,7 @@ open class OAuthPatreon(
 
   private inner class LoginServlet : HttpServlet() {
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+     log.info("Handling login request from: ${req.remoteAddr}")
       resp.sendRedirect(
         patreonAuthorizationUrl + "?" +
           (
@@ -63,6 +67,7 @@ open class OAuthPatreon(
 
   private inner class CallbackServlet : HttpServlet() {
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+     log.info("Received OAuth callback from: ${req.remoteAddr}")
       log.info(
         "OAuth Callback: \n${
           req.parameterMap.toList().joinToString("\n") { "\t${it.first} = ${it.second.joinToString()}" }
@@ -70,6 +75,7 @@ open class OAuthPatreon(
       )
       val code = req.getParameter("code")?.urlEncode
       if (code != null) {
+       log.info("Processing authorization code: $code")
         val body =
           "code=$code&grant_type=authorization_code&client_id=${config?.clientId?.urlEncode}&client_secret=${config?.clientSecret?.urlEncode}&redirect_uri=${redirectUri.urlEncode}"
         log.info("Body: $body")
@@ -91,6 +97,7 @@ open class OAuthPatreon(
           picture = attributes.image_url,
         )
         val accessToken = UUID.randomUUID().toString()
+       log.info("Generated new access token: $accessToken for user: $email")
         ApplicationServices.authenticationManager.putUser(accessToken = accessToken, user = user)
         log.info("User $user logged in with session $accessToken")
         val sessionCookie = Cookie(AuthenticationInterface.AUTH_COOKIE, accessToken)
@@ -105,14 +112,17 @@ open class OAuthPatreon(
           log.info("Redirect Bug Workaround: $redirect")
           redirect = redirect.removeSuffix("None")
         }
+       log.info("Redirecting user to: $redirect")
         resp.sendRedirect(redirect)
       } else {
+       log.error("Authorization code not found in request from: ${req.remoteAddr}")
         resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Authorization code not found")
       }
     }
   }
 
   private fun getUserInfo(authorizationToken: String): PatreonUserInfo {
+   log.info("Fetching user info with token: $authorizationToken")
     Request.create(Method.GET, URI("https://www.patreon.com/api/oauth2/api/current_user"))
       .addHeader("authorization", "Bearer $authorizationToken")
       .execute().returnContent().asString().also {
