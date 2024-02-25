@@ -22,8 +22,7 @@ open class DatabaseServices(
     var connection: Connection? = null
     synchronized(connectionPool) {
       while (connectionPool.isNotEmpty()) {
-        connection = connectionPool.first()
-        connectionPool.remove(connection)
+        connection = connectionPool.firstOrNull()?.apply { connectionPool.remove(this) }
         if (connection?.isClosed == false) break
         else connection = null
       }
