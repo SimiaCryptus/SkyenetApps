@@ -6,6 +6,7 @@ import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.skyenet.apps.AgentPatterns
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.ClientManager
@@ -155,10 +156,23 @@ open class IllustratedStorybookAgent(
     val task = ui.newTask()
     try {
       task.echo(userMessage)
-      val answer = requirementsActor.answer(listOf(userMessage), api = api)
-      task.add(MarkdownUtil.renderMarkdown(answer.text))
-      task.verbose(JsonUtil.toJson(answer.obj))
-      agentSystemArchitecture(answer.obj)
+      val parsedInput = AgentPatterns.iterate(
+        input = userMessage,
+        actor = requirementsActor,
+        toInput = { listOf(it) },
+        api = api,
+        ui = ui,
+        outputFn = { task, design -> task.add(
+          MarkdownUtil.renderMarkdown(
+            "${design.text}\n\n```json\n${
+              JsonUtil.toJson(
+                design.obj
+              )
+            }\n```"
+          )
+        ) }
+      ).obj
+      agentSystemArchitecture(parsedInput)
       task.complete("Generation complete!")
     } catch (e: Throwable) {
       task.error(ui, e)
