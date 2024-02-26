@@ -98,6 +98,7 @@ open class VocabularyAgent(
         toInput = { listOf(it) },
         api = api,
         ui = ui,
+        outputFn = { task, design -> task.add(renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```")) }
       ).obj
 
       task.add(renderMarkdown("```json\n${toJson(parsedInput)}\n```"))
@@ -122,7 +123,7 @@ open class VocabularyAgent(
 
           val illustration = illustrationGeneratorActor.answer(
             listOf(
-              "Generate an illustration that visually represents the term '$term' to ${parsedInput.targetAudience}."
+              "Generate an illustration that visually represents the term '$term' to ${parsedInput.targetAudience} in a '${parsedInput.style}' style."
             ), api = api
           ).image
           illustrations.add(illustration)
@@ -176,14 +177,6 @@ open class VocabularyAgent(
   }
 }
 
-private fun BufferedImage.toJpgBytes(): ByteArray {
-  java.io.ByteArrayOutputStream().use { os ->
-    javax.imageio.ImageIO.write(this, "jpg", os)
-    return os.toByteArray()
-  }
-}
-
-
 class VocabularyActors(
   val model: ChatModels = ChatModels.GPT4Turbo,
   val temperature: Double = 0.3,
@@ -210,7 +203,7 @@ class VocabularyActors(
     val style: String
   )
 
-  val inputProcessorActor = ParsedActor(
+  private val inputProcessorActor = ParsedActor(
     parserClass = UserInputParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
@@ -228,7 +221,7 @@ class VocabularyActors(
     val definition: String
   )
 
-  val aidefinitionGeneratorActor = ParsedActor(
+  private val aidefinitionGeneratorActor = ParsedActor(
     parserClass = TermDefinitionParser::class.java,
     prompt = """
             You are an AI designed to generate definitions for terms. For each term provided, produce a clear and concise definition that is easy to understand.
@@ -238,7 +231,7 @@ class VocabularyActors(
   )
 
 
-  val illustrationGeneratorActor = ImageActor(
+  private val illustrationGeneratorActor = ImageActor(
     prompt = "Generate an illustration that visually represents the given term and its definition in a creative and understandable manner.",
     imageModel = ImageModels.DallE3,
     temperature = 0.3,
