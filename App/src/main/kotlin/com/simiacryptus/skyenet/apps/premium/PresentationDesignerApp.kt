@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
@@ -30,7 +31,7 @@ open class PresentationDesignerApp(
     ) + "</div>"
 
   data class Settings(
-    val model: ChatModels = ChatModels.GPT35Turbo,
+    val model: OpenAITextModel = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
     val voice : String? = "alloy",
     val voiceSpeed : Double? = 1.0,

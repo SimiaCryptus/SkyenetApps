@@ -1,6 +1,7 @@
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
@@ -25,7 +26,7 @@ open class VocabularyListBuilderApp(
 ) {
 
   data class Settings(
-    val model: ChatModels = ChatModels.GPT35Turbo,
+    val model: OpenAITextModel = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
   )
   override val settingsClass: Class<*> get() = Settings::class.java
@@ -68,7 +69,7 @@ open class VocabularyListBuilderAgent(
   dataStorage: StorageInterface,
   val ui: ApplicationInterface,
   val api: API,
-  model: ChatModels = ChatModels.GPT35Turbo,
+  model: OpenAITextModel = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
 ) : ActorSystem<VocabularyListBuilderActors.ActorType>(VocabularyListBuilderActors(
   model = model,
@@ -229,7 +230,7 @@ open class VocabularyListBuilderAgent(
 
 
 class VocabularyListBuilderActors(
-  val model: ChatModels = ChatModels.GPT4Turbo,
+  val model: OpenAITextModel = ChatModels.GPT4Turbo,
   val temperature: Double = 0.3,
 ) {
 

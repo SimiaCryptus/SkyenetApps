@@ -4,6 +4,7 @@ package com.simiacryptus.skyenet.apps.generated
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureActors.Activity
 import com.simiacryptus.skyenet.core.actors.ActorSystem
@@ -29,7 +30,7 @@ open class AutomatedLessonPlannerArchitectureApp(
 ) {
 
   data class Settings(
-    val model: ChatModels = ChatModels.GPT35Turbo,
+    val model: OpenAITextModel = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
     val budget : Double = 2.0,
   )
@@ -75,7 +76,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
   dataStorage: StorageInterface,
   val ui: ApplicationInterface,
   val api: API,
-  model: ChatModels = ChatModels.GPT35Turbo,
+  model: OpenAITextModel = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
 ) : ActorSystem<AutomatedLessonPlannerArchitectureActors.ActorType>(
   AutomatedLessonPlannerArchitectureActors(
@@ -392,7 +393,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
 
 
 class AutomatedLessonPlannerArchitectureActors(
-  val model: ChatModels = ChatModels.GPT4Turbo,
+  val model: OpenAITextModel = ChatModels.GPT4Turbo,
   val temperature: Double = 0.3,
 ) {
 

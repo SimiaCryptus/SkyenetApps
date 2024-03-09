@@ -3,13 +3,14 @@ package com.simiacryptus.skyenet.apps.premium
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
+import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.*
 import org.slf4j.LoggerFactory
 import java.util.function.Function
 
 class PresentationDesignerActors(
-  val model: ChatModels = ChatModels.GPT4Turbo,
+  val model: OpenAITextModel = ChatModels.GPT4Turbo,
   val temperature: Double = 0.3,
   voice: String = "alloy",
   voiceSpeed: Double = 1.0,

@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.apps.premium
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ApiModel.Role
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.AgentPatterns.iterate
 import com.simiacryptus.skyenet.apps.premium.MetaAgentActors.*
@@ -33,7 +34,7 @@ open class MetaAgentAgent(
   dataStorage: StorageInterface,
   val ui: ApplicationInterface,
   val api: API,
-  model: ChatModels = ChatModels.GPT35Turbo,
+  model: OpenAITextModel = ChatModels.GPT35Turbo,
   var autoEvaluate: Boolean = true,
   temperature: Double = 0.3,
 ) : ActorSystem<ActorType>(

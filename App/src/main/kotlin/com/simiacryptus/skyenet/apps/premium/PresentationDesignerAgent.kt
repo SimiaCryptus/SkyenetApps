@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerActors.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.Session
@@ -21,7 +22,7 @@ open class PresentationDesignerAgent(
   dataStorage: StorageInterface,
   val ui: ApplicationInterface,
   val api: API,
-  model: ChatModels = ChatModels.GPT35Turbo,
+  model: OpenAITextModel = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
   val voice: String = "alloy",
   val voiceSpeed: Double = 1.0,

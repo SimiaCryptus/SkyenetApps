@@ -2,12 +2,13 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import java.util.function.Function
 
-class DebateActors(val model: ChatModels, val temperature: Double) {
+class DebateActors(val model: OpenAITextModel, val temperature: Double) {
 
   interface DebateParser : Function<String, DebateSetup> {
     @Description("Dissect debate arguments into a recursive outline of the main ideas and supporting details.")

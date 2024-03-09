@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.apps.premium.DebateActors.*
 import com.simiacryptus.skyenet.core.actors.ActorSystem
@@ -20,7 +21,7 @@ class DebateAgent(
   session: Session,
   val ui: ApplicationInterface,
   val domainName: String,
-  val model : ChatModels = ChatModels.GPT4,
+  val model : OpenAITextModel = ChatModels.GPT4,
   val temperature: Double = 0.3,
   private val debateActors: DebateActors = DebateActors(model, temperature)
 ) : ActorSystem<ActorType>(debateActors.actorMap, dataStorage, userId, session) {

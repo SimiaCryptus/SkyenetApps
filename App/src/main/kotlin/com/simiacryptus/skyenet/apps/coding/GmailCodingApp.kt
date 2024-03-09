@@ -6,6 +6,7 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.gmail.Gmail
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
@@ -62,7 +63,7 @@ class GmailCodingApp : ApplicationServer(
 
   data class Settings(
     val temperature: Double? = 0.1,
-    val model: ChatModels = ChatModels.GPT4Turbo,
+    val model: OpenAITextModel = ChatModels.GPT4Turbo,
   )
 
   override val settingsClass: Class<*> get() = Settings::class.java
