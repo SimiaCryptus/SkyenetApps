@@ -61,6 +61,7 @@ interface ExampleActors {
 
         fun exampleCodingActor() = CodingActor(
             interpreterClass = KotlinInterpreter::class,
+            model = ChatModels.GPT35Turbo,
             details = """
             |You are a software implementation assistant.
             |
@@ -73,13 +74,16 @@ interface ExampleActors {
         )
 
         @Language("Markdown")fun exampleSimpleActor() = SimpleActor(
-            prompt = """
+          model = ChatModels.GPT35Turbo,
+          prompt = """
             |You are a writing assistant.
             """.trimMargin().trim(),
         )
 
 
-        @Language("Markdown")fun exampleImageActor() = ImageActor()
+        @Language("Markdown")fun exampleImageActor() = ImageActor(
+          textModel = ChatModels.GPT35Turbo,
+        )
 
         fun useExampleImageActor(): BufferedImage {
             val answer = exampleImageActor().answer(listOf("Example image description"), api = api)

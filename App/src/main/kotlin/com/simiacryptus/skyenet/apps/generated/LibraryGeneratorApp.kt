@@ -31,10 +31,12 @@ open class LibraryGeneratorApp(
   data class Settings(
     val model: OpenAITextModel = ChatModels.GPT35Turbo,
     val temperature: Double = 0.1,
-    val budget : Double = 2.0,
+    val budget: Double = 2.0,
   )
+
   override val settingsClass: Class<*> get() = Settings::class.java
-  @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : Any> initSettings(session: Session): T? = Settings() as T
 
   override fun userMessage(
     session: Session,
@@ -67,7 +69,6 @@ open class LibraryGeneratorApp(
 }
 
 
-
 open class LibraryGeneratorAgent(
   user: User?,
   session: Session,
@@ -76,12 +77,14 @@ open class LibraryGeneratorAgent(
   val api: API,
   model: OpenAITextModel = ChatModels.GPT35Turbo,
   temperature: Double = 0.3,
-) : ActorSystem<LibraryGeneratorActors.ActorType>(LibraryGeneratorActors(
-  ui = ui,
-  api = api,
-  model = model,
-  temperature = temperature,
-).actorMap, dataStorage, user, session) {
+) : ActorSystem<LibraryGeneratorActors.ActorType>(
+  LibraryGeneratorActors(
+    ui = ui,
+    api = api,
+    model = model,
+    temperature = temperature,
+  ).actorMap, dataStorage, user, session
+) {
 
   @Suppress("UNCHECKED_CAST")
   private val requirementInterpreter by lazy { getActor(LibraryGeneratorActors.ActorType.REQUIREMENT_INTERPRETER) as ParsedActor<LibraryGeneratorActors.InterpretationResult> }
@@ -118,7 +121,11 @@ open class LibraryGeneratorAgent(
       for (structureName in requirements.structures) {
         val dataStructureDesign = designDataStructure(structureName)
         dataStructuresDesigns.add(dataStructureDesign)
-        val codeSnippet = synthesizeCodeForDataStructure(Structure(dataStructureDesign.name!!, dataStructureDesign.fields!!.map { Field(it.name, it.type) }))
+        val codeSnippet = synthesizeCodeForDataStructure(
+          Structure(
+            dataStructureDesign.name!!,
+            dataStructureDesign.fields!!.map { Field(it.name, it.type) })
+        )
         codeSnippets.add(CodeSnippet(codeSnippet))
         val documentation = composeDocumentation(CodeSnippet(codeSnippet))
         documentations.add(Documentation(documentation))
@@ -472,7 +479,6 @@ open class LibraryGeneratorAgent(
 }
 
 
-
 class LibraryGeneratorActors(
   val ui: ApplicationInterface,
   val api: API,
@@ -501,6 +507,7 @@ class LibraryGeneratorActors(
   private val requirementInterpreter = ParsedActor<InterpretationResult>(
     parserClass = RequirementInterpreter::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are an assistant that interprets software requirements. Analyze the following description and extract the required data structures and functions.
         """.trimIndent()
@@ -538,6 +545,7 @@ class LibraryGeneratorActors(
             You are an AI that designs data structures based on specified requirements. Given a description, create a data structure with appropriate fields and types.
         """.trimIndent(),
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     temperature = 0.3
   )
 
@@ -573,6 +581,7 @@ class LibraryGeneratorActors(
   private val functionArchitect = ParsedActor<FunctionOutline>(
     parserClass = FunctionOutlineParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are an AI that outlines software functions. Given a description, you will provide the function name, parameters, and return type.
             """.trimIndent()
@@ -585,6 +594,7 @@ class LibraryGeneratorActors(
       "ui" to ui,
       "api" to api,
     ),
+    model = ChatModels.GPT35Turbo,
     details = """
             You are a code synthesizer.
             
@@ -610,7 +620,8 @@ class LibraryGeneratorActors(
             Your task is to create clear and concise documentation for the provided code snippets.
             The documentation should explain the purpose of the code, how it works, and how to use it.
             Include descriptions of any classes, methods, parameters, and return values.
-        """.trimIndent()
+        """.trimIndent(),
+    model = ChatModels.GPT35Turbo
   )
 
 
@@ -639,8 +650,9 @@ class LibraryGeneratorActors(
     parserClass = TestCaseParser::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
-    You are an assistant that creates detailed test cases for software functions. Given a description of a function and its expected behavior, generate a test case with the following structure: a brief description, the input for the test case, and the expected output.
-    """.trimMargin().trim()
+      You are an assistant that creates detailed test cases for software functions. Given a description of a function and its expected behavior, generate a test case with the following structure: a brief description, the input for the test case, and the expected output.
+    """.trimMargin().trim(),
+    parsingModel = ChatModels.GPT35Turbo
   )
 
 
@@ -669,14 +681,16 @@ class LibraryGeneratorActors(
             You are an assistant that reviews the quality of generated code, documentation, and test cases.
             Assess the quality based on best practices, correctness, and completeness.
             If the quality is not satisfactory, provide specific feedback for improvement.
-        """.trimIndent()
+        """.trimIndent(),
+    parsingModel = ChatModels.GPT35Turbo
   )
 
 
   private val outputFormatter = SimpleActor(
     prompt = """
             You are an output formatter. Your job is to take the generated code, documentation, and test cases and format them neatly for presentation. Ensure that the code is properly indented and commented, the documentation is clear and concise, and the test cases are well-organized and easy to understand.
-        """.trimIndent()
+        """.trimIndent(),
+    model = ChatModels.GPT35Turbo
   )
 
   enum class ActorType {
@@ -690,7 +704,7 @@ class LibraryGeneratorActors(
     OUTPUT_FORMATTER,
   }
 
-  val actorMap: Map<ActorType, BaseActor<out Any,out Any>> = mapOf(
+  val actorMap: Map<ActorType, BaseActor<out Any, out Any>> = mapOf(
     ActorType.REQUIREMENT_INTERPRETER to requirementInterpreter,
     ActorType.STRUCTURE_DESIGNER to structureDesigner,
     ActorType.FUNCTION_ARCHITECT to functionArchitect,

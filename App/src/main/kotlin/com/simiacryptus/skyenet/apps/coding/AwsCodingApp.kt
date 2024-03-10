@@ -34,7 +34,7 @@ class AwsCodingApp : ApplicationServer(
       interpreter = KotlinInterpreter::class,
       symbols = getSymbols(region, profile),
       temperature = (settings?.temperature ?: 0.1),
-      model = (settings?.model ?: ChatModels.GPT35Turbo),
+      model = (settings?.model!!),
     ) {
       override fun getInterpreterString(): String {
         return AwsCodingApp::class.java.name + ":${settings?.region},${settings?.profile}"

@@ -430,6 +430,7 @@ class IllustratedStorybookActors(
   private val requirementsActor = ParsedActor(
     parserClass = UserPreferencesContentParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are helping gather requirements for a storybook. 
             Respond to the user by suggesting a genre, target age group, and specific elements to include in the story.
@@ -439,6 +440,7 @@ class IllustratedStorybookActors(
   private val storyGeneratorActor = ParsedActor(
     parserClass = StoryDataParser::class.java,
     model = ChatModels.GPT4Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are an AI creating a story for a digital storybook. Generate a story that includes a title, storyline, dialogue, and descriptions.
             The story should be engaging and suitable for the specified target age group and genre.
@@ -452,10 +454,11 @@ class IllustratedStorybookActors(
     imageModel = imageModel, // Assuming DallE2 is suitable for generating storybook illustrations
     temperature = 0.5, // Adjust temperature for creativity vs. coherence
     width = 1024, // Width of the generated image
-    height = 1024 // Height of the generated image
+    height = 1024, // Height of the generated image
+    textModel = ChatModels.GPT35Turbo
   )
 
-  private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed)
+  private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = ChatModels.GPT35Turbo)
 
   enum class ActorType {
     REQUIREMENTS_ACTOR,

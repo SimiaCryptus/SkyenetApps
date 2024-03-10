@@ -209,7 +209,8 @@ class VocabularyActors(
     model = ChatModels.GPT35Turbo,
     prompt = """
             Parse and validate the input terms and user preferences for generating a vocabulary list. Ensure the terms are valid, and preferences like target audience, definition style, and output format are correctly identified.
-        """.trimIndent()
+        """.trimIndent(),
+    parsingModel = ChatModels.GPT35Turbo,
   )
 
 
@@ -228,7 +229,8 @@ class VocabularyActors(
             You are an AI designed to generate definitions for terms. For each term provided, produce a clear and concise definition that is easy to understand.
         """.trimIndent(),
     model = ChatModels.GPT35Turbo,
-    temperature = 0.3
+    temperature = 0.3,
+    parsingModel = ChatModels.GPT35Turbo,
   )
 
 
@@ -237,7 +239,8 @@ class VocabularyActors(
     imageModel = ImageModels.DallE3,
     temperature = 0.3,
     width = 1024,
-    height = 1024
+    height = 1024,
+    textModel = ChatModels.GPT35Turbo
   )
 
   enum class ActorType {

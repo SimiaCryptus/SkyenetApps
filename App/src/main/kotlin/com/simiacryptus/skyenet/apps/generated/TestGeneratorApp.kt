@@ -146,6 +146,7 @@ class TestGeneratorActors(
   val inputHandler = ParsedActor<TaskInfo>(
     parserClass = TaskParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are an AI-based automated assistant capable of processing user requests and generating responses. Given a task description, provide a summary of the task and any relevant details to guide the subsequent steps in the process.
         """.trimIndent()
@@ -168,6 +169,7 @@ class TestGeneratorActors(
   val topicIdentificationActor = ParsedActor<TopicIdentificationResult>(
     parserClass = TopicIdentificationParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             Given a piece of text, identify the key topics and associated keywords. For each topic, provide a concise name and a list of relevant keywords.
         """.trimIndent().trim()
@@ -191,6 +193,7 @@ class TestGeneratorActors(
   val questionGenerationActor = ParsedActor<QuestionSet>(
     parserClass = QuestionSetParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             Given a topic, generate a set of quiz questions. Include multiple-choice, true/false, and short answer questions of varying difficulty levels.
         """.trimIndent()
@@ -229,6 +232,7 @@ class TestGeneratorActors(
             You are an assistant capable of generating answers for quiz questions. For each question, generate multiple answers, indicating which are correct or incorrect, and provide explanations for the correctness of each answer.
         """.trimIndent(),
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     temperature = 0.3
   )
 

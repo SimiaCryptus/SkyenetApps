@@ -253,6 +253,7 @@ class VocabularyListBuilderActors(
   val definitionActor = ParsedActor<DefinitionOutput>(
     parserClass = DefinitionParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are a definition generator. For each term, define the term in the given style for the given target audience. Ensure the definition is engaging and understandable.
         """.trimIndent()
@@ -285,6 +286,7 @@ class VocabularyListBuilderActors(
   val feedbackActor = ParsedActor<FeedbackOutput>(
     parserClass = FeedbackParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are an assistant that refines content based on user feedback. Improve the content according to the feedback provided.
         """.trimIndent().trim()
@@ -297,6 +299,7 @@ class VocabularyListBuilderActors(
   val parseInputActor = ParsedActor<VocabularyListBuilderAgent.TermInput>(
     parserClass = TermInputParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are a parser that extracts the term, definition style, target audience, and illustration preferences from the user input.
         """.trimIndent().trim()

@@ -426,7 +426,8 @@ class AutomatedLessonPlannerArchitectureActors(
     prompt = """
             You are an assistant that maps learning objectives to curriculum standards.
             Given a list of learning objectives, provide the corresponding curriculum standards.
-        """.trimIndent()
+        """.trimIndent(),
+    parsingModel = ChatModels.GPT35Turbo
   )
 
 
@@ -451,6 +452,7 @@ class AutomatedLessonPlannerArchitectureActors(
   val resourceAllocatorActor = ParsedActor<ResourceAllocation>(
     parserClass = ResourceAllocatorParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are an assistant that suggests educational activities based on a list of available resources.
             Given a list of resources, provide a list of possible activities that can be conducted using these resources.
@@ -507,6 +509,7 @@ class AutomatedLessonPlannerArchitectureActors(
   val timeManagerActor = ParsedActor<LessonTimeline>(
     parserClass = TimeManagerParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are an assistant that creates a timeline for a lesson plan.
             Given a list of activities and their descriptions, along with the total lesson time, 
@@ -549,6 +552,7 @@ class AutomatedLessonPlannerArchitectureActors(
   val assessmentPlannerActor = ParsedActor<AssessmentPlan>(
     parserClass = AssessmentPlanParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are an assistant specializing in educational assessment. Your task is to recommend assessment methods that align with specific learning objectives. For each learning objective provided, suggest one or more assessment methods that effectively measure student understanding and mastery.
             
@@ -567,8 +571,9 @@ class AutomatedLessonPlannerArchitectureActors(
             You are an automated lesson planner customization tool.
             Provide options for teachers to customize their lesson plans.
             Listen to the teacher's requests and incorporate their preferences into the lesson plan.
-        """.trimIndent()
-  )
+        """.trimIndent(),
+    model = ChatModels.GPT35Turbo,
+    )
 
 
   data class FeedbackAnalysis(
@@ -592,6 +597,7 @@ class AutomatedLessonPlannerArchitectureActors(
   val feedbackAnalyzerActor = ParsedActor<FeedbackAnalysis>(
     parserClass = FeedbackParser::class.java,
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are an assistant that analyzes teacher feedback on lesson plans to suggest improvements.
             Analyze the following feedback and provide suggestions for improvement.

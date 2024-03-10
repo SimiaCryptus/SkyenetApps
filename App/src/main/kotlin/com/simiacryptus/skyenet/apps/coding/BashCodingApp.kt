@@ -51,7 +51,7 @@ class BashCodingApp(
         "command" to (settings?.command ?: listOf("bash")),
       ),
       temperature = (settings?.temperature ?: 0.1),
-      model = (settings?.model ?: ChatModels.GPT35Turbo),
+      model = (settings?.model!!),
     ).start(
       userMessage = userMessage,
     )

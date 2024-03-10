@@ -36,6 +36,7 @@ class PresentationDesignerActors(
   val initialAuthor = ParsedActor(
     parserClass = OutlineParser::class.java,
     model = ChatModels.GPT4Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     prompt = """
             You are a high-level presentation planner. Based on an input topic, provide a list of slides with a brief description of each.
         """.trimIndent()
@@ -89,6 +90,7 @@ class PresentationDesignerActors(
             Generate detailed outlines for each slide described by the input.
         """.trimIndent(),
     model = ChatModels.GPT35Turbo,
+    parsingModel = ChatModels.GPT35Turbo,
     temperature = 0.3
   )
 
@@ -117,6 +119,7 @@ class PresentationDesignerActors(
       You are an assistant that expands outlines into detailed content. 
       Given an outline for a slide in a presentation, provide a comprehensive explanation or description for it.
       """.trimIndent(),
+    parsingModel = ChatModels.GPT35Turbo,
     parserClass = SlideDetailsParser::class.java
   )
 
@@ -175,7 +178,8 @@ class PresentationDesignerActors(
             You are an assistant that creates speaking transcripts from content. 
             Given a piece of content, transform it into the input for a text-to-speech system.
             Do not use formatting or HTML tags. Use capitalization and punctuation for emphasis.
-        """.trimIndent()
+        """.trimIndent(),
+    parsingModel = ChatModels.GPT35Turbo,
   )
 
   val imageRenderer = ImageActor(
@@ -185,10 +189,11 @@ class PresentationDesignerActors(
         """.trimIndent(),
     name = "ImageRenderer",
     imageModel = ImageModels.DallE3,
+    textModel = ChatModels.GPT35Turbo,
     temperature = 0.3
   )
 
-  val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed)
+  val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = ChatModels.GPT35Turbo)
 
   enum class ActorType {
     INITIAL_AUTHOR,
