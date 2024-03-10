@@ -7,7 +7,7 @@ import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.JsonUtil
-import com.simiacryptus.skyenet.apps.AgentPatterns
+import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.ClientManager

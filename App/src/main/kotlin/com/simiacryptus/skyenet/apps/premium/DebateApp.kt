@@ -20,7 +20,7 @@ open class DebateApp(
     path = "/debate",
 ) {
     data class Settings(
-        val model: OpenAITextModel = ChatModels.GPT35Turbo,
+        val model: ChatModels = ChatModels.GPT35Turbo,
         val temperature: Double = 0.2,
         val budget : Double = 2.0,
     )

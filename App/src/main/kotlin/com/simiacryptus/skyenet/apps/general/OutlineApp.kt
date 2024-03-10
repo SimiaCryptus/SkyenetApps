@@ -4,7 +4,6 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.GPT4Tokenizer
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
-import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
@@ -49,11 +48,11 @@ open class OutlineApp(
     ) + "</div>")
 
   data class Settings(
-    val models: List<OpenAITextModel> = listOf(
+    val models: List<ChatModels> = listOf(
       ChatModels.GPT4Turbo,
       ChatModels.GPT35Turbo
     ),
-    val parsingModel: OpenAITextModel = ChatModels.GPT35Turbo,
+    val parsingModel: ChatModels = ChatModels.GPT35Turbo,
     val temperature: Double = 0.3,
     val minTokensForExpansion: Int = 16,
     val showProjector: Boolean = true,
@@ -110,9 +109,9 @@ class OutlineAgent(
   session: Session,
   user: User?,
   temperature: Double,
-  val models: List<OpenAITextModel>,
-  val firstLevelModel: OpenAITextModel,
-  val parsingModel: OpenAITextModel,
+  val models: List<ChatModels>,
+  val firstLevelModel: ChatModels,
+  val parsingModel: ChatModels,
   private val minSize: Int,
   val writeFinalEssay: Boolean,
   val showProjector: Boolean,
@@ -218,7 +217,7 @@ class OutlineAgent(
   private fun processRecursive(
     manager: OutlineManager,
     node: OutlineManager.OutlinedText,
-    models: List<OpenAITextModel>
+    models: List<ChatModels>
   ) {
     val terminalNodeMap = node.outline.getTerminalNodeMap()
     if (terminalNodeMap.isEmpty()) {
@@ -260,7 +259,7 @@ class OutlineAgent(
     sectionName: String,
     outlineManager: OutlineManager,
     message: SessionTask,
-    model: OpenAITextModel,
+    model: ChatModels,
   ): OutlineManager.OutlinedText? {
     if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
       log.debug("Skipping: ${parent.text}")
@@ -298,13 +297,13 @@ interface OutlineActors {
 
     val log = org.slf4j.LoggerFactory.getLogger(OutlineActors::class.java)
 
-    fun actorMap(temperature: Double, firstLevelModel: OpenAITextModel, parsingModel: OpenAITextModel) = mapOf(
+    fun actorMap(temperature: Double, firstLevelModel: ChatModels, parsingModel: ChatModels) = mapOf(
       ActorType.INITIAL to initialAuthor(temperature, firstLevelModel, parsingModel),
       ActorType.EXPAND to expansionAuthor(temperature, parsingModel),
       ActorType.FINAL to finalWriter(temperature, firstLevelModel),
     )
 
-    private fun initialAuthor(temperature: Double, model: OpenAITextModel, parsingModel: OpenAITextModel) = ParsedActor(
+    private fun initialAuthor(temperature: Double, model: ChatModels, parsingModel: ChatModels) = ParsedActor(
       OutlineParser::class.java,
       prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
       model = model,
@@ -312,7 +311,7 @@ interface OutlineActors {
       parsingModel = parsingModel,
     )
 
-    private fun expansionAuthor(temperature: Double, parsingModel: OpenAITextModel): ParsedActor<OutlineManager.NodeList> = ParsedActor(
+    private fun expansionAuthor(temperature: Double, parsingModel: ChatModels): ParsedActor<OutlineManager.NodeList> = ParsedActor(
       parserClass = OutlineParser::class.java,
       prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
       name = "Expand",
@@ -321,7 +320,7 @@ interface OutlineActors {
       parsingModel = parsingModel,
     )
 
-    private fun finalWriter(temperature: Double, model: OpenAITextModel) = SimpleActor(
+    private fun finalWriter(temperature: Double, model: ChatModels) = SimpleActor(
       prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
       model = model,
       temperature = temperature,

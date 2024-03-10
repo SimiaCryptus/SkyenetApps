@@ -2,7 +2,6 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
-import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.CodingActor
@@ -18,7 +17,7 @@ import kotlin.reflect.KClass
 class MetaAgentActors(
     private val interpreterClass: KClass<out Interpreter> = KotlinInterpreter::class,
     val symbols: Map<String, Any> = mapOf(),
-    val model: OpenAITextModel = ChatModels.GPT4Turbo,
+    val model: ChatModels = ChatModels.GPT4Turbo,
     val temperature: Double = 0.3,
 ) {
 

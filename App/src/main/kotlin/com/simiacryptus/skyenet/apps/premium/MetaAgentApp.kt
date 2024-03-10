@@ -2,7 +2,6 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
-import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.User
@@ -39,7 +38,7 @@ open class MetaAgentApp(
         }</div>"
 
     data class Settings(
-        val model: OpenAITextModel = ChatModels.GPT4Turbo,
+        val model: ChatModels = ChatModels.GPT4Turbo,
         val validateCode: Boolean = true,
         val temperature: Double = 0.2,
         val budget : Double = 2.0,
