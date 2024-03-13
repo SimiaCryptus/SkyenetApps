@@ -1,5 +1,6 @@
 package com.simiacryptus.skyenet.platform
 import com.simiacryptus.jopenai.ApiModel
+import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.OpenAIModel
 import com.simiacryptus.skyenet.core.platform.*
 import com.simiacryptus.skyenet.core.platform.file.DataStorage
@@ -327,8 +328,8 @@ open class DatabaseServices(
           executeQuery().use { resultSet ->
             if (resultSet.next()) {
               return@useConnection UserSettingsInterface.UserSettings(
-                apiKey = resultSet.getString("api_key"),
-                apiBase = resultSet.getString("api_base"),
+                apiKeys = mapOf(APIProvider.OpenAI to resultSet.getString("api_key")),
+                apiBase = mapOf(APIProvider.OpenAI to resultSet.getString("api_base")),
               )
             }
           }
@@ -351,7 +352,7 @@ open class DatabaseServices(
             SET api_key = EXCLUDED.api_key
             """.trimIndent()).apply {
             setString(1, user.id)
-            setString(2, settings.apiKey)
+            setString(2, settings.apiKeys[APIProvider.OpenAI])
             execute()
           }
           connection.commit()
