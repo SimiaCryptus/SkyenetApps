@@ -12,6 +12,7 @@ import com.simiacryptus.skyenet.apps.general.WebDevApp
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
 import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
 import com.simiacryptus.skyenet.apps.generated.TestGeneratorApp
+import com.simiacryptus.skyenet.apps.hybrid.IncrementalCodeGenApp
 import com.simiacryptus.skyenet.apps.premium.DebateApp
 import com.simiacryptus.skyenet.apps.premium.MetaAgentApp
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
@@ -53,6 +54,7 @@ open class AppServer(
   override val childWebApps by lazy {
     listOf(
       ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName)),
+      ChildWebApp("/incremental_codegen", IncrementalCodeGenApp(domainName = domainName)),
       ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName)),
       ChildWebApp("/meta_agent", MetaAgentApp()),
       ChildWebApp("/debate", DebateApp(domainName = domainName)),

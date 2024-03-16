@@ -16,7 +16,6 @@ import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil
 import org.slf4j.LoggerFactory
-import java.util.function.Function
 
 open class TestGeneratorApp(
   applicationName: String = "Test Generator",
@@ -76,7 +75,7 @@ open class TestGeneratorAgent(
   TestGeneratorActors(
     model = model,
     temperature = temperature,
-  ).actorMap, dataStorage, user, session
+  ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
 ) {
 
   @Suppress("UNCHECKED_CAST")

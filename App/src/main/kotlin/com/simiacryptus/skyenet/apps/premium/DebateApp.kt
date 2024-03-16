@@ -91,7 +91,7 @@ class DebateAgent(
     val model : ChatModels = ChatModels.GPT4Turbo,
     val temperature: Double = 0.3,
     private val debateActors: DebateActors = DebateActors(model, temperature)
-) : ActorSystem<DebateActors.ActorType>(debateActors.actorMap, dataStorage, userId, session) {
+) : ActorSystem<DebateActors.ActorType>(debateActors.actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, userId, session) {
     private val outlines = mutableMapOf<String, DebateActors.Outline>()
 
     @Suppress("UNCHECKED_CAST")

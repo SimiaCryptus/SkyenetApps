@@ -115,7 +115,7 @@ open class MetaAgentAgent(
         ),
         model = model,
         temperature = temperature,
-    ).actorMap, dataStorage, user, session
+    ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
 ) {
 
     private val highLevelDesigner by lazy { getActor(MetaAgentActors.ActorType.HIGH_LEVEL) as SimpleActor }

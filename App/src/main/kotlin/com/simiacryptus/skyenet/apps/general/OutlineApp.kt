@@ -2,7 +2,6 @@ package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.GPT4Tokenizer
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.describe.JsonDescriber
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil
@@ -21,7 +20,6 @@ import com.simiacryptus.skyenet.webui.util.TensorflowProjector
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.function.Function
 
 open class OutlineApp(
   applicationName: String = "Outline Expansion Concept Map v1.0",
@@ -120,7 +118,7 @@ class OutlineAgent(
   val ui: ApplicationInterface,
   val domainName: String
 ) : ActorSystem<OutlineActors.ActorType>(
-  OutlineActors.actorMap(temperature, firstLevelModel, parsingModel),
+  OutlineActors.actorMap(temperature, firstLevelModel, parsingModel).map { it.key.name to it.value.javaClass }.toMap(),
   dataStorage,
   user,
   session

@@ -19,7 +19,6 @@ import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
-import java.util.function.Function
 
 
 open class PresentationDesignerApp(
@@ -101,7 +100,7 @@ open class PresentationDesignerAgent(
     temperature = temperature,
     voice = voice,
     voiceSpeed = voiceSpeed,
-  ).actorMap, dataStorage, user, session
+  ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
 ) {
 
   @Suppress("UNCHECKED_CAST")

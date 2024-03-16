@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
-import java.util.function.Function
 
 open class IllustratedStorybookApp(
   applicationName: String = "Illustrated Storybook Generator v1.0",
@@ -104,7 +103,7 @@ open class IllustratedStorybookAgent(
     imageModel = imageModel,
     voice = voice,
     voiceSpeed = voiceSpeed,
-  ).actorMap, dataStorage, user, session
+  ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
 ) {
 
   @Suppress("UNCHECKED_CAST")

@@ -13,8 +13,6 @@ import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import org.slf4j.LoggerFactory
-import java.util.function.Consumer
-import java.util.function.Function
 
 
 open class SoftwareProjectGeneratorApp(
@@ -78,7 +76,7 @@ open class SoftwareProjectGeneratorAgent(
   SoftwareProjectGeneratorActors(
     model = model,
     temperature = temperature,
-  ).actorMap, dataStorage, user, session
+  ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
 ) {
 
   @Suppress("UNCHECKED_CAST")

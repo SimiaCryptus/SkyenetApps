@@ -17,7 +17,6 @@ import com.simiacryptus.skyenet.webui.session.SessionTask.Companion.toPng
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
-import java.util.function.Function
 
 
 open class VocabularyApp(
@@ -82,7 +81,7 @@ open class VocabularyAgent(
   VocabularyActors(
     model = model,
     temperature = temperature,
-  ).actorMap, dataStorage, user, session
+  ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
 ) {
 
   @Suppress("UNCHECKED_CAST")

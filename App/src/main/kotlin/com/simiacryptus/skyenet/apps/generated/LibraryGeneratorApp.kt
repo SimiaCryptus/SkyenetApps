@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
-import java.util.function.Function
 
 open class LibraryGeneratorApp(
   applicationName: String = "Software Libary Assistant",
@@ -83,7 +82,7 @@ open class LibraryGeneratorAgent(
     api = api,
     model = model,
     temperature = temperature,
-  ).actorMap, dataStorage, user, session
+  ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
 ) {
 
   @Suppress("UNCHECKED_CAST")
