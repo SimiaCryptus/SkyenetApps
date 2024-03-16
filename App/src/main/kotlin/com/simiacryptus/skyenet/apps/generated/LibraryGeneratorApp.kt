@@ -473,7 +473,6 @@ open class LibraryGeneratorAgent(
   }
 
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(LibraryGeneratorAgent::class.java)
 
   }
 }
@@ -499,13 +498,9 @@ class LibraryGeneratorActors(
     }
   }
 
-  interface RequirementInterpreter : Function<String, InterpretationResult> {
-    @Description("Interpret the user's requirements for data structures and functions.")
-    override fun apply(text: String): InterpretationResult
-  }
-
-  private val requirementInterpreter = ParsedActor<InterpretationResult>(
-    parserClass = RequirementInterpreter::class.java,
+  private val requirementInterpreter = ParsedActor(
+//    parserClass = RequirementInterpreter::class.java,
+    resultClass = InterpretationResult::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -534,13 +529,9 @@ class LibraryGeneratorActors(
     val type: String
   )
 
-  interface StructureDesignerParser : Function<String, DataStructureDesign> {
-    @Description("Parse the text response into a data structure design.")
-    override fun apply(text: String): DataStructureDesign
-  }
-
-  private val structureDesigner = ParsedActor<DataStructureDesign>(
-    parserClass = StructureDesignerParser::class.java,
+  private val structureDesigner = ParsedActor(
+//    parserClass = StructureDesignerParser::class.java,
+    resultClass = DataStructureDesign::class.java,
     prompt = """
             You are an AI that designs data structures based on specified requirements. Given a description, create a data structure with appropriate fields and types.
         """.trimIndent(),
@@ -573,13 +564,9 @@ class LibraryGeneratorActors(
     val type: String
   )
 
-  interface FunctionOutlineParser : Function<String, FunctionOutline> {
-    @Description("Parse the text response into a FunctionOutline data structure.")
-    override fun apply(text: String): FunctionOutline
-  }
-
-  private val functionArchitect = ParsedActor<FunctionOutline>(
-    parserClass = FunctionOutlineParser::class.java,
+  private val functionArchitect = ParsedActor(
+//    parserClass = FunctionOutlineParser::class.java,
+    resultClass = FunctionOutline::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -625,11 +612,6 @@ class LibraryGeneratorActors(
   )
 
 
-  interface TestCaseParser : Function<String, TestCase> {
-    @Description("Parse the text into a test case data structure.")
-    override fun apply(text: String): TestCase
-  }
-
   data class TestCase(
     @Description("A brief description of the test case.")
     val description: String? = null,
@@ -646,8 +628,9 @@ class LibraryGeneratorActors(
     }
   }
 
-  private val testCaseCreator = ParsedActor<TestCase>(
-    parserClass = TestCaseParser::class.java,
+  private val testCaseCreator = ParsedActor(
+//    parserClass = TestCaseParser::class.java,
+    resultClass = TestCase::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
       You are an assistant that creates detailed test cases for software functions. Given a description of a function and its expected behavior, generate a test case with the following structure: a brief description, the input for the test case, and the expected output.
@@ -669,13 +652,9 @@ class LibraryGeneratorActors(
     }
   }
 
-  interface QualityReviewParser : Function<String, QualityReview> {
-    @Description("Parse the text response into a QualityReview data structure.")
-    override fun apply(text: String): QualityReview
-  }
-
-  private val qualityAssessor = ParsedActor<QualityReview>(
-    parserClass = QualityReviewParser::class.java,
+  private val qualityAssessor = ParsedActor(
+//    parserClass = QualityReviewParser::class.java,
+    resultClass = QualityReview::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
             You are an assistant that reviews the quality of generated code, documentation, and test cases.

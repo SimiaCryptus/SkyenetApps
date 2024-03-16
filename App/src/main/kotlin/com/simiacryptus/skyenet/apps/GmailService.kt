@@ -21,10 +21,10 @@ import java.security.GeneralSecurityException
 
 open class GmailService(
   val applicationName: String = "Gmail API Java Quickstart",
-  val jsonFactory: JsonFactory = GsonFactory.getDefaultInstance(),
-  val tokensDir: String = "tokens",
-  val credentialsResourcePath: String = "/google-credentials.json.kms",
-  val scopes: List<String> = listOf(
+  private val jsonFactory: JsonFactory = GsonFactory.getDefaultInstance(),
+  private val tokensDir: String = "tokens",
+  private val credentialsResourcePath: String = "/google-credentials.json.kms",
+  private val scopes: List<String> = listOf(
     GmailScopes.GMAIL_LABELS,
     GmailScopes.GMAIL_READONLY,
     GmailScopes.MAIL_GOOGLE_COM,

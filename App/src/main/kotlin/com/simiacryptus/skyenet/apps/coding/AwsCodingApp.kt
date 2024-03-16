@@ -56,13 +56,6 @@ class AwsCodingApp : ApplicationServer(
   override fun <T : Any> initSettings(session: Session): T? = Settings() as T
 
   companion object {
-    fun fromString(str: String): InterpreterAndTools {
-      val parts = str.split(", ")
-      return InterpreterAndTools(
-        KotlinInterpreter::class.java,
-        getSymbols(parts[0], parts[1])
-      )
-    }
 
     fun getSymbols(region: String?, profile: String?) = mapOf(
       "awsRegion" to (region ?: DefaultAwsRegionProviderChain().getRegion().id()),

@@ -60,6 +60,5 @@ class InterpreterTests {
     }
 
     companion object {
-        fun testFn() = "test"
     }
 }

@@ -88,7 +88,7 @@ class DebateAgent(
     session: Session,
     val ui: ApplicationInterface,
     val domainName: String,
-    val model : ChatModels = ChatModels.GPT4,
+    val model : ChatModels = ChatModels.GPT4Turbo,
     val temperature: Double = 0.3,
     private val debateActors: DebateActors = DebateActors(model, temperature)
 ) : ActorSystem<DebateActors.ActorType>(debateActors.actorMap, dataStorage, userId, session) {
@@ -151,7 +151,6 @@ class DebateAgent(
                 api = api,
                 dataStorage = dataStorage,
                 sessionID = session,
-                appPath = "debate_mapper",
                 host = domainName,
                 session = ui,
                 userId = user,
@@ -190,11 +189,6 @@ class DebateActors(val model: ChatModels, val temperature: Double) {
         val text: String? = null,
     )
 
-    interface OutlineParser : Function<String, Outline> {
-        @Description("Dissect debate arguments into a recursive outline of the main ideas and supporting details.")
-        override fun apply(text: String): Outline
-    }
-
     data class Outline(
         val arguments: List<Argument>? = null,
     ) : ValidatedObject {
@@ -229,7 +223,8 @@ class DebateActors(val model: ChatModels, val temperature: Double) {
         )
 
     fun getActorConfig(actor: Debater) = ParsedActor(
-        parserClass = OutlineParser::class.java,
+//        parserClass = OutlineParser::class.java,
+        resultClass = Outline::class.java,
         prompt = """You are a debater: ${actor.name}.
                               |You will provide a well-reasoned and supported argument for your position.
                               |Details about you: ${actor.description}

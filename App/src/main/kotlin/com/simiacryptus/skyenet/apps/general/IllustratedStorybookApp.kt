@@ -385,7 +385,6 @@ open class IllustratedStorybookAgent(
   }
 
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(IllustratedStorybookAgent::class.java)
 
   }
 }
@@ -417,18 +416,9 @@ class IllustratedStorybookActors(
     }
   }
 
-  interface StoryDataParser : Function<String, StoryData> {
-    @Description("Parse the text into a StoryData structure.")
-    override fun apply(text: String): StoryData
-  }
-
-  interface UserPreferencesContentParser : Function<String, IllustratedStorybookAgent.UserPreferencesContent> {
-    @Description("Parse the text into a UserPreferencesContent structure.")
-    override fun apply(text: String): IllustratedStorybookAgent.UserPreferencesContent
-  }
-
   private val requirementsActor = ParsedActor(
-    parserClass = UserPreferencesContentParser::class.java,
+//    parserClass = UserPreferencesContentParser::class.java,
+    resultClass = IllustratedStorybookAgent.UserPreferencesContent::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -438,7 +428,8 @@ class IllustratedStorybookActors(
   )
 
   private val storyGeneratorActor = ParsedActor(
-    parserClass = StoryDataParser::class.java,
+//    parserClass = StoryDataParser::class.java,
+    resultClass = StoryData::class.java,
     model = ChatModels.GPT4Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """

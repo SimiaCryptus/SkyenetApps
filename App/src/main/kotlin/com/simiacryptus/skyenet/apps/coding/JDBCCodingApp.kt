@@ -72,18 +72,6 @@ class JDBCCodingApp : ApplicationServer(
   override fun <T : Any> initSettings(session: Session): T = Settings() as T
 
   companion object {
-    fun fromString(user: User, string: String): InterpreterAndTools {
-      return InterpreterAndTools(
-        KotlinInterpreter::class.java,
-        JDBCCodingApp().getSymbols(
-          DriverManager.getConnection(
-            "jdbc:postgresql://localhost:5432/postgres",
-            "postgres",
-            ""
-          )
-        )
-      )
-    }
   }
 
 }

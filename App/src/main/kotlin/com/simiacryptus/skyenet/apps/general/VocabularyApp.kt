@@ -173,7 +173,6 @@ open class VocabularyAgent(
   )
 
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(VocabularyAgent::class.java)
 
   }
 }
@@ -184,7 +183,7 @@ class VocabularyActors(
 ) {
 
 
-  val userInterfaceActor = SimpleActor(
+  private val userInterfaceActor = SimpleActor(
     prompt = """
             You are an interactive user interface assistant. Your role is to help users create a vocabulary list. For each term, you will guide them to define the term in a given style for a specified target audience. Additionally, you will assist in producing an illustration to represent each term.
         """.trimIndent(),
@@ -194,10 +193,6 @@ class VocabularyActors(
   )
 
 
-  interface UserInputParser : Function<String, UserInput> {
-    override fun apply(text: String): UserInput
-  }
-
   data class UserInput(
     val terms: List<String>,
     val targetAudience: String,
@@ -205,7 +200,8 @@ class VocabularyActors(
   )
 
   private val inputProcessorActor = ParsedActor(
-    parserClass = UserInputParser::class.java,
+//    parserClass = UserInputParser::class.java,
+    resultClass = UserInput::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
             Parse and validate the input terms and user preferences for generating a vocabulary list. Ensure the terms are valid, and preferences like target audience, definition style, and output format are correctly identified.
@@ -214,17 +210,14 @@ class VocabularyActors(
   )
 
 
-  interface TermDefinitionParser : Function<String, TermDefinition> {
-    override fun apply(text: String): TermDefinition
-  }
-
   data class TermDefinition(
     val term: String,
     val definition: String
   )
 
   private val aidefinitionGeneratorActor = ParsedActor(
-    parserClass = TermDefinitionParser::class.java,
+//    parserClass = TermDefinitionParser::class.java,
+    resultClass = TermDefinition::class.java,
     prompt = """
             You are an AI designed to generate definitions for terms. For each term provided, produce a clear and concise definition that is easy to understand.
         """.trimIndent(),

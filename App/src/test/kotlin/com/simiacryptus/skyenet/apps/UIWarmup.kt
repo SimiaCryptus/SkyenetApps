@@ -23,9 +23,9 @@ object UIWarmup {
     }
   }
 
-  val vars: MutableMap<String, Any> = HashMap()
+  private val vars: MutableMap<String, Any> = HashMap()
 
-  fun waitForWindow(driver: WebDriver, timeout: Int): String {
+  private fun waitForWindow(driver: WebDriver, timeout: Int): String {
     Thread.sleep(timeout.toLong())
     val whNow = driver.windowHandles
     val whThen = vars["window_handles"] as Set<String>
@@ -35,7 +35,7 @@ object UIWarmup {
     return whNow.iterator().next()
   }
 
-  fun singlewalkthrough(driver: WebDriver) {
+  private fun singlewalkthrough(driver: WebDriver) {
     val js: JavascriptExecutor = driver as JavascriptExecutor
     driver.get("http://localhost:1900/")
     driver.manage().window().size = Dimension(972, 894)
@@ -138,16 +138,6 @@ object UIWarmup {
     driver.findElement(By.id("modal")).click();
     driver.close();
     */
-  }
-
-  private fun awaitUserLogin() {
-    val dialog = JDialog(null as Frame?, "Login", true)
-    dialog.contentPane.add(JLabel("Please login to Patreon in the browser window."));
-    dialog.pack();
-    dialog.isVisible = true;
-    while (dialog.isVisible) {
-      Thread.sleep(100)
-    }
   }
 
 }

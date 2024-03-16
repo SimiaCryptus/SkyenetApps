@@ -76,10 +76,6 @@ open class VocabularyListBuilderAgent(
   temperature = temperature,
 ).actorMap, dataStorage, user, session) {
 
-  @Suppress("UNCHECKED_CAST")
-  private val definitionActor by lazy { getActor(VocabularyListBuilderActors.ActorType.DEFINITION_ACTOR) as ParsedActor<VocabularyListBuilderActors.DefinitionOutput> }
-  private val illustrationActor by lazy { getActor(VocabularyListBuilderActors.ActorType.ILLUSTRATION_ACTOR) as SimpleActor }
-  private val feedbackActor by lazy { getActor(VocabularyListBuilderActors.ActorType.FEEDBACK_ACTOR) as ParsedActor<VocabularyListBuilderActors.FeedbackOutput> }
   private val parseInputActor by lazy { getActor(VocabularyListBuilderActors.ActorType.PARSE_INPUT) as ParsedActor<TermInput> }
 
   data class TermInput(
@@ -101,7 +97,7 @@ open class VocabularyListBuilderAgent(
       throw e
     }
   }
-  fun vocabularyListBuilder(termInput: TermInput) {
+  private fun vocabularyListBuilder(termInput: TermInput) {
     val task = ui.newTask()
     try {
       task.header("Vocabulary List Builder")
@@ -128,101 +124,19 @@ open class VocabularyListBuilderAgent(
   // Example invocation
 //  vocabularyListBuilder(TermInput("Ecosystem", "informal", "teenagers", "cartoonish style, vibrant colors, appealing to a younger audience"))
 
-  fun generate_illustration(term: String, illustration_preferences: String) {
-    val task = ui.newTask()
-    try {
-      task.header("Generating Illustration Description")
-      val prompt = "Create a detailed textual description for an illustration of '$term' that incorporates the following preferences: $illustration_preferences."
-      // Simulating the response from the illustration actor as the actual API call cannot be made here.
-      val simulatedIllustrationDescription = "An illustration showing a vibrant ecosystem with a variety of animals like rabbits and deer, and plants like trees and bushes, under a bright blue sky. The style is cartoonish, appealing to a younger audience, with bright colors to make the scene lively and engaging."
-      task.add("Illustration description for '$term': $simulatedIllustrationDescription")
-      task.complete("Illustration description generation complete.")
-    } catch (e: Throwable) {
-      task.error(ui, e)
-      throw e
-    }
-  }
+  //  generate_illustration("Ecosystem", "cartoonish style, vibrant colors, appealing to a younger audience")
 
-//  generate_illustration("Ecosystem", "cartoonish style, vibrant colors, appealing to a younger audience")
-
-  fun handle_feedback(feedback: String, definition: String, illustration: String) {
-    val task = ui.newTask()
-    try {
-      task.header("Handling Feedback")
-
-      // Simulate refining the definition based on feedback
-      val refinedDefinition = if (feedback.contains("definition", ignoreCase = true)) {
-        // This is where you'd use the feedbackActor to refine the definition based on the feedback
-        // Simulating the response as the actual API call cannot be made here
-        "$definition (Refined based on feedback: $feedback)"
-      } else {
-        definition
-      }
-
-      // Simulate refining the illustration description based on feedback
-      val refinedIllustration = if (feedback.contains("illustration", ignoreCase = true)) {
-        // This is where you'd use the feedbackActor to refine the illustration description based on the feedback
-        // Simulating the response as the actual API call cannot be made here
-        "$illustration (Refined based on feedback: $feedback)"
-      } else {
-        illustration
-      }
-
-      task.add("Refined Definition: $refinedDefinition")
-      task.add("Refined Illustration Description: $refinedIllustration")
-      task.complete("Feedback handling complete.")
-    } catch (e: Throwable) {
-      task.error(ui, e)
-      throw e
-    }
-  }
-
-//  handle_feedback("Please make the definition more detailed and the illustration brighter.",
+  //  handle_feedback("Please make the definition more detailed and the illustration brighter.",
 //  "An ecosystem is a community of living organisms in conjunction with the nonliving components of their environment, interacting as a system.",
 //  "An illustration showing a vibrant ecosystem with a variety of animals and plants under a bright sky.")
 
-  fun generate_definition(term: String, definition_style: String, target_audience: String) {
-    val task = ui.newTask()
-    try {
-      task.header("Generating Definition")
-      val prompt = "Define the term '$term' in a style suitable for $definition_style and understandable by $target_audience."
-      // Simulating the response from the definition actor as the actual API call cannot be made here.
-      val simulatedDefinition = "An ecosystem is like a big community in nature where living things like plants and animals interact with non-living things like water, rocks, and soil."
-      task.add("Definition for '$term': $simulatedDefinition")
-      task.complete("Definition generation complete.")
-    } catch (e: Throwable) {
-      task.error(ui, e)
-      throw e
-    }
-  }
+  //  generate_definition("Ecosystem", "informal", "teenagers")
 
-//  generate_definition("Ecosystem", "informal", "teenagers")
-
-  fun customize(definition: String, illustration: String) {
-    val task = ui.newTask()
-    try {
-      task.header("Customizing Content")
-
-      // Customizing the definition
-      val customizedDefinition = "Customized Definition: $definition"
-      task.add("Customized Definition: $customizedDefinition")
-
-      // Customizing the illustration description
-      val customizedIllustration = "Customized Illustration Description: $illustration"
-      task.add("Customized Illustration Description: $customizedIllustration")
-
-      task.complete("Content customization complete.")
-    } catch (e: Throwable) {
-      task.error(ui, e)
-      throw e
-    }
-  }
-//
+  //
 //  customize("An ecosystem is a community of living organisms in conjunction with the nonliving components of their environment, interacting as a system.",
 //  "An illustration showing a vibrant ecosystem with a variety of animals and plants under a bright sky.")
 
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(VocabularyListBuilderAgent::class.java)
 
   }
 }
@@ -235,10 +149,6 @@ class VocabularyListBuilderActors(
 ) {
 
 
-  interface DefinitionParser : Function<String, DefinitionOutput> {
-    override fun apply(text: String): DefinitionOutput
-  }
-
   data class DefinitionOutput(
     val term: String? = null,
     val definition: String? = null
@@ -250,8 +160,9 @@ class VocabularyListBuilderActors(
     }
   }
 
-  val definitionActor = ParsedActor<DefinitionOutput>(
-    parserClass = DefinitionParser::class.java,
+  private val definitionActor = ParsedActor(
+//    parserClass = DefinitionParser::class.java,
+    resultClass = DefinitionOutput::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -260,7 +171,7 @@ class VocabularyListBuilderActors(
   )
 
 
-  val illustrationActor = SimpleActor(
+  private val illustrationActor = SimpleActor(
     prompt = """
             You are an illustration guidance assistant. Your task is to create detailed textual descriptions for illustrations based on the given term and illustration preferences such as style, color scheme, and specific elements to include. Use your creativity to suggest engaging and relevant visuals that accurately represent the term and adhere to the specified preferences.
         """.trimIndent().trim(),
@@ -269,10 +180,6 @@ class VocabularyListBuilderActors(
     temperature = 0.3
   )
 
-
-  interface FeedbackParser : Function<String, FeedbackOutput> {
-    override fun apply(text: String): FeedbackOutput
-  }
 
   data class FeedbackOutput(
     val refinedOutput: String? = null
@@ -283,8 +190,9 @@ class VocabularyListBuilderActors(
     }
   }
 
-  val feedbackActor = ParsedActor<FeedbackOutput>(
-    parserClass = FeedbackParser::class.java,
+  private val feedbackActor = ParsedActor(
+//    parserClass = FeedbackParser::class.java,
+    resultClass = FeedbackOutput::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -292,12 +200,9 @@ class VocabularyListBuilderActors(
         """.trimIndent().trim()
   )
 
-  interface TermInputParser : Function<String, VocabularyListBuilderAgent.TermInput> {
-    override fun apply(text: String): VocabularyListBuilderAgent.TermInput
-  }
-
-  val parseInputActor = ParsedActor<VocabularyListBuilderAgent.TermInput>(
-    parserClass = TermInputParser::class.java,
+  private val parseInputActor = ParsedActor(
+//    parserClass = TermInputParser::class.java,
+    resultClass = VocabularyListBuilderAgent.TermInput::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """

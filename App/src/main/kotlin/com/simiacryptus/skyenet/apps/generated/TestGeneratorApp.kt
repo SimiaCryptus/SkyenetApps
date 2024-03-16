@@ -122,7 +122,6 @@ open class TestGeneratorAgent(
   }
 
   companion object {
-    private val log = LoggerFactory.getLogger(TestGeneratorAgent::class.java)
 
   }
 }
@@ -134,17 +133,14 @@ class TestGeneratorActors(
 ) {
 
 
-  interface TaskParser : Function<String, TaskInfo> {
-    override fun apply(text: String): TaskInfo
-  }
-
   data class TaskInfo(
     val name: String? = null,
     val description: String? = null,
   )
 
-  val inputHandler = ParsedActor<TaskInfo>(
-    parserClass = TaskParser::class.java,
+  private val inputHandler = ParsedActor(
+//    parserClass = TaskParser::class.java,
+    resultClass = TaskInfo::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -152,10 +148,6 @@ class TestGeneratorActors(
         """.trimIndent()
   )
 
-
-  interface TopicIdentificationParser : Function<String, TopicIdentificationResult> {
-    override fun apply(text: String): TopicIdentificationResult
-  }
 
   data class TopicIdentificationResult(
     val topics: List<Topic>? = null
@@ -166,8 +158,9 @@ class TestGeneratorActors(
     )
   }
 
-  val topicIdentificationActor = ParsedActor<TopicIdentificationResult>(
-    parserClass = TopicIdentificationParser::class.java,
+  private val topicIdentificationActor = ParsedActor(
+//    parserClass = TopicIdentificationParser::class.java,
+    resultClass = TopicIdentificationResult::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -175,10 +168,6 @@ class TestGeneratorActors(
         """.trimIndent().trim()
   )
 
-
-  interface QuestionSetParser : Function<String, QuestionSet> {
-    override fun apply(text: String): QuestionSet
-  }
 
   data class Question(
     val text: String? = null,
@@ -190,8 +179,9 @@ class TestGeneratorActors(
     val questions: List<Question>? = null
   )
 
-  val questionGenerationActor = ParsedActor<QuestionSet>(
-    parserClass = QuestionSetParser::class.java,
+  private val questionGenerationActor = ParsedActor(
+//    parserClass = QuestionSetParser::class.java,
+    resultClass = QuestionSet::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -222,12 +212,9 @@ class TestGeneratorActors(
     }
   }
 
-  interface AnswerParser : Function<String, AnswerSet> {
-    override fun apply(text: String): AnswerSet
-  }
-
-  val answerGenerationActor = ParsedActor<AnswerSet>(
-    parserClass = AnswerParser::class.java,
+  private val answerGenerationActor = ParsedActor(
+//    parserClass = AnswerParser::class.java,
+    resultClass = AnswerSet::class.java,
     prompt = """
             You are an assistant capable of generating answers for quiz questions. For each question, generate multiple answers, indicating which are correct or incorrect, and provide explanations for the correctness of each answer.
         """.trimIndent(),

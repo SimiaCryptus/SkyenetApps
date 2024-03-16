@@ -178,7 +178,6 @@ class OutlineAgent(
           api = api,
           dataStorage = dataStorage,
           sessionID = session,
-          appPath = "idea_mapper",
           host = domainName,
           session = ui,
           userId = user,
@@ -283,11 +282,6 @@ class OutlineAgent(
 
 interface OutlineActors {
 
-  interface OutlineParser : Function<String, OutlineManager.NodeList> {
-    @Description("Break down the text into a recursive outline of the main ideas and supporting details.")
-    override fun apply(text: String): OutlineManager.NodeList
-  }
-
   enum class ActorType {
     INITIAL,
     EXPAND,
@@ -305,7 +299,7 @@ interface OutlineActors {
     )
 
     private fun initialAuthor(temperature: Double, model: ChatModels, parsingModel: ChatModels) = ParsedActor(
-      OutlineParser::class.java,
+      OutlineManager.NodeList::class.java,
       prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
       model = model,
       temperature = temperature,
@@ -335,7 +329,8 @@ interface OutlineActors {
 
     private fun expansionAuthor(temperature: Double, parsingModel: ChatModels): ParsedActor<OutlineManager.NodeList> =
       ParsedActor(
-        parserClass = OutlineParser::class.java,
+//        parserClass = OutlineParser::class.java,
+        resultClass = OutlineManager.NodeList::class.java,
         prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
         name = "Expand",
         model = parsingModel,

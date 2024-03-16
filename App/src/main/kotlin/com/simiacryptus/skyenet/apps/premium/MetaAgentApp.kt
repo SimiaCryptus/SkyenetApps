@@ -550,7 +550,6 @@ open class MetaAgentAgent(
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(MetaAgentAgent::class.java)
 
 
     }
@@ -584,11 +583,6 @@ class MetaAgentActors(
         ActorType.CODING to codingActorDesigner(),
         ActorType.FLOW_STEP to flowStepDesigner(),
     )
-
-    interface DesignParser : Function<String, AgentDesign> {
-        @Description("Break down the text into a data structure.")
-        override fun apply(text: String): AgentDesign
-    }
 
     interface FlowParser : Function<String, AgentFlowDesign> {
         @Description("Break down the text into a data structure.")

@@ -371,7 +371,6 @@ open class PresentationDesignerAgent(
   )
 
   companion object {
-    private val log = LoggerFactory.getLogger(PresentationDesignerAgent::class.java)
 
   }
 }
@@ -385,24 +384,9 @@ class PresentationDesignerActors(
 ) {
 
 
-  data class IdeaList(
-    @Description("A list of creative concepts.")
-    val concepts: List<String>
-  ) : ValidatedObject {
-    override fun validate() = when {
-      concepts.isEmpty() -> "At least one concept is required"
-      concepts.any { it.isBlank() } -> "Concepts cannot be blank"
-      else -> null
-    }
-  }
-
-  interface IdeaListParser : Function<String, IdeaList> {
-    @Description("Parses the text response into a list of creative concepts.")
-    override fun apply(text: String): IdeaList
-  }
-
-  val initialAuthor = ParsedActor(
-    parserClass = OutlineParser::class.java,
+  private val initialAuthor = ParsedActor(
+//    parserClass = OutlineParser::class.java,
+    resultClass = Outline::class.java,
     model = ChatModels.GPT4Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -445,23 +429,6 @@ class PresentationDesignerActors(
     }
   }
 
-  // Define the interface for parsing the text response into an Outline object
-  interface OutlineParser : Function<String, Outline> {
-    override fun apply(text: String): Outline
-  }
-
-  // Instantiate the outlineCreator as a ParsedActor<Outline>
-  val outlineCreator = ParsedActor(
-    parserClass = OutlineParser::class.java,
-    prompt = """
-            You are an assistant that creates structured outlines for presentations.
-            Generate detailed outlines for each slide described by the input.
-        """.trimIndent(),
-    model = ChatModels.GPT35Turbo,
-    parsingModel = ChatModels.GPT35Turbo,
-    temperature = 0.3
-  )
-
 
   data class Content(
     val detailedContent: List<String> // Assuming the key is the outline point title and the value is the detailed content
@@ -472,27 +439,19 @@ class PresentationDesignerActors(
     }
   }
 
-  interface ContentParser : Function<String, Content> {
-    @Description("Parse the text response into detailed content for each outline point.")
-    override fun apply(text: String): Content
-  }
-
-  interface SlideDetailsParser : Function<String, SlideDetails> {
-    override fun apply(text: String): SlideDetails
-  }
-
-  val contentExpander = ParsedActor(
+  private val contentExpander = ParsedActor(
     model = ChatModels.GPT4Turbo,
     prompt = """
       You are an assistant that expands outlines into detailed content. 
       Given an outline for a slide in a presentation, provide a comprehensive explanation or description for it.
       """.trimIndent(),
     parsingModel = ChatModels.GPT35Turbo,
-    parserClass = SlideDetailsParser::class.java
+//    parserClass = SlideDetailsParser::class.java
+    resultClass = SlideDetails::class.java,
   )
 
 
-  val slideSummarizer = SimpleActor(
+  private val slideSummarizer = SimpleActor(
     prompt = """
         You are a writing assistant. Your task is to summarize content from a speech. 
         When you receive content, summarize it into about 100 words.
@@ -502,7 +461,7 @@ class PresentationDesignerActors(
     temperature = 0.3
   )
 
-  val slideFormatter = SimpleActor(
+  private val slideFormatter = SimpleActor(
     prompt = """
         You are a presentation slide designer. Your task is to present content it in a visually appealing and consumable form. 
         When you receive content, format it using HTML and CSS to create a professional and polished look.
@@ -514,7 +473,7 @@ class PresentationDesignerActors(
     temperature = 0.3
   )
 
-  val contentFormatter = SimpleActor(
+  private val contentFormatter = SimpleActor(
     prompt = """
         You are a style formatter. Your task is to apply visual styling to the content provided to you. 
         When you receive content, format it using HTML and CSS to create a professional and polished look.
@@ -534,13 +493,9 @@ class PresentationDesignerActors(
     }
   }
 
-  interface RefinerParser : Function<String, SpeakingNotes> {
-    @Description("Parse the response into a RefinedContent data structure.")
-    override fun apply(text: String): SpeakingNotes
-  }
-
-  val speakerNotes = ParsedActor(
-    parserClass = RefinerParser::class.java,
+  private val speakerNotes = ParsedActor(
+//    parserClass = RefinerParser::class.java,
+    resultClass = SpeakingNotes::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
             You are an assistant that creates speaking transcripts from content. 
@@ -550,7 +505,7 @@ class PresentationDesignerActors(
     parsingModel = ChatModels.GPT35Turbo,
   )
 
-  val imageRenderer = ImageActor(
+  private val imageRenderer = ImageActor(
     prompt = """
             Your task is to provide a useful image to accompany the content provided to you.
             You will reply with an image description which will then be rendered.
@@ -561,7 +516,7 @@ class PresentationDesignerActors(
     temperature = 0.3
   )
 
-  val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = ChatModels.GPT35Turbo)
+  private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = ChatModels.GPT35Turbo)
 
   enum class ActorType {
     INITIAL_AUTHOR,

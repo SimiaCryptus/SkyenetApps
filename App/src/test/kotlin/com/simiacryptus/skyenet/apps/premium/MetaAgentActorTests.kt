@@ -145,7 +145,7 @@ class MetaAgentActorTests {
             )
         }
 
-        val codePrefix =
+        private val codePrefix =
             "\nimport com.simiacryptus.skyenet.core.actors.SimpleActor\nimport com.simiacryptus.jopenai.models.ChatModels\nimport com.simiacryptus.jopenai.models.OpenAITextModel\n\nfun conceptActor(): SimpleActor {\n    return SimpleActor(\n        prompt = \"\"\"\n        You are a creative assistant specialized in generating comic book concepts. \n        When given a theme or genre, you provide a structured concept that includes the genre, themes, and a basic plot outline.\n        \"\"\".trimIndent(),\n        name = \"ConceptActor\",\n        model = ChatModels.GPT35Turbo,\n        temperature = 0.3\n    )\n}\n".trimIndent()
         override fun answer(messages: Array<ApiModel.ChatMessage>): CodingActor.CodeResult {
             return actor.respond(

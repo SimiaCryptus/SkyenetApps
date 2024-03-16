@@ -18,7 +18,6 @@ import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import org.slf4j.LoggerFactory
-import java.util.function.Function
 
 
 open class AutomatedLessonPlannerArchitectureApp(
@@ -161,7 +160,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
   }
 
   // Function to allow teachers to customize the generated lesson plan
-  fun customizeLessonPlan(initialLessonPlan: String) {
+  private fun customizeLessonPlan(initialLessonPlan: String) {
     // Create a new task in the UI to show progress
     val task = ui.newTask()
     try {
@@ -198,7 +197,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
   }
 
   // Function to analyze teacher feedback for continuous improvement
-  fun analyzeFeedback(feedback: String) {
+  private fun analyzeFeedback(feedback: String) {
     // Create a new task in the UI to show progress
     val task = ui.newTask()
     try {
@@ -235,7 +234,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
   }
 
   // Function to map learning objectives to curriculum standards
-  fun mapLearningObjectivesToStandards(learningObjectives: List<String>) {
+  private fun mapLearningObjectivesToStandards(learningObjectives: List<String>) {
     // Create a new task in the UI to show progress
     val task = ui.newTask()
     try {
@@ -272,7 +271,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
   }
 
   // Function to create a lesson timeline based on activities and time constraints
-  fun createLessonTimeline(activities: List<Activity>, totalLessonTime: Int) {
+  private fun createLessonTimeline(activities: List<Activity>, totalLessonTime: Int) {
     // Create a new task in the UI to show progress
     val task = ui.newTask()
     try {
@@ -312,7 +311,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
   }
 
   // Function to suggest assessment methods based on learning objectives
-  fun suggestAssessmentMethods(learningObjectives: List<String>) {
+  private fun suggestAssessmentMethods(learningObjectives: List<String>) {
     // Create a new task in the UI to show progress
     val task = ui.newTask()
     try {
@@ -349,7 +348,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
   }
 
   // Function to suggest activities based on available resources
-  fun suggestActivities(availableResources: List<String>) {
+  private fun suggestActivities(availableResources: List<String>) {
     // Create a new task in the UI to show progress
     val task = ui.newTask()
     try {
@@ -386,7 +385,6 @@ open class AutomatedLessonPlannerArchitectureAgent(
   }
 
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(AutomatedLessonPlannerArchitectureAgent::class.java)
 
   }
 }
@@ -413,15 +411,10 @@ class AutomatedLessonPlannerArchitectureActors(
     }
   }
 
-  // Define the parser interface
-  interface CurriculumMappingParser : Function<String, CurriculumMapping> {
-    @Description("Parse the text response into a CurriculumMapping data structure.")
-    override fun apply(text: String): CurriculumMapping
-  }
-
   // Instantiate the curriculumMapperActor
-  val curriculumMapperActor = ParsedActor<CurriculumMapping>(
-    parserClass = CurriculumMappingParser::class.java,
+  private val curriculumMapperActor = ParsedActor(
+//    parserClass = CurriculumMappingParser::class.java,
+    resultClass = CurriculumMapping::class.java,
     model = ChatModels.GPT35Turbo,
     prompt = """
             You are an assistant that maps learning objectives to curriculum standards.
@@ -444,13 +437,9 @@ class AutomatedLessonPlannerArchitectureActors(
     }
   }
 
-  interface ResourceAllocatorParser : Function<String, ResourceAllocation> {
-    @Description("Parses the text into a ResourceAllocation data structure.")
-    override fun apply(text: String): ResourceAllocation
-  }
-
-  val resourceAllocatorActor = ParsedActor<ResourceAllocation>(
-    parserClass = ResourceAllocatorParser::class.java,
+  private val resourceAllocatorActor = ParsedActor(
+//    parserClass = ResourceAllocatorParser::class.java,
+    resultClass = ResourceAllocation::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -501,13 +490,9 @@ class AutomatedLessonPlannerArchitectureActors(
     }
   }
 
-  interface TimeManagerParser : Function<String, LessonTimeline> {
-    @Description("Parse the text response into a lesson timeline structure.")
-    override fun apply(text: String): LessonTimeline
-  }
-
-  val timeManagerActor = ParsedActor<LessonTimeline>(
-    parserClass = TimeManagerParser::class.java,
+  private val timeManagerActor = ParsedActor(
+//    parserClass = TimeManagerParser::class.java,
+    resultClass = LessonTimeline::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -544,13 +529,9 @@ class AutomatedLessonPlannerArchitectureActors(
     }
   }
 
-  interface AssessmentPlanParser : Function<String, AssessmentPlan> {
-    @Description("Parse the text response into an assessment plan.")
-    override fun apply(text: String): AssessmentPlan
-  }
-
-  val assessmentPlannerActor = ParsedActor<AssessmentPlan>(
-    parserClass = AssessmentPlanParser::class.java,
+  private val assessmentPlannerActor = ParsedActor(
+//    parserClass = AssessmentPlanParser::class.java,
+    resultClass = AssessmentPlan::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
@@ -566,7 +547,7 @@ class AutomatedLessonPlannerArchitectureActors(
   )
 
 
-  val customizationActor = SimpleActor(
+  private val customizationActor = SimpleActor(
     prompt = """
             You are an automated lesson planner customization tool.
             Provide options for teachers to customize their lesson plans.
@@ -589,13 +570,9 @@ class AutomatedLessonPlannerArchitectureActors(
     }
   }
 
-  interface FeedbackParser : Function<String, FeedbackAnalysis> {
-    @Description("Parse the feedback text into a structured feedback analysis.")
-    override fun apply(text: String): FeedbackAnalysis
-  }
-
-  val feedbackAnalyzerActor = ParsedActor<FeedbackAnalysis>(
-    parserClass = FeedbackParser::class.java,
+  private val feedbackAnalyzerActor = ParsedActor(
+//    parserClass = FeedbackParser::class.java,
+    resultClass = FeedbackAnalysis::class.java,
     model = ChatModels.GPT35Turbo,
     parsingModel = ChatModels.GPT35Turbo,
     prompt = """
