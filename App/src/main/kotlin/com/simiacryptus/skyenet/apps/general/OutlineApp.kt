@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.apps.general
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.GPT4Tokenizer
 import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.jopenai.describe.JsonDescriber
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.core.actors.ActorSystem
@@ -309,16 +310,39 @@ interface OutlineActors {
       model = model,
       temperature = temperature,
       parsingModel = parsingModel,
+      describer = object : JsonDescriber(
+        mutableSetOf("com.simiacryptus", "com.github.simiacryptus")
+      ) {
+        override val includeMethods: Boolean get() = false
+      },
+      exampleInstance = exampleNodeList(),
     )
 
-    private fun expansionAuthor(temperature: Double, parsingModel: ChatModels): ParsedActor<OutlineManager.NodeList> = ParsedActor(
-      parserClass = OutlineParser::class.java,
-      prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
-      name = "Expand",
-      model = parsingModel,
-      temperature = temperature,
-      parsingModel = parsingModel,
+    private fun exampleNodeList() = OutlineManager.NodeList(
+      listOf(
+        OutlineManager.Node(name = "Main Idea", description = "Main Idea Description"),
+        OutlineManager.Node(
+          name = "Supporting Idea",
+          description = "Supporting Idea Description",
+          children = OutlineManager.NodeList(
+            listOf(
+              OutlineManager.Node(name = "Sub Idea", description = "Sub Idea Description")
+            )
+          )
+        )
+      )
     )
+
+    private fun expansionAuthor(temperature: Double, parsingModel: ChatModels): ParsedActor<OutlineManager.NodeList> =
+      ParsedActor(
+        parserClass = OutlineParser::class.java,
+        prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
+        name = "Expand",
+        model = parsingModel,
+        temperature = temperature,
+        parsingModel = parsingModel,
+        exampleInstance = exampleNodeList(),
+      )
 
     private fun finalWriter(temperature: Double, model: ChatModels) = SimpleActor(
       prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
