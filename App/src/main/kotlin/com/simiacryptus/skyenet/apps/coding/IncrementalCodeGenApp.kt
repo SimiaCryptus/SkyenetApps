@@ -233,16 +233,18 @@ class IncrementalCodeGenAgent(
     highLevelPlan: ParsedResponse<TaskBreakdownResult>,
     genState: GenState,
   ) {
+    val task = ui.newTask()
     try {
-      val task = ui.newTask()
       val dependencies = subTask.dependencies?.toMutableList() ?: mutableListOf()
       dependencies += getAllDependencies(subTask, genState.subTasks)
       task.add(renderMarkdown("## Task: ${subTask.description ?: ""}\n\nDependencies:\n${dependencies.joinToString("\n") { "- $it" }}"))
-      val priorCode = dependencies.associateWith { genState.subTasks[it] }.entries.joinToString("\n") { (id, task) ->
-        genState.generatedCodes[id]?.code ?: ""
-      }
+      val priorCode = dependencies
+        .flatMap { genState.subTasks[it]?.dependencies ?: emptyList() }
+        .joinToString("\n") { """
+          // ${genState.subTasks[it]?.description ?: "Unknown"}
+          ${genState.generatedCodes[it]?.code ?: ""}
+        """.trimIndent() }
       when (subTask.taskType) {
-
         TaskType.Coding_General, TaskType.Coding_Tests, TaskType.Coding_Schema -> {
           task.add(renderMarkdown("Prior Code:\n```kotlin\n${priorCode ?: ""}\n```"))
           val codeRequest = CodingActor.CodeRequest(
@@ -258,7 +260,7 @@ class IncrementalCodeGenAgent(
         }
 
         TaskType.Documentation -> {
-          val docResult = documentationGeneratorActor.answer(listOf(priorCode ?: ""), api)
+          val docResult = documentationGeneratorActor.answer(listOf(priorCode), api)
           task.complete(renderMarkdown("## Generated Documentation\n$docResult"))
           genState.generatedDocs[taskId] = docResult
         }
@@ -304,12 +306,14 @@ class IncrementalCodeGenAgent(
               }
             }
           }
-//          val task = ui.newTask()
           task.complete(renderMarkdown("## Task Dependency Graph\n```mermaid\n${buildMermaidGraph(genState.subTasks)}\n```"))
         }
 
         else -> null
       }
+    } catch (e : Exception) {
+      task.error(ui, e)
+      log.warn("Error during task execution", e)
     } finally {
       genState.completedTasks.add(taskId)
     }
@@ -356,11 +360,9 @@ class IncrementalCodeGenAgent(
         .replace(")", "\\)")
     }
     subTasks.forEach { (taskId, task) ->
-      // Add node for the task
       val taskId = taskId.replace(" ", "_")
       val escapedDescription = escapeMermaidCharacters(task.description ?: "")
       graphBuilder.append("    ${taskId}[\"${escapedDescription}\"];\n")
-      // Add edges for dependencies
       task.dependencies?.forEach { dependency ->
         graphBuilder.append("    ${dependency.replace(" ", "_")} --> ${taskId};\n")
       }
