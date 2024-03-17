@@ -6,6 +6,7 @@ import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
 import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
@@ -15,6 +16,8 @@ import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
+import java.util.concurrent.Future
+import java.util.concurrent.ThreadPoolExecutor
 
 class IncrementalCodeGenApp(
   applicationName: String = "Incremental Code Generation v1.0",
@@ -79,9 +82,10 @@ class IncrementalCodeGenAgent(
     ActorTypes.TaskBreakdown to ParsedActor(
       resultClass = TaskBreakdownResult::class.java,
       prompt = """
-       Break down the user request into smaller, manageable tasks, focusing on identifying clear, actionable items that can be individually addressed. 
-       Ensure each task is well-defined and includes any specific requirements or constraints.
-        """.trimIndent(),
+      Analyze the user request and break it down into smaller, actionable tasks suitable for direct implementation in code.
+      Each task should be clearly defined, with explicit mention of any specific requirements, constraints, and the expected outcome.
+      Prioritize tasks based on dependencies and logical sequence of implementation. Provide a brief rationale for the division and ordering of tasks.
+      """.trimIndent(),
       model = model,
       parsingModel = parsingModel,
       temperature = temperature,
@@ -90,26 +94,28 @@ class IncrementalCodeGenAgent(
       interpreterClass = KotlinInterpreter::class,
       symbols = mapOf(),
       details = """
-       Generate code based on the specified tasks, ensuring the code is efficient, readable, and well-structured. 
-       Include comments to explain complex logic or important decisions made during the coding process.
-        """.trimIndent(),
+      Generate code that fulfills the specified tasks, ensuring the code is not only efficient and readable but also adheres to best practices in software development.
+      The code should be well-structured, with clear separation of concerns and modularity to facilitate future maintenance and scalability.
+      Include inline comments to explain complex logic, important decisions, and the purpose of major functions and modules. Consider edge cases and error handling in your implementation.
+      """.trimIndent(),
       model = model,
       temperature = temperature,
     ),
     ActorTypes.CodeReviewer to SimpleActor(
       prompt = """
-       Review the generated code for optimization and best practices, focusing on identifying potential improvements in code efficiency, readability, and adherence to coding standards. 
-       Provide specific suggestions for enhancements.
-        """.trimIndent(),
+      Conduct a comprehensive review of the generated code, focusing on its efficiency, readability, maintainability, and adherence to coding standards and best practices.
+      Evaluate the code's structure, naming conventions, modularity, and use of design patterns. Identify any potential improvements and provide specific, actionable suggestions for enhancing the code's quality, performance, and readability. Highlight any areas that may be prone to errors or bugs.
+      """.trimIndent(),
       model = model,
       temperature = temperature,
 
       ),
     ActorTypes.DocumentationGenerator to SimpleActor(
       prompt = """
-      Generate comprehensive and clear documentation for the provided code snippets, including descriptions of the code's purpose, inputs, outputs, and any assumptions or limitations. 
-      Use a structured format that is easy to follow.
-       """.trimIndent(),
+      Create detailed and clear documentation for the provided code, covering its purpose, functionality, inputs, outputs, and any assumptions or limitations.
+      Use a structured and consistent format that facilitates easy understanding and navigation. Include code examples where applicable, and explain the rationale behind key design decisions and algorithm choices.
+      Document any known issues or areas for improvement, providing guidance for future developers on how to extend or maintain the code.
+      """.trimIndent(),
       model = model,
       temperature = temperature,
     )
@@ -135,15 +141,15 @@ class IncrementalCodeGenAgent(
 
   enum class TaskType {
     Design,
-    CodeGeneration,
-    CodeReview,
+    Coding_Schema,
+    Coding_General,
+    Coding_Tests,
     Documentation,
     Testing,
   }
 
   val taskBreakdownActor by lazy { actorMap[ActorTypes.TaskBreakdown] as ParsedActor<TaskBreakdownResult> }
   val codeGeneratorActor by lazy { actorMap[ActorTypes.CodeGenerator] as CodingActor }
-  val codeReviewerActor by lazy { actorMap[ActorTypes.CodeReviewer] as SimpleActor }
 
   fun startProcess(userMessage: String) {
     val highLevelPlan = AgentPatterns.iterate(
@@ -157,98 +163,173 @@ class IncrementalCodeGenAgent(
         task.add(renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```"))
       }
     )
-
-    val task = ui.newTask()
+    val pool: ThreadPoolExecutor = clientManager.getPool(session, user, dataStorage)
+    val genState = GenState(
+      subTasks = highLevelPlan.obj.tasksByID?.toMutableMap() ?: mutableMapOf(),
+      generatedCodes = mutableMapOf(),
+      generatedDocs = mutableMapOf(),
+      taskIds = executionOrder(highLevelPlan.obj.tasksByID ?: emptyMap()).toMutableList(),
+      completedTasks = mutableListOf()
+    )
     try {
-      var subTasks = highLevelPlan.obj.tasksByID?.toMutableMap() ?: mutableMapOf()
-      val generatedCodes = mutableMapOf<String, CodingActor.CodeResult>()
-      val generatedDocs = mutableMapOf<String, String>()
-
-      task.add(renderMarkdown("## Task Dependency Graph\n```mermaid\n${buildMermaidGraph(subTasks ?: emptyMap())}\n```"))
-
-      val taskIds = executionOrder(subTasks ?: emptyMap()).toMutableList()
-      val completedTasks = mutableListOf<String>()
-      while (taskIds.isNotEmpty()) {
-        val taskId = taskIds.removeAt(0)
-        val subTask = subTasks?.get(taskId) ?: throw RuntimeException("Task not found: $taskId")
-        val dependencies = subTask.dependencies?.associate { it to subTasks[it] }
-        val priorCode =
-          dependencies?.filter { it.value?.taskType == TaskType.CodeGeneration }?.entries?.joinToString("\n") { (id, task) ->
-            generatedCodes[id]?.code ?: throw RuntimeException("Code not found for dependency: $id")
+      ui.newTask()
+        .complete(renderMarkdown("## Task Graph\n```mermaid\n${buildMermaidGraph(genState.subTasks ?: emptyMap())}\n```"))
+      while (genState.taskIds.isNotEmpty()) {
+        val taskId = genState.taskIds.removeAt(0)
+        val subTask = genState.subTasks[taskId] ?: throw RuntimeException("Task not found: $taskId")
+        subTask.dependencies
+          ?.associate { it to genState.taskFutures[it] }
+          ?.forEach { (id, future) ->
+            try {
+              future?.get() ?: log.warn("Dependency not found: $id")
+            } catch (e: Throwable) {
+              log.warn("Error", e)
+            }
           }
-        try {
-          when (subTask.taskType) {
-
-            TaskType.CodeGeneration -> {
-              val codeRequest = CodingActor.CodeRequest(
-                codePrefix = priorCode ?: "",
-                messages = listOf(
-                  highLevelPlan.text to ApiModel.Role.user,
-                  ("Build ${subTask.description ?: ""}") to ApiModel.Role.user
-                ),
-              )
-              val codeResult = codeGeneratorActor.answer(codeRequest, api)
-              ui.newTask().add(renderMarkdown("Generated Code: \n```kotlin\n${codeResult.code}\n```\n"))
-              generatedCodes[taskId] = codeResult
-            }
-
-            TaskType.CodeReview -> {
-              val reviewResult = codeReviewerActor.answer(listOf(priorCode ?: ""), api)
-              ui.newTask().add(renderMarkdown("Code Review: $reviewResult"))
-            }
-
-            TaskType.Documentation -> {
-              val docResult = documentationGeneratorActor.answer(listOf(priorCode ?: ""), api)
-              ui.newTask().add(renderMarkdown("Generated Documentation: $docResult"))
-              generatedDocs[taskId] = docResult
-            }
-
-            TaskType.Design -> {
-              val subPlan = AgentPatterns.iterate(
-                input = "Expand ${ subTask.description ?: "" }",
-                heading = "Expand ${ subTask.description ?: "" }",
-                actor = taskBreakdownActor,
-                toInput = { listOf(
-                  userMessage,
-                  highLevelPlan.text,
-                  it
-                ) },
-                api = api,
-                ui = ui,
-                outputFn = { task, design ->
-                  task.add(renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```"))
-                }
-              )
-              var newTasks = subPlan.obj.tasksByID
-              val conflictingKeys = newTasks?.keys?.intersect(subTasks.keys)
-              newTasks = newTasks?.entries?.associate { (key, value) -> (when {
-                conflictingKeys?.contains(key) == true -> "${taskId}_${key}"
-                else -> key
-              }) to value.copy(dependencies = value.dependencies?.map { key -> when {
-                conflictingKeys?.contains(key) == true -> "${taskId}_${key}"
-                else -> key
-              } }) }
-              subTasks.putAll(newTasks ?: emptyMap())
-              executionOrder(newTasks ?: emptyMap()).reversed().forEach { taskIds.add(0, it) }
-              subTasks.values.forEach { it.dependencies = it.dependencies?.map { dep -> when {
-                dep == taskId -> subPlan.obj.finalTaskID ?: dep
-                else -> dep
-              } } }
-              ui.newTask().add(renderMarkdown("## Task Dependency Graph\n```mermaid\n${buildMermaidGraph(subTasks)}\n```"))
-            }
-
-            else -> null
-          }
-        } finally {
-          completedTasks.add(taskId)
+        genState.taskFutures[taskId] = pool.submit {
+          runTask(
+            taskId = taskId,
+            subTask = subTask,
+            userMessage = userMessage,
+            highLevelPlan = highLevelPlan,
+            genState = genState
+          )
         }
       }
-
-      task.complete("Process completed successfully.")
+      genState.taskFutures.forEach { (id, future) ->
+        try {
+          future.get() ?: log.warn("Dependency not found: $id")
+        } catch (e: Throwable) {
+          log.warn("Error", e)
+        }
+      }
+      genState.completedTasks.joinToString("\n") { taskId ->
+        """
+          // ${genState.subTasks[taskId]?.description ?: "Unknown"}
+          ${genState.generatedCodes[taskId]?.code ?: ""}
+        """.trimIndent()
+      }.let { summary ->
+        ui.newTask().complete(renderMarkdown("# Completed Code\n```kotlin\n$summary\n```"))
+      }
     } catch (e: Throwable) {
-      task.error(ui, e)
+      ui.newTask().error(ui, e)
       log.warn("Error during incremental code generation process", e)
     }
+  }
+
+  data class GenState(
+    val subTasks: MutableMap<String, Task>,
+    val generatedCodes: MutableMap<String, CodingActor.CodeResult>,
+    val generatedDocs: MutableMap<String, String>,
+    val taskIds: MutableList<String>,
+    val completedTasks: MutableList<String>,
+    val taskFutures: MutableMap<String, Future<*>> = mutableMapOf(),
+  )
+
+  private fun runTask(
+    taskId: String,
+    subTask: Task,
+    userMessage: String,
+    highLevelPlan: ParsedResponse<TaskBreakdownResult>,
+    genState: GenState,
+  ) {
+    try {
+      val task = ui.newTask()
+      val dependencies = subTask.dependencies?.toMutableList() ?: mutableListOf()
+      dependencies += getAllDependencies(subTask, genState.subTasks)
+      task.add(renderMarkdown("## Task: ${subTask.description ?: ""}\n\nDependencies:\n${dependencies.joinToString("\n") { "- $it" }}"))
+      val priorCode = dependencies.associateWith { genState.subTasks[it] }.entries.joinToString("\n") { (id, task) ->
+        genState.generatedCodes[id]?.code ?: ""
+      }
+      when (subTask.taskType) {
+
+        TaskType.Coding_General, TaskType.Coding_Tests, TaskType.Coding_Schema -> {
+          task.add(renderMarkdown("Prior Code:\n```kotlin\n${priorCode ?: ""}\n```"))
+          val codeRequest = CodingActor.CodeRequest(
+            codePrefix = priorCode ?: "",
+            messages = listOf(
+              highLevelPlan.text to ApiModel.Role.user,
+              ("Build ${subTask.description ?: ""}") to ApiModel.Role.user
+            ),
+          )
+          val codeResult = codeGeneratorActor.answer(codeRequest, api)
+          task.complete(renderMarkdown("## Generated Code\n```kotlin\n${codeResult.code}\n```\n"))
+          genState.generatedCodes[taskId] = codeResult
+        }
+
+        TaskType.Documentation -> {
+          val docResult = documentationGeneratorActor.answer(listOf(priorCode ?: ""), api)
+          task.complete(renderMarkdown("## Generated Documentation\n$docResult"))
+          genState.generatedDocs[taskId] = docResult
+        }
+
+        TaskType.Design -> {
+          val subPlan = AgentPatterns.iterate(
+            input = "Expand ${subTask.description ?: ""}",
+            heading = "Expand ${subTask.description ?: ""}",
+            actor = taskBreakdownActor,
+            toInput = {
+              listOf(
+                userMessage,
+                highLevelPlan.text,
+                it
+              )
+            },
+            api = api,
+            ui = ui,
+            outputFn = { task, design ->
+              task.add(renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```"))
+            }
+          )
+          var newTasks = subPlan.obj.tasksByID
+          val conflictingKeys = newTasks?.keys?.intersect(genState.subTasks.keys)
+          newTasks = newTasks?.entries?.associate { (key, value) ->
+            (when {
+              conflictingKeys?.contains(key) == true -> "${taskId}_${key}"
+              else -> key
+            }) to value.copy(dependencies = value.dependencies?.map { key ->
+              when {
+                conflictingKeys?.contains(key) == true -> "${taskId}_${key}"
+                else -> key
+              }
+            })
+          }
+          genState.subTasks.putAll(newTasks ?: emptyMap())
+          executionOrder(newTasks ?: emptyMap()).reversed().forEach { genState.taskIds.add(0, it) }
+          genState.subTasks.values.forEach {
+            it.dependencies = it.dependencies?.map { dep ->
+              when {
+                dep == taskId -> subPlan.obj.finalTaskID ?: dep
+                else -> dep
+              }
+            }
+          }
+//          val task = ui.newTask()
+          task.complete(renderMarkdown("## Task Dependency Graph\n```mermaid\n${buildMermaidGraph(genState.subTasks)}\n```"))
+        }
+
+        else -> null
+      }
+    } finally {
+      genState.completedTasks.add(taskId)
+    }
+  }
+
+  private fun getAllDependencies(subTask: Task, subTasks: MutableMap<String, Task>): List<String> {
+    return getAllDependenciesHelper(subTask, subTasks, mutableSetOf())
+  }
+
+  private fun getAllDependenciesHelper(subTask: Task, subTasks: MutableMap<String, Task>, visited: MutableSet<String>): List<String> {
+    val dependencies = subTask.dependencies?.toMutableList() ?: mutableListOf()
+    subTask.dependencies?.forEach { dep ->
+      if (dep in visited) return@forEach
+      val subTask = subTasks[dep]
+      if (subTask != null) {
+        visited.add(dep)
+        dependencies.addAll(getAllDependenciesHelper(subTask, subTasks, visited))
+      }
+    }
+    return dependencies
   }
 
   private fun executionOrder(tasks: Map<String, Task>): List<String> {
