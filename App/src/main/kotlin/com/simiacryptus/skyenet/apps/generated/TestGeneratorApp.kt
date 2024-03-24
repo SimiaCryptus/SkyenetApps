@@ -75,7 +75,7 @@ open class TestGeneratorAgent(
   TestGeneratorActors(
     model = model,
     temperature = temperature,
-  ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
+  ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
 ) {
 
   @Suppress("UNCHECKED_CAST")

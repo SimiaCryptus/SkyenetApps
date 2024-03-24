@@ -81,7 +81,7 @@ open class VocabularyAgent(
   VocabularyActors(
     model = model,
     temperature = temperature,
-  ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
+  ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
 ) {
 
   @Suppress("UNCHECKED_CAST")
@@ -95,10 +95,19 @@ open class VocabularyAgent(
       val parsedInput = AgentPatterns.iterate(
         input = userInput,
         actor = inputProcessorActor,
-        toInput = { listOf(it) },
+        toInput = { it: String -> listOf(it) },
         api = api,
         ui = ui,
-        outputFn = { task, design -> task.add(renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```")) }
+        outputFn = { design ->
+//          renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```")
+          AgentPatterns.displayMapInTabs(
+            mapOf(
+              "Text" to renderMarkdown(design.text),
+              "JSON" to renderMarkdown("```json\n${toJson(design.obj)}\n```"),
+            )
+          )
+        },
+        task = ui.newTask()
       ).obj
 
       task.add(renderMarkdown("```json\n${toJson(parsedInput)}\n```"))

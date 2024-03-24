@@ -118,7 +118,7 @@ class OutlineAgent(
   val ui: ApplicationInterface,
   val domainName: String
 ) : ActorSystem<OutlineActors.ActorType>(
-  OutlineActors.actorMap(temperature, firstLevelModel, parsingModel).map { it.key.name to it.value.javaClass }.toMap(),
+  OutlineActors.actorMap(temperature, firstLevelModel, parsingModel).map { it.key.name to it.value }.toMap(),
   dataStorage,
   user,
   session
@@ -206,7 +206,7 @@ class OutlineAgent(
   private fun buildFinalEssay(
     nodeList: OutlineManager.NodeList,
     manager: OutlineManager
-  ): String = if (tokenizer.estimateTokenCount(nodeList.getTextOutline()) > (summary.model.maxTokens * 0.6).toInt()) {
+  ): String = if (tokenizer.estimateTokenCount(nodeList.getTextOutline()) > (summary.model.maxTotalTokens * 0.6).toInt()) {
     manager.expandNodes(nodeList)?.joinToString("\n") { buildFinalEssay(it, manager) } ?: ""
   } else {
     summary.answer(listOf(nodeList.getTextOutline()), api = api)

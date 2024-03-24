@@ -115,7 +115,7 @@ open class MetaAgentAgent(
         ),
         model = model,
         temperature = temperature,
-    ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
+    ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
 ) {
 
     private val highLevelDesigner by lazy { getActor(MetaAgentActors.ActorType.HIGH_LEVEL) as SimpleActor }
@@ -321,41 +321,42 @@ open class MetaAgentAgent(
         val highLevelDesign = AgentPatterns.iterate(
             input = input,
             actor = highLevelDesigner,
-            toInput = { listOf(it) },
+            toInput = { it: String -> listOf(it) },
             api = api,
-            ui = ui
+            ui = ui,
+            task = ui.newTask()
         )
         val flowDesign = AgentPatterns.iterate(
             input = highLevelDesign,
             heading = "Flow Design",
             actor = detailDesigner,
-            toInput = { listOf(it) },
+            toInput = { it: String -> listOf(it) },
             api = api,
             ui = ui,
-            outputFn = { task, design ->
-                task.add(renderMarkdown(design.toString()))
+            outputFn = { design ->
                 try {
-                    task.verbose(JsonUtil.toJson(design.obj))
+                    renderMarkdown(design.toString()) + JsonUtil.toJson(design.obj)
                 } catch (e: Throwable) {
-                    task.error(ui, e)
+                    renderMarkdown(e.message ?: e.toString())
                 }
-            }
+            },
+            task = ui.newTask()
         )
         val actorDesignParsedResponse: ParsedResponse<MetaAgentActors.AgentActorDesign> = AgentPatterns.iterate(
             input = flowDesign.text,
             heading = "Actor Design",
             actor = actorDesigner,
-            toInput = { listOf(it) },
+            toInput = { it: String -> listOf(it) },
             api = api,
             ui = ui,
-            outputFn = { task, design ->
-                task.add(renderMarkdown(design.toString()))
+            outputFn = { design ->
                 try {
-                    task.verbose(JsonUtil.toJson(design.obj))
+                    renderMarkdown(design.toString()) + JsonUtil.toJson(design.obj)
                 } catch (e: Throwable) {
-                    task.error(ui, e)
+                    renderMarkdown(e.message ?: e.toString())
                 }
-            }
+            },
+            task = ui.newTask()
         )
         return object : ParsedResponse<MetaAgentActors.AgentDesign>(MetaAgentActors.AgentDesign::class.java) {
             override val text get() = flowDesign.text + "\n" + actorDesignParsedResponse.text

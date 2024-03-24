@@ -121,7 +121,7 @@ class IncrementalCodeGenAgent(
     )
   )
 ) : ActorSystem<IncrementalCodeGenAgent.ActorTypes>(
-  actorMap.map { it.key.name to it.value.javaClass }.toMap(),
+  actorMap.map { it.key.name to it.value }.toMap(),
   dataStorage,
   user,
   session
@@ -156,12 +156,19 @@ class IncrementalCodeGenAgent(
       input = userMessage,
       heading = userMessage,
       actor = taskBreakdownActor,
-      toInput = { listOf(userMessage, it) },
+      toInput = { it: String -> listOf(userMessage, it) },
       api = api,
       ui = ui,
-      outputFn = { task, design ->
-        task.add(renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```"))
-      }
+      outputFn = { design ->
+//        renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```")
+        AgentPatterns.displayMapInTabs(
+          mapOf(
+            "Text" to renderMarkdown(design.text),
+            "JSON" to renderMarkdown("```json\n${toJson(design.obj)}\n```"),
+          )
+        )
+      },
+      task = ui.newTask()
     )
     val pool: ThreadPoolExecutor = clientManager.getPool(session, user, dataStorage)
     val genState = GenState(
@@ -270,7 +277,7 @@ class IncrementalCodeGenAgent(
             input = "Expand ${subTask.description ?: ""}",
             heading = "Expand ${subTask.description ?: ""}",
             actor = taskBreakdownActor,
-            toInput = {
+            toInput = { it: String ->
               listOf(
                 userMessage,
                 highLevelPlan.text,
@@ -279,9 +286,16 @@ class IncrementalCodeGenAgent(
             },
             api = api,
             ui = ui,
-            outputFn = { task, design ->
-              task.add(renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```"))
-            }
+            outputFn = { design ->
+//              renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```")
+              AgentPatterns.displayMapInTabs(
+                mapOf(
+                  "Text" to renderMarkdown(design.text),
+                  "JSON" to renderMarkdown("```json\n${toJson(design.obj)}\n```"),
+                )
+              )
+            },
+            task = ui.newTask()
           )
           var newTasks = subPlan.obj.tasksByID
           val conflictingKeys = newTasks?.keys?.intersect(genState.subTasks.keys)

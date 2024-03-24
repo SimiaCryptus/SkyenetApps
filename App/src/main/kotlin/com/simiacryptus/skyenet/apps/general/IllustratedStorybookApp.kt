@@ -16,7 +16,7 @@ import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.util.MarkdownUtil
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
@@ -33,7 +33,7 @@ open class IllustratedStorybookApp(
 
   override val description: String
     @Language("HTML")
-    get() = "<div>" + MarkdownUtil.renderMarkdown(
+    get() = "<div>" + renderMarkdown(
       """
         Welcome to the Illustrated Storybook Generator, an app designed to help you create illustrated storybooks with ease.
         
@@ -103,7 +103,7 @@ open class IllustratedStorybookAgent(
     imageModel = imageModel,
     voice = voice,
     voiceSpeed = voiceSpeed,
-  ).actorMap.map { it.key.name to it.value.javaClass }.toMap(), dataStorage, user, session
+  ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
 ) {
 
   @Suppress("UNCHECKED_CAST")
@@ -159,18 +159,19 @@ open class IllustratedStorybookAgent(
       val parsedInput = AgentPatterns.iterate(
         input = userMessage,
         actor = requirementsActor,
-        toInput = { listOf(it) },
+        toInput = { it: String -> listOf(it) },
         api = api,
         ui = ui,
-        outputFn = { task, design -> task.add(
-          MarkdownUtil.renderMarkdown(
-            "${design.text}\n\n```json\n${
-              JsonUtil.toJson(
-                design.obj
-              )
-            }\n```"
+        outputFn = { design ->
+//          renderMarkdown("${design.text}\n\n```json\n${JsonUtil.toJson(design.obj)}\n```")
+          AgentPatterns.displayMapInTabs(
+            mapOf(
+              "Text" to renderMarkdown(design.text),
+              "JSON" to renderMarkdown("```json\n${JsonUtil.toJson(design.obj)}\n```"),
+            )
           )
-        ) }
+        },
+        task = ui.newTask()
       ).obj
       agentSystemArchitecture(parsedInput)
       task.complete("Generation complete!")
@@ -334,7 +335,7 @@ open class IllustratedStorybookAgent(
       val illustrationResponse = illustrationGeneratorActor.answer(conversationThread, api = api)
 
       // Log the AgentSystemArchitectureActors.image description
-      task.add(MarkdownUtil.renderMarkdown(illustrationResponse.text), className = "illustration-caption")
+      task.add(renderMarkdown(illustrationResponse.text), className = "illustration-caption")
       val imageHtml = task.image(illustrationResponse.image).toString()
       task.complete()
 
@@ -370,7 +371,7 @@ open class IllustratedStorybookAgent(
       val storyResponse = storyGeneratorActor.answer(conversationThread, api = api)
 
       // Log the natural language answer
-      task.add(MarkdownUtil.renderMarkdown(storyResponse.text))
+      task.add(renderMarkdown(storyResponse.text))
       task.verbose(JsonUtil.toJson(storyResponse.obj))
 
       // Return the parsed story data
