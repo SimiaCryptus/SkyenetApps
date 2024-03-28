@@ -7,6 +7,7 @@ import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.StorageInterface.Companion.long64
@@ -99,18 +100,18 @@ open class VocabularyAgent(
         api = api,
         ui = ui,
         outputFn = { design ->
-//          renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```")
+//          renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
           AgentPatterns.displayMapInTabs(
             mapOf(
               "Text" to renderMarkdown(design.text),
-              "JSON" to renderMarkdown("```json\n${toJson(design.obj)}\n```"),
+              "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
             )
           )
         },
         task = ui.newTask()
       ).obj
 
-      task.add(renderMarkdown("```json\n${toJson(parsedInput)}\n```"))
+      task.add(renderMarkdown("```json\n${toJson(parsedInput).indent("  ")}\n```"))
 
       // Initialize lists to hold terms, definitions, and illustrations
       val terms = parsedInput.terms
@@ -128,7 +129,7 @@ open class VocabularyAgent(
           val definition = VocabularyActors.TermDefinition(term, response.text).definition
           definitions.add(definition)
           task.add("Generated definition for term: $term")
-          task.verbose(renderMarkdown("```json\n${toJson(definition)}\n```"))
+          task.verbose(renderMarkdown("```json\n${toJson(definition).indent("  ")}\n```"))
 
           val illustration = illustrationGeneratorActor.answer(
             listOf(

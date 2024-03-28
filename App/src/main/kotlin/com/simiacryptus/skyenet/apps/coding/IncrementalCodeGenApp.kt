@@ -6,6 +6,7 @@ import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
 import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
@@ -15,6 +16,7 @@ import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
+import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Future
 import java.util.concurrent.ThreadPoolExecutor
@@ -160,11 +162,11 @@ class IncrementalCodeGenAgent(
       api = api,
       ui = ui,
       outputFn = { design ->
-//        renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```")
+//        renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
         AgentPatterns.displayMapInTabs(
           mapOf(
             "Text" to renderMarkdown(design.text),
-            "JSON" to renderMarkdown("```json\n${toJson(design.obj)}\n```"),
+            "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
           )
         )
       },
@@ -216,7 +218,7 @@ class IncrementalCodeGenAgent(
           ${genState.generatedCodes[taskId]?.code ?: ""}
         """.trimIndent()
       }.let { summary ->
-        ui.newTask().complete(renderMarkdown("# Completed Code\n```kotlin\n$summary\n```"))
+        ui.newTask().complete(renderMarkdown("# Completed Code\n```kotlin\n${summary?.let { /*escapeHtml4*/(it).indent("  ") }}\n```"))
       }
     } catch (e: Throwable) {
       ui.newTask().error(ui, e)
@@ -253,7 +255,7 @@ class IncrementalCodeGenAgent(
         """.trimIndent() }
       when (subTask.taskType) {
         TaskType.Coding_General, TaskType.Coding_Tests, TaskType.Coding_Schema -> {
-          task.add(renderMarkdown("Prior Code:\n```kotlin\n${priorCode ?: ""}\n```"))
+          task.add(renderMarkdown("Prior Code:\n```kotlin\n${priorCode?.let { /*escapeHtml4*/(it).indent("  ") }}\n```"))
           val codeRequest = CodingActor.CodeRequest(
             codePrefix = priorCode ?: "",
             messages = listOf(
@@ -262,7 +264,7 @@ class IncrementalCodeGenAgent(
             ),
           )
           val codeResult = codeGeneratorActor.answer(codeRequest, api)
-          task.complete(renderMarkdown("## Generated Code\n```kotlin\n${codeResult.code}\n```\n"))
+          task.complete(renderMarkdown("## Generated Code\n```kotlin\n${codeResult.code?.let { /*escapeHtml4*/(it).indent("  ") }}\n```\n"))
           genState.generatedCodes[taskId] = codeResult
         }
 
@@ -287,11 +289,11 @@ class IncrementalCodeGenAgent(
             api = api,
             ui = ui,
             outputFn = { design ->
-//              renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)}\n```")
+//              renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
               AgentPatterns.displayMapInTabs(
                 mapOf(
                   "Text" to renderMarkdown(design.text),
-                  "JSON" to renderMarkdown("```json\n${toJson(design.obj)}\n```"),
+                  "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
                 )
               )
             },
