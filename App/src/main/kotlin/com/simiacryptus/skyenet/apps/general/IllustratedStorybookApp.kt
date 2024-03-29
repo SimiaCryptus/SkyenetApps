@@ -1,12 +1,16 @@
 package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.ApiModel
+import com.simiacryptus.jopenai.ApiModel.Role
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
+import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.skyenet.Acceptable
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.*
@@ -157,23 +161,30 @@ open class IllustratedStorybookAgent(
     val task = ui.newTask()
     try {
       task.echo(userMessage)
-      val parsedInput = AgentPatterns.iterate(
-        input = userMessage,
-        actor = requirementsActor,
-        toInput = { it: String -> listOf(it) },
-        api = api,
+      val toInput = { it: String -> listOf(it) }
+      val parsedInput = Acceptable<ParsedResponse<UserPreferencesContent>>(
+        task = ui.newTask(),
+        userMessage = userMessage,
+        heading = renderMarkdown(input),
+        initialResponse = { it: String -> requirementsActor.answer(toInput(it), api = api) },
+        outputFn = { design: ParsedResponse<UserPreferencesContent> ->
+    //          renderMarkdown("${design.text}\n\n```json\n${JsonUtil.toJson(design.obj).indent("  ")}\n```")
+              AgentPatterns.displayMapInTabs(
+                mapOf(
+                  "Text" to renderMarkdown(design.text),
+                  "JSON" to renderMarkdown("```json\n${JsonUtil.toJson(design.obj).indent("  ")}\n```"),
+                )
+              )
+            },
         ui = ui,
-        outputFn = { design ->
-//          renderMarkdown("${design.text}\n\n```json\n${JsonUtil.toJson(design.obj).indent("  ")}\n```")
-          AgentPatterns.displayMapInTabs(
-            mapOf(
-              "Text" to renderMarkdown(design.text),
-              "JSON" to renderMarkdown("```json\n${JsonUtil.toJson(design.obj).indent("  ")}\n```"),
-            )
+        reviseResponse = { userMessages: List<Pair<String, Role>> ->
+          requirementsActor.respond(
+            messages = (userMessages.map<Pair<String, Role>, ApiModel.ChatMessage> { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
+            input = toInput(p1 = userMessage),
+            api = api
           )
         },
-        task = ui.newTask()
-      ).obj
+      ).call().obj
       agentSystemArchitecture(parsedInput)
       task.complete("Generation complete!")
     } catch (e: Throwable) {

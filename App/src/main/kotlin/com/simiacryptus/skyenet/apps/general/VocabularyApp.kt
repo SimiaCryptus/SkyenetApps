@@ -1,10 +1,14 @@
 package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.ApiModel
+import com.simiacryptus.jopenai.ApiModel.Role
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAITextModel
+import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
+import com.simiacryptus.skyenet.Acceptable
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
@@ -93,23 +97,30 @@ open class VocabularyAgent(
   fun generate(userInput: String) {
     val task = ui.newTask()
     try {
-      val parsedInput = AgentPatterns.iterate(
-        input = userInput,
-        actor = inputProcessorActor,
-        toInput = { it: String -> listOf(it) },
-        api = api,
+      val toInput = { it: String -> listOf(it) }
+      val parsedInput = Acceptable<ParsedResponse<VocabularyActors.UserInput>>(
+        task = ui.newTask(),
+        userMessage = userInput,
+        heading = renderMarkdown(input),
+        initialResponse = { it: String -> inputProcessorActor.answer(toInput(it), api = api) },
+        outputFn = { design: ParsedResponse<VocabularyActors.UserInput> ->
+    //          renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
+              AgentPatterns.displayMapInTabs(
+                mapOf(
+                  "Text" to renderMarkdown(design.text),
+                  "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
+                )
+              )
+            },
         ui = ui,
-        outputFn = { design ->
-//          renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
-          AgentPatterns.displayMapInTabs(
-            mapOf(
-              "Text" to renderMarkdown(design.text),
-              "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
-            )
+        reviseResponse = { userMessages: List<Pair<String, Role>> ->
+          inputProcessorActor.respond(
+            messages = (userMessages.map<Pair<String, Role>, ApiModel.ChatMessage> { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
+            input = toInput(p1 = userInput),
+            api = api
           )
         },
-        task = ui.newTask()
-      ).obj
+      ).call().obj
 
       task.add(renderMarkdown("```json\n${toJson(parsedInput).indent("  ")}\n```"))
 

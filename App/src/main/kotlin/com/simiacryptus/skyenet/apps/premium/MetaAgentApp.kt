@@ -2,11 +2,13 @@ package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ApiModel
+import com.simiacryptus.jopenai.ApiModel.Role
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
+import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil
-import com.simiacryptus.skyenet.AgentPatterns
+import com.simiacryptus.skyenet.Acceptable
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.camelCase
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.imports
@@ -318,46 +320,66 @@ open class MetaAgentAgent(
     }
 
     private fun initialDesign(input: String): ParsedResponse<MetaAgentActors.AgentDesign> {
-        val highLevelDesign = AgentPatterns.iterate(
-            input = input,
-            actor = highLevelDesigner,
-            toInput = { it: String -> listOf(it) },
-            api = api,
-            ui = ui,
-            task = ui.newTask()
-        )
-        val flowDesign = AgentPatterns.iterate(
-            input = highLevelDesign,
-            heading = "Flow Design",
-            actor = detailDesigner,
-            toInput = { it: String -> listOf(it) },
-            api = api,
-            ui = ui,
-            outputFn = { design ->
-                try {
-                    renderMarkdown(design.toString()) + JsonUtil.toJson(design.obj)
-                } catch (e: Throwable) {
-                    renderMarkdown(e.message ?: e.toString())
-                }
-            },
-            task = ui.newTask()
-        )
-        val actorDesignParsedResponse: ParsedResponse<MetaAgentActors.AgentActorDesign> = AgentPatterns.iterate(
-            input = flowDesign.text,
-            heading = "Actor Design",
-            actor = actorDesigner,
-            toInput = { it: String -> listOf(it) },
-            api = api,
-            ui = ui,
-            outputFn = { design ->
-                try {
-                    renderMarkdown(design.toString()) + JsonUtil.toJson(design.obj)
-                } catch (e: Throwable) {
-                    renderMarkdown(e.message ?: e.toString())
-                }
-            },
-            task = ui.newTask()
-        )
+      val toInput = { it: String -> listOf(it) }
+      val highLevelDesign = Acceptable(
+        task = ui.newTask(),
+        userMessage = input,
+        heading = renderMarkdown(input),
+        initialResponse = { it: String -> highLevelDesigner.answer(toInput(it), api = api) },
+        outputFn = { design -> renderMarkdown(design.toString()) },
+        ui = ui,
+        reviseResponse = { userMessages: List<Pair<String, Role>> ->
+          highLevelDesigner.respond(
+            messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
+            input = toInput(p1 = input),
+            api = api
+          )
+        },
+      ).call()
+      val toInput1 = { it: String -> listOf(it) }
+      val flowDesign = Acceptable(
+        task = ui.newTask(),
+        userMessage = highLevelDesign,
+        heading = "Flow Design",
+        initialResponse = { it: String -> detailDesigner.answer(toInput1(it), api = api) },
+        outputFn = { design: ParsedResponse<MetaAgentActors.AgentFlowDesign> ->
+                    try {
+                        renderMarkdown(design.toString()) + JsonUtil.toJson(design.obj)
+                    } catch (e: Throwable) {
+                        renderMarkdown(e.message ?: e.toString())
+                    }
+                },
+        ui = ui,
+        reviseResponse = { userMessages: List<Pair<String, Role>> ->
+          detailDesigner.respond(
+            messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
+            input = toInput1(p1 = highLevelDesign),
+            api = api
+          )
+        },
+      ).call()
+      val toInput2 = { it: String -> listOf(it) }
+      val actorDesignParsedResponse: ParsedResponse<MetaAgentActors.AgentActorDesign> = Acceptable(
+        task = ui.newTask(),
+        userMessage = flowDesign.text,
+        heading = "Actor Design",
+        initialResponse = { it: String -> actorDesigner.answer(toInput2(it), api = api) },
+        outputFn = { design: ParsedResponse<MetaAgentActors.AgentActorDesign> ->
+                    try {
+                        renderMarkdown(design.toString()) + JsonUtil.toJson(design.obj)
+                    } catch (e: Throwable) {
+                        renderMarkdown(e.message ?: e.toString())
+                    }
+                },
+        ui = ui,
+        reviseResponse = { userMessages: List<Pair<String, Role>> ->
+          actorDesigner.respond(
+            messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
+            input = toInput2(p1 = flowDesign.text),
+            api = api
+          )
+        },
+      ).call()
         return object : ParsedResponse<MetaAgentActors.AgentDesign>(MetaAgentActors.AgentDesign::class.java) {
             override val text get() = flowDesign.text + "\n" + actorDesignParsedResponse.text
             override val obj

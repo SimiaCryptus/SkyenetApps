@@ -2,8 +2,11 @@ package com.simiacryptus.skyenet.apps.hybrid
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ApiModel
+import com.simiacryptus.jopenai.ApiModel.Role
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
+import com.simiacryptus.skyenet.Acceptable
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
@@ -16,7 +19,6 @@ import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
-import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Future
 import java.util.concurrent.ThreadPoolExecutor
@@ -154,24 +156,30 @@ class IncrementalCodeGenAgent(
   val codeGeneratorActor by lazy { actorMap[ActorTypes.CodeGenerator] as CodingActor }
 
   fun startProcess(userMessage: String) {
-    val highLevelPlan = AgentPatterns.iterate(
-      input = userMessage,
+    val toInput = { it: String -> listOf(userMessage, it) }
+    val highLevelPlan = Acceptable(
+      task = ui.newTask(),
+      userMessage = userMessage,
       heading = userMessage,
-      actor = taskBreakdownActor,
-      toInput = { it: String -> listOf(userMessage, it) },
-      api = api,
-      ui = ui,
-      outputFn = { design ->
-//        renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
-        AgentPatterns.displayMapInTabs(
-          mapOf(
-            "Text" to renderMarkdown(design.text),
-            "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
+      initialResponse = { it: String -> taskBreakdownActor.answer(toInput(it), api = api) },
+      outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
+  //        renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
+          AgentPatterns.displayMapInTabs(
+            mapOf(
+              "Text" to renderMarkdown(design.text),
+              "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
+            )
           )
+        },
+      ui = ui,
+      reviseResponse = { userMessages: List<Pair<String, Role>> ->
+        taskBreakdownActor.respond(
+          messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
+          input = toInput(p1 = userMessage),
+          api = api
         )
       },
-      task = ui.newTask()
-    )
+    ).call()
     val pool: ThreadPoolExecutor = clientManager.getPool(session, user, dataStorage)
     val genState = GenState(
       subTasks = highLevelPlan.obj.tasksByID?.toMutableMap() ?: mutableMapOf(),
@@ -275,30 +283,37 @@ class IncrementalCodeGenAgent(
         }
 
         TaskType.Design -> {
-          val subPlan = AgentPatterns.iterate(
-            input = "Expand ${subTask.description ?: ""}",
+          val input1 = "Expand ${subTask.description ?: ""}"
+          val toInput = { it: String ->
+            listOf(
+              userMessage,
+              highLevelPlan.text,
+              it
+            )
+          }
+          val subPlan = Acceptable(
+            task = ui.newTask(),
+            userMessage = input1,
             heading = "Expand ${subTask.description ?: ""}",
-            actor = taskBreakdownActor,
-            toInput = { it: String ->
-              listOf(
-                userMessage,
-                highLevelPlan.text,
-                it
-              )
-            },
-            api = api,
+            initialResponse = { it: String -> taskBreakdownActor.answer(toInput(it), api = api) },
+            outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
+        //              renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
+                      AgentPatterns.displayMapInTabs(
+                        mapOf(
+                          "Text" to renderMarkdown(design.text),
+                          "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
+                        )
+                      )
+                    },
             ui = ui,
-            outputFn = { design ->
-//              renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
-              AgentPatterns.displayMapInTabs(
-                mapOf(
-                  "Text" to renderMarkdown(design.text),
-                  "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
-                )
+            reviseResponse = { userMessages: List<Pair<String, Role>> ->
+              taskBreakdownActor.respond(
+                messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
+                input = toInput(p1 = input1),
+                api = api
               )
             },
-            task = ui.newTask()
-          )
+          ).call()
           var newTasks = subPlan.obj.tasksByID
           val conflictingKeys = newTasks?.keys?.intersect(genState.subTasks.keys)
           newTasks = newTasks?.entries?.associate { (key, value) ->
