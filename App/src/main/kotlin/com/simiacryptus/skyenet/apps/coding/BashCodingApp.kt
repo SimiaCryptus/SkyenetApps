@@ -18,10 +18,10 @@ class BashCodingApp(
   data class Settings(
     val env: Map<String, String> = mapOf(),
     val workingDir: String = ".",
-    val model: ChatModels = ChatModels.GPT35Turbo,
-    val temperature: Double = 0.1,
     val language: String = "bash",
     val command: List<String> = listOf("bash"),
+    val model: ChatModels = ChatModels.GPT35Turbo,
+    val temperature: Double = 0.1,
   )
 
   override val settingsClass: Class<*> get() = Settings::class.java
