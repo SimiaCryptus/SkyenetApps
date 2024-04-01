@@ -163,11 +163,11 @@ class IncrementalCodeGenAgent(
       heading = userMessage,
       initialResponse = { it: String -> taskBreakdownActor.answer(toInput(it), api = api) },
       outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
-  //        renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
+  //        renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)/*.indent("  ")*/}\n```")
           AgentPatterns.displayMapInTabs(
             mapOf(
-              "Text" to renderMarkdown(design.text),
-              "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
+              "Text" to renderMarkdown(design.text, ui=ui),
+              "JSON" to renderMarkdown("```json\n${toJson(design.obj)/*.indent("  ")*/}\n```", ui=ui),
             )
           )
         },
@@ -190,7 +190,7 @@ class IncrementalCodeGenAgent(
     )
     try {
       ui.newTask()
-        .complete(renderMarkdown("## Task Graph\n```mermaid\n${buildMermaidGraph(genState.subTasks ?: emptyMap())}\n```"))
+        .complete(renderMarkdown("## Task Graph\n```mermaid\n${buildMermaidGraph(genState.subTasks ?: emptyMap())}\n```", ui=ui))
       while (genState.taskIds.isNotEmpty()) {
         val taskId = genState.taskIds.removeAt(0)
         val subTask = genState.subTasks[taskId] ?: throw RuntimeException("Task not found: $taskId")
@@ -226,7 +226,7 @@ class IncrementalCodeGenAgent(
           ${genState.generatedCodes[taskId]?.code ?: ""}
         """.trimIndent()
       }.let { summary ->
-        ui.newTask().complete(renderMarkdown("# Completed Code\n```kotlin\n${summary?.let { /*escapeHtml4*/(it).indent("  ") }}\n```"))
+        ui.newTask().complete(renderMarkdown("# Completed Code\n```kotlin\n${summary?.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}\n```", ui=ui))
       }
     } catch (e: Throwable) {
       ui.newTask().error(ui, e)
@@ -254,7 +254,7 @@ class IncrementalCodeGenAgent(
     try {
       val dependencies = subTask.dependencies?.toMutableList() ?: mutableListOf()
       dependencies += getAllDependencies(subTask, genState.subTasks)
-      task.add(renderMarkdown("## Task: ${subTask.description ?: ""}\n\nDependencies:\n${dependencies.joinToString("\n") { "- $it" }}"))
+      task.add(renderMarkdown("## Task: ${subTask.description ?: ""}\n\nDependencies:\n${dependencies.joinToString("\n") { "- $it" }}", ui=ui))
       val priorCode = dependencies
         .flatMap { genState.subTasks[it]?.dependencies ?: emptyList() }
         .joinToString("\n") { """
@@ -263,7 +263,7 @@ class IncrementalCodeGenAgent(
         """.trimIndent() }
       when (subTask.taskType) {
         TaskType.Coding_General, TaskType.Coding_Tests, TaskType.Coding_Schema -> {
-          task.add(renderMarkdown("Prior Code:\n```kotlin\n${priorCode?.let { /*escapeHtml4*/(it).indent("  ") }}\n```"))
+          task.add(renderMarkdown("Prior Code:\n```kotlin\n${priorCode?.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}\n```", ui=ui))
           val codeRequest = CodingActor.CodeRequest(
             codePrefix = priorCode ?: "",
             messages = listOf(
@@ -272,13 +272,13 @@ class IncrementalCodeGenAgent(
             ),
           )
           val codeResult = codeGeneratorActor.answer(codeRequest, api)
-          task.complete(renderMarkdown("## Generated Code\n```kotlin\n${codeResult.code?.let { /*escapeHtml4*/(it).indent("  ") }}\n```\n"))
+          task.complete(renderMarkdown("## Generated Code\n```kotlin\n${codeResult.code?.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}\n```\n", ui=ui))
           genState.generatedCodes[taskId] = codeResult
         }
 
         TaskType.Documentation -> {
           val docResult = documentationGeneratorActor.answer(listOf(priorCode), api)
-          task.complete(renderMarkdown("## Generated Documentation\n$docResult"))
+          task.complete(renderMarkdown("## Generated Documentation\n$docResult", ui=ui))
           genState.generatedDocs[taskId] = docResult
         }
 
@@ -297,11 +297,11 @@ class IncrementalCodeGenAgent(
             heading = "Expand ${subTask.description ?: ""}",
             initialResponse = { it: String -> taskBreakdownActor.answer(toInput(it), api = api) },
             outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
-        //              renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
+        //              renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)/*.indent("  ")*/}\n```")
                       AgentPatterns.displayMapInTabs(
                         mapOf(
-                          "Text" to renderMarkdown(design.text),
-                          "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
+                          "Text" to renderMarkdown(design.text, ui=ui),
+                          "JSON" to renderMarkdown("```json\n${toJson(design.obj)/*.indent("  ")*/}\n```", ui=ui),
                         )
                       )
                     },
@@ -337,7 +337,7 @@ class IncrementalCodeGenAgent(
               }
             }
           }
-          task.complete(renderMarkdown("## Task Dependency Graph\n```mermaid\n${buildMermaidGraph(genState.subTasks)}\n```"))
+          task.complete(renderMarkdown("## Task Dependency Graph\n```mermaid\n${buildMermaidGraph(genState.subTasks)}\n```", ui=ui))
         }
 
         else -> null

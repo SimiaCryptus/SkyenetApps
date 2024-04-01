@@ -101,14 +101,14 @@ open class VocabularyAgent(
       val parsedInput = Acceptable<ParsedResponse<VocabularyActors.UserInput>>(
         task = ui.newTask(),
         userMessage = userInput,
-        heading = renderMarkdown(input),
+        heading = renderMarkdown(userInput, ui=ui),
         initialResponse = { it: String -> inputProcessorActor.answer(toInput(it), api = api) },
         outputFn = { design: ParsedResponse<VocabularyActors.UserInput> ->
-    //          renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj).indent("  ")}\n```")
+    //          renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)/*.indent("  ")*/}\n```")
               AgentPatterns.displayMapInTabs(
                 mapOf(
-                  "Text" to renderMarkdown(design.text),
-                  "JSON" to renderMarkdown("```json\n${toJson(design.obj).indent("  ")}\n```"),
+                  "Text" to renderMarkdown(design.text, ui=ui),
+                  "JSON" to renderMarkdown("```json\n${toJson(design.obj)/*.indent("  ")*/}\n```", ui=ui),
                 )
               )
             },
@@ -122,7 +122,7 @@ open class VocabularyAgent(
         },
       ).call().obj
 
-      task.add(renderMarkdown("```json\n${toJson(parsedInput).indent("  ")}\n```"))
+      task.add(renderMarkdown("```json\n${toJson(parsedInput)/*.indent("  ")*/}\n```", ui=ui))
 
       // Initialize lists to hold terms, definitions, and illustrations
       val terms = parsedInput.terms
@@ -140,7 +140,7 @@ open class VocabularyAgent(
           val definition = VocabularyActors.TermDefinition(term, response.text).definition
           definitions.add(definition)
           task.add("Generated definition for term: $term")
-          task.verbose(renderMarkdown("```json\n${toJson(definition).indent("  ")}\n```"))
+          task.verbose(renderMarkdown("```json\n${toJson(definition)/*.indent("  ")*/}\n```", ui=ui))
 
           val illustration = illustrationGeneratorActor.answer(
             listOf(

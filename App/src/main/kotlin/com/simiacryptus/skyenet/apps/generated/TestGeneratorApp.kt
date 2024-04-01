@@ -95,7 +95,7 @@ open class TestGeneratorAgent(
       val questions = topics.flatMap { topic ->
         task.add("Generating questions for the topic: $topic")
         val questionSet = questionGenerationActor.answer(listOf(prompt, params, topic!!), api).obj
-        task.verbose(MarkdownUtil.renderMarkdown("Questions for the topic: $topic\n```json\n${toJson(questionSet).indent("  ")}\n```"))
+        task.verbose(MarkdownUtil.renderMarkdown("Questions for the topic: $topic\n```json\n${toJson(questionSet)/*.indent("  ")*/}\n```", ui=ui))
         questionSet.questions?.map { question ->
           question.copy(text = "[$topic] ${question.text}")
         } ?: emptyList()
@@ -105,11 +105,11 @@ open class TestGeneratorAgent(
         val answers = answerGenerationActor.answer(listOf(prompt, params, question.text!!), api).obj.answers!!
         task.verbose(
           MarkdownUtil.renderMarkdown(
-            "Answers for the question:\n```text\n${question.text.indent("  ")}\n```\n\n```json\n${
+            "Answers for the question:\n```text\n${question.text/*.indent("  ")*/}\n```\n\n```json\n${
               toJson(
                 answers
-              ).indent("  ")
-            }\n```\n"
+              )/*.indent("  ")*/
+            }\n```\n", ui=ui
           )
         )
         answers

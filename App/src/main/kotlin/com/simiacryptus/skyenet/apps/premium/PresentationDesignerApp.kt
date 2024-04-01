@@ -121,7 +121,7 @@ open class PresentationDesignerAgent(
 
       // Step 1: Generate ideas based on the user's request
       val ideaListResponse = initialAuthor.answer(listOf(userRequest), api = api)
-      task.add(MarkdownUtil.renderMarkdown("Slides generated: \n${ideaListResponse.obj.slides.joinToString("\n") { "* " + it.title }}"))
+      task.add(MarkdownUtil.renderMarkdown("Slides generated: \n${ideaListResponse.obj.slides.joinToString("\n") { "* " + it.title }}", ui=ui))
 
       // Step 2: Expand the outline into detailed content
       val content = ideaListResponse.obj.slides.mapNotNull { it.content }.map { slide ->
@@ -169,12 +169,12 @@ open class PresentationDesignerAgent(
     task.add("""<div>$fullHtml</div>""".trimIndent())
     val summary = slideSummary.answer(list, api = api)
     //language=HTML
-    task.add("""<div>${MarkdownUtil.renderMarkdown(summary)}</div>""".trimIndent())
+    task.add("""<div>${MarkdownUtil.renderMarkdown(summary, ui=ui)}</div>""".trimIndent())
     val slideContent = slideLayout.answer(listOf(summary), api = api).replace("image.png", imageURL)
     //language=HTML
     task.add("""<div>$slideContent</div>""".trimIndent())
     val speakingNotes = speakerNotes.answer(list, api = api).obj.content ?: ""
-    task.verbose(MarkdownUtil.renderMarkdown(speakingNotes), tag = "div")
+    task.verbose(MarkdownUtil.renderMarkdown(speakingNotes, ui=ui), tag = "div")
     val mp3data = partition(speakingNotes).map { narrator.answer(listOf(it), api = api).mp3data }
     val mp3links =
       mp3data.withIndex().map { (i, it) -> if (null != it) task.saveFile("slide$idx-$i.mp3", it) else "" }
@@ -251,7 +251,7 @@ open class PresentationDesignerAgent(
             """
           |```markdown
           |${it.speakingNotes}
-          |```""".trimMargin()
+          |```""".trimMargin(), ui=ui
           )
         }
           |</div>
@@ -290,7 +290,7 @@ open class PresentationDesignerAgent(
         }
           |  <div class='slide-content'>${it.slideContent.replace(refBase, "")}</div>
           |  <div class='slide-content'>${it.fullContent.replace(refBase, "")}</div>
-          |  <div class='slide-notes'>${MarkdownUtil.renderMarkdown(it.speakingNotes)}</div>
+          |  <div class='slide-notes'>${MarkdownUtil.renderMarkdown(it.speakingNotes, ui=ui)}</div>
           |</div>
           |
           """.trimMargin()

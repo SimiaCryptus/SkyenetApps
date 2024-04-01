@@ -114,9 +114,9 @@ class DebateAgent(
         )
 
         val moderatorTask = ui.newTask()
-        moderatorTask.echo(MarkdownUtil.renderMarkdown(userMessage))
+        moderatorTask.echo(MarkdownUtil.renderMarkdown(userMessage, ui=ui))
         val moderatorResponse = this.moderator.answer(listOf(userMessage), api = api)
-        moderatorTask.add(MarkdownUtil.renderMarkdown(moderatorResponse.text))
+        moderatorTask.add(MarkdownUtil.renderMarkdown(moderatorResponse.text, ui=ui))
         moderatorTask.verbose(JsonUtil.toJson(moderatorResponse.obj))
         moderatorTask.complete()
 
@@ -124,7 +124,7 @@ class DebateAgent(
             (moderatorResponse.obj.questions?.list ?: emptyList()).parallelStream().flatMap { question ->
                 val questionTask = ui.newTask()
                 questionTask.header(
-                    MarkdownUtil.renderMarkdown(question.text ?: "").trim(),
+                    MarkdownUtil.renderMarkdown(question.text ?: "", ui=ui).trim(),
                     classname = "response-message response-message-question"
                 )
                 try {
@@ -133,7 +133,7 @@ class DebateAgent(
                             questionTask.header(actor.name?.trim() ?: "", classname = "response-message response-message-actor")
                             val response = debateActors.getActorConfig(actor).answer(listOf(question.text ?: ""), api = api)
                             outlines[actor.name!! + ": " + question.text!!] = response.obj
-                            questionTask.add(MarkdownUtil.renderMarkdown(response.text))
+                            questionTask.add(MarkdownUtil.renderMarkdown(response.text, ui=ui))
                             questionTask.verbose(JsonUtil.toJson(response.obj))
                             response.obj.arguments?.map { it.text ?: "" } ?: emptyList()
                         }

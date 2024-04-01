@@ -89,7 +89,7 @@ open class VocabularyListBuilderAgent(
     try {
       task.echo(termInput)
       val termInputParsed = parseInputActor.answer(listOf(termInput), api)
-      task.add(renderMarkdown(termInputParsed.text))
+      task.add(renderMarkdown(termInputParsed.text, ui=ui))
       vocabularyListBuilder(termInputParsed.obj)
     } catch (e: Throwable) {
       task.error(ui, e)

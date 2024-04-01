@@ -139,9 +139,9 @@ class OutlineAgent(
   fun buildMap() {
     val message = ui.newTask()
     val outlineManager = try {
-      message.echo(renderMarkdown(this.userMessage))
+      message.echo(renderMarkdown(this.userMessage, ui=ui))
       val root = initial.answer(listOf(this.userMessage), api = api)
-      message.add(renderMarkdown(root.text))
+      message.add(renderMarkdown(root.text, ui=ui))
       message.verbose(JsonUtil.toJson(root.obj))
       message.complete()
       OutlineManager(OutlineManager.OutlinedText(root.text, root.obj))
@@ -164,7 +164,7 @@ class OutlineAgent(
     val finalOutline = outlineManager.buildFinalOutline()
     finalOutlineMessage.verbose(JsonUtil.toJson(finalOutline))
     val textOutline = finalOutline.getTextOutline()
-    finalOutlineMessage.complete(renderMarkdown(textOutline))
+    finalOutlineMessage.complete(renderMarkdown(textOutline, ui=ui))
     sessionDir.resolve("finalOutline.json").writeText(JsonUtil.toJson(finalOutline))
     sessionDir.resolve("textOutline.md").writeText(textOutline)
 
@@ -195,7 +195,7 @@ class OutlineAgent(
       try {
         val finalEssay = buildFinalEssay(finalOutline, outlineManager)
         sessionDir.resolve("finalEssay.md").writeText(finalEssay)
-        finalRenderMessage.complete(renderMarkdown(finalEssay))
+        finalRenderMessage.complete(renderMarkdown(finalEssay, ui=ui))
       } catch (e: Exception) {
         log.warn("Error", e)
         finalRenderMessage.error(ui, e)
@@ -265,7 +265,7 @@ class OutlineAgent(
     }
     message.header("Expand $sectionName")
     val answer = expand.withModel(model).answer(listOf(this.userMessage, parent.text, sectionName), api = api)
-    message.add(renderMarkdown(answer.text))
+    message.add(renderMarkdown(answer.text, ui=ui))
     message.verbose(JsonUtil.toJson(answer.obj))
     val newNode = OutlineManager.OutlinedText(answer.text, answer.obj)
     outlineManager.nodes.add(newNode)

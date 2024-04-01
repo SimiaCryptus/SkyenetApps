@@ -312,7 +312,7 @@ open class MetaAgentAgent(
         |""".trimMargin()
 
             //language=HTML
-            task.complete(renderMarkdown(code))
+            task.complete(renderMarkdown(code, ui=ui))
         } catch (e: Throwable) {
             task.error(ui, e)
             throw e
@@ -324,14 +324,14 @@ open class MetaAgentAgent(
       val highLevelDesign = Acceptable(
         task = ui.newTask(),
         userMessage = input,
-        heading = renderMarkdown(input),
+        heading = renderMarkdown(input, ui=ui),
         initialResponse = { it: String -> highLevelDesigner.answer(toInput(it), api = api) },
-        outputFn = { design -> renderMarkdown(design.toString()) },
+        outputFn = { design -> renderMarkdown(design.toString(), ui=ui) },
         ui = ui,
         reviseResponse = { userMessages: List<Pair<String, Role>> ->
           highLevelDesigner.respond(
             messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
-            input = toInput(p1 = input),
+            input = toInput(input),
             api = api
           )
         },
@@ -344,16 +344,16 @@ open class MetaAgentAgent(
         initialResponse = { it: String -> detailDesigner.answer(toInput1(it), api = api) },
         outputFn = { design: ParsedResponse<MetaAgentActors.AgentFlowDesign> ->
                     try {
-                        renderMarkdown(design.toString()) + JsonUtil.toJson(design.obj)
+                        renderMarkdown(design.toString(), ui=ui) + JsonUtil.toJson(design.obj)
                     } catch (e: Throwable) {
-                        renderMarkdown(e.message ?: e.toString())
+                        renderMarkdown(e.message ?: e.toString(), ui=ui)
                     }
                 },
         ui = ui,
         reviseResponse = { userMessages: List<Pair<String, Role>> ->
           detailDesigner.respond(
             messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
-            input = toInput1(p1 = highLevelDesign),
+            input = toInput1(highLevelDesign),
             api = api
           )
         },
@@ -366,16 +366,16 @@ open class MetaAgentAgent(
         initialResponse = { it: String -> actorDesigner.answer(toInput2(it), api = api) },
         outputFn = { design: ParsedResponse<MetaAgentActors.AgentActorDesign> ->
                     try {
-                        renderMarkdown(design.toString()) + JsonUtil.toJson(design.obj)
+                        renderMarkdown(design.toString(), ui=ui) + JsonUtil.toJson(design.obj)
                     } catch (e: Throwable) {
-                        renderMarkdown(e.message ?: e.toString())
+                        renderMarkdown(e.message ?: e.toString(), ui=ui)
                     }
                 },
         ui = ui,
         reviseResponse = { userMessages: List<Pair<String, Role>> ->
           actorDesigner.respond(
             messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
-            input = toInput2(p1 = flowDesign.text),
+            input = toInput2(flowDesign.text),
             api = api
           )
         },
@@ -422,7 +422,7 @@ open class MetaAgentAgent(
           |```kotlin
           |$mainFunction
           |```
-          """.trimMargin()
+          """.trimMargin(), ui=ui
                 ), tag = "div"
             )
             task.complete()
@@ -496,7 +496,7 @@ open class MetaAgentAgent(
         |```kotlin
         |$code
         |```
-        """.trimMargin()
+        """.trimMargin(), ui=ui
             ), tag = "div"
         )
         task.complete()
@@ -559,7 +559,7 @@ open class MetaAgentAgent(
             |```kotlin
             |$code
             |```
-            """.trimMargin()
+            """.trimMargin(), ui=ui
                     ), tag = "div"
                 )
                 message.complete()

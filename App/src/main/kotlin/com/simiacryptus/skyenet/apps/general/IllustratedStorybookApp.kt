@@ -165,14 +165,14 @@ open class IllustratedStorybookAgent(
       val parsedInput = Acceptable<ParsedResponse<UserPreferencesContent>>(
         task = ui.newTask(),
         userMessage = userMessage,
-        heading = renderMarkdown(input),
+        heading = renderMarkdown(userMessage, ui=ui),
         initialResponse = { it: String -> requirementsActor.answer(toInput(it), api = api) },
         outputFn = { design: ParsedResponse<UserPreferencesContent> ->
-    //          renderMarkdown("${design.text}\n\n```json\n${JsonUtil.toJson(design.obj).indent("  ")}\n```")
+    //          renderMarkdown("${design.text}\n\n```json\n${JsonUtil.toJson(design.obj)/*.indent("  ")*/}\n```")
               AgentPatterns.displayMapInTabs(
                 mapOf(
-                  "Text" to renderMarkdown(design.text),
-                  "JSON" to renderMarkdown("```json\n${JsonUtil.toJson(design.obj).indent("  ")}\n```"),
+                  "Text" to renderMarkdown(design.text, ui=ui),
+                  "JSON" to renderMarkdown("```json\n${JsonUtil.toJson(design.obj)/*.indent("  ")*/}\n```", ui=ui),
                 )
               )
             },
@@ -347,7 +347,7 @@ open class IllustratedStorybookAgent(
       val illustrationResponse = illustrationGeneratorActor.answer(conversationThread, api = api)
 
       // Log the AgentSystemArchitectureActors.image description
-      task.add(renderMarkdown(illustrationResponse.text), className = "illustration-caption")
+      task.add(renderMarkdown(illustrationResponse.text, ui=ui), className = "illustration-caption")
       val imageHtml = task.image(illustrationResponse.image).toString()
       task.complete()
 
@@ -383,7 +383,7 @@ open class IllustratedStorybookAgent(
       val storyResponse = storyGeneratorActor.answer(conversationThread, api = api)
 
       // Log the natural language answer
-      task.add(renderMarkdown(storyResponse.text))
+      task.add(renderMarkdown(storyResponse.text, ui=ui))
       task.verbose(JsonUtil.toJson(storyResponse.obj))
 
       // Return the parsed story data
