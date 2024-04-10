@@ -11,7 +11,6 @@ import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.Acceptable
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.core.actors.*
-import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.StorageInterface.Companion.long64
@@ -116,7 +115,7 @@ open class VocabularyAgent(
         reviseResponse = { userMessages: List<Pair<String, Role>> ->
           inputProcessorActor.respond(
             messages = (userMessages.map<Pair<String, Role>, ApiModel.ChatMessage> { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
-            input = toInput(p1 = userInput),
+            input = toInput(userInput),
             api = api
           )
         },
