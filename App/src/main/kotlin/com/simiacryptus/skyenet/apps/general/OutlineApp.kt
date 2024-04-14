@@ -212,7 +212,7 @@ class OutlineAgent(
     summary.answer(listOf(nodeList.getTextOutline()), api = api)
   }
 
-  private fun processRecursive(
+  private fun   processRecursive(
     manager: OutlineManager,
     node: OutlineManager.OutlinedText,
     models: List<ChatModels>
