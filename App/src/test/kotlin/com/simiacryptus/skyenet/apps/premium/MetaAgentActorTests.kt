@@ -7,10 +7,10 @@ import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization
 import com.simiacryptus.skyenet.core.actors.opt.ActorOptimization.Companion.toChatMessage
 import com.simiacryptus.skyenet.core.actors.opt.Expectation
 import com.simiacryptus.skyenet.core.actors.test.CodingActorTestBase
-import com.simiacryptus.skyenet.core.platform.file.DataStorage
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.file.DataStorage
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationSocketManager
@@ -117,7 +117,7 @@ class MetaAgentActorTests {
         @Test
         override fun testRun() = super.testRun()
         override val interpreterClass get() = KotlinInterpreter::class
-        override val actor = MetaAgentActors(symbols=symbols()).flowStepDesigner()
+        override val actor = MetaAgentActors(symbols = symbols()).flowStepDesigner()
 
         private fun symbols(): Map<String, Any> {
             val user = User("user@test")
@@ -147,6 +147,7 @@ class MetaAgentActorTests {
 
         private val codePrefix =
             "\nimport com.simiacryptus.skyenet.core.actors.SimpleActor\nimport com.simiacryptus.jopenai.models.ChatModels\nimport com.simiacryptus.jopenai.models.OpenAITextModel\n\nfun conceptActor(): SimpleActor {\n    return SimpleActor(\n        prompt = \"\"\"\n        You are a creative assistant specialized in generating comic book concepts. \n        When given a theme or genre, you provide a structured concept that includes the genre, themes, and a basic plot outline.\n        \"\"\".trimIndent(),\n        name = \"ConceptActor\",\n        model = ChatModels.GPT35Turbo,\n        temperature = 0.3\n    )\n}\n".trimIndent()
+
         override fun answer(messages: Array<ApiModel.ChatMessage>): CodingActor.CodeResult {
             return actor.respond(
                 messages = messages,

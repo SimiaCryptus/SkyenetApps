@@ -10,40 +10,41 @@ import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import org.eclipse.jetty.webapp.WebAppContext
 
 object TestNoauthAppServer : AppServer(
-  publicName = "localhost",
-  localName = "localhost",
-  port = 27000 //Random.nextInt(1024,  /*8 * 1024*/ /*65535*/), /*37600*/
+    publicName = "localhost",
+    localName = "localhost",
+    port = 27000 //Random.nextInt(1024,  /*8 * 1024*/ /*65535*/), /*37600*/
 ) {
 
-  @JvmStatic
-  fun main(args: Array<String>) {
-    super._main(args)
-  }
+    @JvmStatic
+    fun main(args: Array<String>) {
+        super._main(args)
+    }
 
-  override fun authenticatedWebsite() = object : OAuthBase("") {
-    override fun configure(context: WebAppContext, addFilter: Boolean) = context
-  }
-  override fun setupPlatform() {
-    super.setupPlatform()
-    val mockUser = User(
-      "1",
-      "user@mock.test",
-      "Test User",
-      ""
-    )
-    ApplicationServices.authenticationManager = object : AuthenticationInterface {
-      override fun getUser(accessToken: String?) = mockUser
-      override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-      override fun logout(accessToken: String, user: User) {}
+    override fun authenticatedWebsite() = object : OAuthBase("") {
+        override fun configure(context: WebAppContext, addFilter: Boolean) = context
     }
-    ApplicationServices.authorizationManager = object : AuthorizationManager() {
-      override fun isAuthorized(
-        applicationClass: Class<*>?,
-        user: User?,
-        operationType: AuthorizationInterface.OperationType
-      ): Boolean = true
+
+    override fun setupPlatform() {
+        super.setupPlatform()
+        val mockUser = User(
+            "1",
+            "user@mock.test",
+            "Test User",
+            ""
+        )
+        ApplicationServices.authenticationManager = object : AuthenticationInterface {
+            override fun getUser(accessToken: String?) = mockUser
+            override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
+            override fun logout(accessToken: String, user: User) {}
+        }
+        ApplicationServices.authorizationManager = object : AuthorizationManager() {
+            override fun isAuthorized(
+                applicationClass: Class<*>?,
+                user: User?,
+                operationType: AuthorizationInterface.OperationType
+            ): Boolean = true
+        }
     }
-  }
 
 
 }

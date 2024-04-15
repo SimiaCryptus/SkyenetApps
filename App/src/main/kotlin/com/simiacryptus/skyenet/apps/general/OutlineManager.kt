@@ -6,11 +6,13 @@ import com.simiacryptus.jopenai.proxy.ValidatedObject
 open class OutlineManager(val rootNode: OutlinedText) {
 
     data class NodeList(
-      val children: List<Node>? = null,
+        val children: List<Node>? = null,
     ) : ValidatedObject {
         override fun validate(): String? = when {
             children == null -> "children is required"
-            !children.all { it.validate() == null } -> children.map { it.validate() }.filter { null != it }.joinToString("\n")
+            !children.all { it.validate() == null } -> children.map { it.validate() }.filter { null != it }
+                .joinToString("\n")
+
             children.size != children.map { it.name ?: "" }.distinct().size -> "children must have unique names"
             else -> null
         }
@@ -44,9 +46,9 @@ open class OutlineManager(val rootNode: OutlinedText) {
     }
 
     data class Node(
-      val name: String? = null,
-      val children: NodeList? = null,
-      val description: String? = null,
+        val name: String? = null,
+        val children: NodeList? = null,
+        val description: String? = null,
     ) : ValidatedObject {
         override fun validate(): String? = when {
             null == name -> "name is required"
@@ -73,8 +75,8 @@ open class OutlineManager(val rootNode: OutlinedText) {
     }
 
     data class OutlinedText(
-      val text: String,
-      val outline: NodeList,
+        val text: String,
+        val outline: NodeList,
     )
 
     val nodes = mutableListOf<OutlinedText>()
@@ -124,7 +126,7 @@ open class OutlineManager(val rootNode: OutlinedText) {
             ?: listOf())
 
     fun buildFinalOutline(): NodeList {
-        return buildFinalOutline(rootNode?.outline?.deepClone() ?: return NodeList()) ?: NodeList()
+        return buildFinalOutline(rootNode.outline?.deepClone() ?: return NodeList()) ?: NodeList()
     }
 
     private fun buildFinalOutline(outline: NodeList?, maxDepth: Int = 10): NodeList? {

@@ -24,16 +24,18 @@ open class DebateApp(
     applicationName: String = "Automated Debate Concept Map v1.2",
     val domainName: String,
 ) : ApplicationServer(
-  applicationName = applicationName,
+    applicationName = applicationName,
     path = "/debate",
 ) {
     data class Settings(
         val model: ChatModels = ChatModels.GPT35Turbo,
         val temperature: Double = 0.2,
-        val budget : Double = 2.0,
+        val budget: Double = 2.0,
     )
+
     override val settingsClass: Class<*> get() = Settings::class.java
-    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> initSettings(session: Session): T? = Settings() as T
 
     override val description: String
         @Language("HTML")
@@ -66,7 +68,6 @@ open class DebateApp(
                 userId = user,
                 session = session,
                 ui = ui,
-                domainName = domainName,
                 model = settings?.model ?: ChatModels.GPT35Turbo,
                 temperature = settings?.temperature ?: 0.3,
             ).debate(userMessage)
@@ -87,11 +88,15 @@ class DebateAgent(
     userId: User?,
     session: Session,
     val ui: ApplicationInterface,
-    val domainName: String,
-    val model : ChatModels = ChatModels.GPT4Turbo,
+    val model: ChatModels = ChatModels.GPT4Turbo,
     val temperature: Double = 0.3,
     private val debateActors: DebateActors = DebateActors(model, temperature)
-) : ActorSystem<DebateActors.ActorType>(debateActors.actorMap.map { it.key.name to it.value }.toMap(), dataStorage, userId, session) {
+) : ActorSystem<DebateActors.ActorType>(
+    debateActors.actorMap.map { it.key.name to it.value }.toMap(),
+    dataStorage,
+    userId,
+    session
+) {
     private val outlines = mutableMapOf<String, DebateActors.Outline>()
 
     @Suppress("UNCHECKED_CAST")
@@ -114,9 +119,9 @@ class DebateAgent(
         )
 
         val moderatorTask = ui.newTask()
-        moderatorTask.echo(MarkdownUtil.renderMarkdown(userMessage, ui=ui))
+        moderatorTask.echo(MarkdownUtil.renderMarkdown(userMessage, ui = ui))
         val moderatorResponse = this.moderator.answer(listOf(userMessage), api = api)
-        moderatorTask.add(MarkdownUtil.renderMarkdown(moderatorResponse.text, ui=ui))
+        moderatorTask.add(MarkdownUtil.renderMarkdown(moderatorResponse.text, ui = ui))
         moderatorTask.verbose(JsonUtil.toJson(moderatorResponse.obj))
         moderatorTask.complete()
 
@@ -124,16 +129,20 @@ class DebateAgent(
             (moderatorResponse.obj.questions?.list ?: emptyList()).parallelStream().flatMap { question ->
                 val questionTask = ui.newTask()
                 questionTask.header(
-                    MarkdownUtil.renderMarkdown(question.text ?: "", ui=ui).trim(),
+                    MarkdownUtil.renderMarkdown(question.text ?: "", ui = ui).trim(),
                     classname = "response-message response-message-question"
                 )
                 try {
                     val result = (moderatorResponse.obj.debaters?.list ?: emptyList())
                         .map { actor ->
-                            questionTask.header(actor.name?.trim() ?: "", classname = "response-message response-message-actor")
-                            val response = debateActors.getActorConfig(actor).answer(listOf(question.text ?: ""), api = api)
+                            questionTask.header(
+                                actor.name?.trim() ?: "",
+                                classname = "response-message response-message-actor"
+                            )
+                            val response =
+                                debateActors.getActorConfig(actor).answer(listOf(question.text ?: ""), api = api)
                             outlines[actor.name!! + ": " + question.text!!] = response.obj
-                            questionTask.add(MarkdownUtil.renderMarkdown(response.text, ui=ui))
+                            questionTask.add(MarkdownUtil.renderMarkdown(response.text, ui = ui))
                             questionTask.verbose(JsonUtil.toJson(response.obj))
                             response.obj.arguments?.map { it.text ?: "" } ?: emptyList()
                         }
@@ -151,7 +160,6 @@ class DebateAgent(
                 api = api,
                 dataStorage = dataStorage,
                 sessionID = session,
-                host = domainName,
                 session = ui,
                 userId = user,
             ).writeTensorflowEmbeddingProjectorHtml(*(allStatements).toTypedArray<String>())
@@ -160,6 +168,7 @@ class DebateAgent(
     }
 
 }
+
 class DebateActors(val model: ChatModels, val temperature: Double) {
 
     interface DebateParser : Function<String, DebateSetup> {
@@ -248,7 +257,5 @@ class DebateActors(val model: ChatModels, val temperature: Double) {
         temperature = temperature,
     )
 
-    companion object {
-
-    }
+    companion object
 }

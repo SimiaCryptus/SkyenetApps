@@ -59,6 +59,5 @@ class InterpreterTests {
         assertEquals(result, "test") // Not an expression
     }
 
-    companion object {
-    }
+    companion object
 }

@@ -20,70 +20,70 @@ import java.io.InputStreamReader
 import java.security.GeneralSecurityException
 
 open class GmailService(
-  val applicationName: String = "Gmail API Java Quickstart",
-  private val jsonFactory: JsonFactory = GsonFactory.getDefaultInstance(),
-  private val tokensDir: String = "tokens",
-  private val credentialsResourcePath: String = "/google-credentials.json.kms",
-  private val scopes: List<String> = listOf(
-    GmailScopes.GMAIL_LABELS,
-    GmailScopes.GMAIL_READONLY,
-    GmailScopes.MAIL_GOOGLE_COM,
-  ),
+    val applicationName: String = "Gmail API Java Quickstart",
+    private val jsonFactory: JsonFactory = GsonFactory.getDefaultInstance(),
+    private val tokensDir: String = "tokens",
+    private val credentialsResourcePath: String = "/google-credentials.json.kms",
+    private val scopes: List<String> = listOf(
+        GmailScopes.GMAIL_LABELS,
+        GmailScopes.GMAIL_READONLY,
+        GmailScopes.MAIL_GOOGLE_COM,
+    ),
 ) {
-  open val transport by lazy { GoogleApacheHttpTransport.newTrustedTransport() }
+    open val transport by lazy { GoogleApacheHttpTransport.newTrustedTransport() }
 
-  @Throws(IOException::class)
-  open fun getCredentials(transport: HttpTransport): Credential =
-    AuthorizationCodeInstalledApp(
-      GoogleAuthorizationCodeFlow.Builder(
-        transport,
-        jsonFactory,
-        GoogleClientSecrets.load(
-          jsonFactory,
-          getCredentialsJsonStream()
-        ), scopes
-      )
-        .setDataStoreFactory(FileDataStoreFactory(File(tokensDir)))
-        .setAccessType("offline")
-        .build(), LocalServerReceiver.Builder().setPort(8888).build()
-    ).authorize("user")
+    @Throws(IOException::class)
+    open fun getCredentials(transport: HttpTransport): Credential =
+        AuthorizationCodeInstalledApp(
+            GoogleAuthorizationCodeFlow.Builder(
+                transport,
+                jsonFactory,
+                GoogleClientSecrets.load(
+                    jsonFactory,
+                    getCredentialsJsonStream()
+                ), scopes
+            )
+                .setDataStoreFactory(FileDataStoreFactory(File(tokensDir)))
+                .setAccessType("offline")
+                .build(), LocalServerReceiver.Builder().setPort(8888).build()
+        ).authorize("user")
 
-  open fun getCredentialsJsonStream(): InputStreamReader {
-    var inputStream = (GmailService::class.java.getResourceAsStream(credentialsResourcePath)
-      ?: throw FileNotFoundException("Resource not found: $credentialsResourcePath"))
-    if(credentialsResourcePath.endsWith(".kms")) {
-      inputStream = ApplicationServices.cloud!!.decrypt(inputStream.readAllBytes()).byteInputStream()
-    }
-    return InputStreamReader(inputStream)
-  }
-
-  open fun getGmailService() = Gmail
-    .Builder(transport, jsonFactory, getCredentials(transport))
-    .setApplicationName(applicationName)
-    .build()
-
-  companion object : GmailService() {
-
-    @Throws(IOException::class, GeneralSecurityException::class)
-    @JvmStatic
-    fun main(args: Array<String>) {
-      val service: Gmail = getGmailService()
-      val user: String = "me"
-      val users: Gmail.Users = service.users()
-      val messageSvc: Gmail.Users.Messages = users.messages()
-      val labelSvc: Gmail.Users.Labels = users.labels()
-      val labels = labelSvc.list(user).execute().labels
-      labels.forEach { println(it) }
-      val listRequest = messageSvc.list(user)
-      val listMessagesResponse = listRequest.execute()
-      val messages = listMessagesResponse.messages
-      messages.forEach {
-        val message = messageSvc.get(user, it.id).execute()
-        message.payload.headers.forEach {
-          println(it)
+    open fun getCredentialsJsonStream(): InputStreamReader {
+        var inputStream = (GmailService::class.java.getResourceAsStream(credentialsResourcePath)
+            ?: throw FileNotFoundException("Resource not found: $credentialsResourcePath"))
+        if (credentialsResourcePath.endsWith(".kms")) {
+            inputStream = ApplicationServices.cloud!!.decrypt(inputStream.readAllBytes()).byteInputStream()
         }
-      }
+        return InputStreamReader(inputStream)
     }
-  }
+
+    open fun getGmailService() = Gmail
+        .Builder(transport, jsonFactory, getCredentials(transport))
+        .setApplicationName(applicationName)
+        .build()
+
+    companion object : GmailService() {
+
+        @Throws(IOException::class, GeneralSecurityException::class)
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val service: Gmail = getGmailService()
+            val user: String = "me"
+            val users: Gmail.Users = service.users()
+            val messageSvc: Gmail.Users.Messages = users.messages()
+            val labelSvc: Gmail.Users.Labels = users.labels()
+            val labels = labelSvc.list(user).execute().labels
+            labels.forEach { println(it) }
+            val listRequest = messageSvc.list(user)
+            val listMessagesResponse = listRequest.execute()
+            val messages = listMessagesResponse.messages
+            messages.forEach {
+                val message = messageSvc.get(user, it.id).execute()
+                message.payload.headers.forEach {
+                    println(it)
+                }
+            }
+        }
+    }
 
 }

@@ -19,61 +19,61 @@ import java.security.GeneralSecurityException
 
 object GmailQuickstart {
 
-  private const val APPLICATION_NAME = "Gmail API Java Quickstart"
-  private val JSON_FACTORY: JsonFactory = GsonFactory.getDefaultInstance()
-  private const val TOKENS_DIRECTORY_PATH = "tokens"
-  private const val CREDENTIALS_FILE_PATH = "/google-credentials.json"
-  private val transport by lazy { GoogleNetHttpTransport.newTrustedTransport() }
+    private const val APPLICATION_NAME = "Gmail API Java Quickstart"
+    private val JSON_FACTORY: JsonFactory = GsonFactory.getDefaultInstance()
+    private const val TOKENS_DIRECTORY_PATH = "tokens"
+    private const val CREDENTIALS_FILE_PATH = "/google-credentials.json"
+    private val transport by lazy { GoogleNetHttpTransport.newTrustedTransport() }
 
-  private val SCOPES = listOf(
-    GmailScopes.GMAIL_LABELS,
-    GmailScopes.GMAIL_READONLY,
-    GmailScopes.MAIL_GOOGLE_COM,
-  )
+    private val SCOPES = listOf(
+        GmailScopes.GMAIL_LABELS,
+        GmailScopes.GMAIL_READONLY,
+        GmailScopes.MAIL_GOOGLE_COM,
+    )
 
-  @Throws(IOException::class)
-  private fun getCredentials(transport: NetHttpTransport) =
-    AuthorizationCodeInstalledApp(
-      GoogleAuthorizationCodeFlow.Builder(
-        transport,
-        JSON_FACTORY,
-        GoogleClientSecrets.load(
-          JSON_FACTORY,
-          getCredentialsJsonStream()
-        ), SCOPES
-      )
-        .setDataStoreFactory(FileDataStoreFactory(File(TOKENS_DIRECTORY_PATH)))
-        .setAccessType("offline")
-        .build(), LocalServerReceiver.Builder().setPort(8888).build()
-    ).authorize("user")
+    @Throws(IOException::class)
+    private fun getCredentials(transport: NetHttpTransport) =
+        AuthorizationCodeInstalledApp(
+            GoogleAuthorizationCodeFlow.Builder(
+                transport,
+                JSON_FACTORY,
+                GoogleClientSecrets.load(
+                    JSON_FACTORY,
+                    getCredentialsJsonStream()
+                ), SCOPES
+            )
+                .setDataStoreFactory(FileDataStoreFactory(File(TOKENS_DIRECTORY_PATH)))
+                .setAccessType("offline")
+                .build(), LocalServerReceiver.Builder().setPort(8888).build()
+        ).authorize("user")
 
-  private fun getCredentialsJsonStream() = InputStreamReader(
-    GmailQuickstart::class.java.getResourceAsStream(CREDENTIALS_FILE_PATH)
-      ?: throw FileNotFoundException("Resource not found: $CREDENTIALS_FILE_PATH")
-  )
+    private fun getCredentialsJsonStream() = InputStreamReader(
+        GmailQuickstart::class.java.getResourceAsStream(CREDENTIALS_FILE_PATH)
+            ?: throw FileNotFoundException("Resource not found: $CREDENTIALS_FILE_PATH")
+    )
 
-  @Throws(IOException::class, GeneralSecurityException::class)
-  @JvmStatic
-  fun main(args: Array<String>) {
-    val service = getGmailService()
-    val user = "me"
-    val users = service.users()
-    val messageSvc = users.messages()
-    val labels = users.labels().list(user).execute().labels
-    labels.forEach { println(it) }
-    val listRequest = messageSvc.list(user)
-    val listMessagesResponse = listRequest.execute()
-    val messages = listMessagesResponse.messages
-    messages.forEach {
-      val message = messageSvc.get(user, it.id).execute()
-      message.payload.headers.forEach {
-        println(it)
-      }
+    @Throws(IOException::class, GeneralSecurityException::class)
+    @JvmStatic
+    fun main(args: Array<String>) {
+        val service = getGmailService()
+        val user = "me"
+        val users = service.users()
+        val messageSvc = users.messages()
+        val labels = users.labels().list(user).execute().labels
+        labels.forEach { println(it) }
+        val listRequest = messageSvc.list(user)
+        val listMessagesResponse = listRequest.execute()
+        val messages = listMessagesResponse.messages
+        messages.forEach {
+            val message = messageSvc.get(user, it.id).execute()
+            message.payload.headers.forEach {
+                println(it)
+            }
+        }
     }
-  }
 
-  private fun getGmailService() = Gmail
-    .Builder(transport, JSON_FACTORY, getCredentials(transport))
-    .setApplicationName(APPLICATION_NAME)
-    .build()
+    private fun getGmailService() = Gmail
+        .Builder(transport, JSON_FACTORY, getCredentials(transport))
+        .setApplicationName(APPLICATION_NAME)
+        .build()
 }

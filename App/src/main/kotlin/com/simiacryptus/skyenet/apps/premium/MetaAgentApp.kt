@@ -34,14 +34,15 @@ open class MetaAgentApp(
     applicationName: String = "Meta-Agent-Agent v1.0",
     temperature: Double = 0.1,
 ) : ApplicationServer(
-  applicationName = applicationName,
+    applicationName = applicationName,
     path = "/meta_agent",
 ) {
     override val description: String
         @Language("Markdown")
         get() = "<div>${
-            
-            renderMarkdown("""
+
+            renderMarkdown(
+                """
                 **It's agents all the way down!**
                 Welcome to the MetaAgentAgent, an innovative tool designed to streamline the process of creating custom AI agents. 
                 This powerful system leverages the capabilities of OpenAI's language models to assist you in designing and implementing your very own AI agent tailored to your specific needs and preferences.
@@ -53,17 +54,20 @@ open class MetaAgentApp(
                 
                 Get started with MetaAgentAgent today and bring your custom AI agent to life with ease! 
                 Whether you're looking to automate customer service, streamline data analysis, or create an interactive chatbot, MetaAgentAgent is here to help you make it happen.
-            """.trimIndent())
+            """.trimIndent()
+            )
         }</div>"
 
     data class Settings(
         val model: ChatModels = ChatModels.GPT4Turbo,
         val validateCode: Boolean = true,
         val temperature: Double = 0.2,
-        val budget : Double = 2.0,
+        val budget: Double = 2.0,
     )
+
     override val settingsClass: Class<*> get() = Settings::class.java
-    @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> initSettings(session: Session): T? = Settings() as T
 
     override fun userMessage(
         session: Session,
@@ -192,11 +196,11 @@ open class MetaAgentAgent(
             } ?: ""
 
             val actorMapEntries = design.obj.actors?.joinToString("\n") { actor ->
-                """ActorType.${actor.name?.upperSnakeCase()} to ${actor.name?.camelCase()},"""
+                """ActorType.${actor.name.upperSnakeCase()} to ${actor.name.camelCase()},"""
             } ?: ""
 
             val actorEnumDefs = design.obj.actors?.joinToString("\n") { actor ->
-                """${actor.name?.upperSnakeCase()},"""
+                """${actor.name.upperSnakeCase()},"""
             } ?: ""
 
             @Language("kotlin") val appCode = """
@@ -278,7 +282,8 @@ open class MetaAgentAgent(
         """.trimMargin()
 
             agentCode = design.obj.actors?.map { it.simpleClassName }?.fold(agentCode)
-            { code, type -> code.replace("(?<![\\w.])$type(?![\\w])".toRegex(), "${classBaseName}Actors.$type") } ?: agentCode
+            { code, type -> code.replace("(?<![\\w.])$type(?![\\w])".toRegex(), "${classBaseName}Actors.$type") }
+                ?: agentCode
 
             @Language("kotlin") val agentsCode = """
         |$standardImports
@@ -312,7 +317,7 @@ open class MetaAgentAgent(
         |""".trimMargin()
 
             //language=HTML
-            task.complete(renderMarkdown(code, ui=ui))
+            task.complete(renderMarkdown(code, ui = ui))
         } catch (e: Throwable) {
             task.error(ui, e)
             throw e
@@ -320,66 +325,69 @@ open class MetaAgentAgent(
     }
 
     private fun initialDesign(input: String): ParsedResponse<MetaAgentActors.AgentDesign> {
-      val toInput = { it: String -> listOf(it) }
-      val highLevelDesign = Acceptable(
-        task = ui.newTask(),
-        userMessage = input,
-        heading = renderMarkdown(input, ui=ui),
-        initialResponse = { it: String -> highLevelDesigner.answer(toInput(it), api = api) },
-        outputFn = { design -> renderMarkdown(design.toString(), ui=ui) },
-        ui = ui,
-        reviseResponse = { userMessages: List<Pair<String, Role>> ->
-          highLevelDesigner.respond(
-            messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
-            input = toInput(input),
-            api = api
-          )
-        },
-      ).call()
-      val toInput1 = { it: String -> listOf(it) }
-      val flowDesign = Acceptable(
-        task = ui.newTask(),
-        userMessage = highLevelDesign,
-        heading = "Flow Design",
-        initialResponse = { it: String -> detailDesigner.answer(toInput1(it), api = api) },
-        outputFn = { design: ParsedResponse<MetaAgentActors.AgentFlowDesign> ->
-                    try {
-                        renderMarkdown(design.toString(), ui=ui) + JsonUtil.toJson(design.obj)
-                    } catch (e: Throwable) {
-                        renderMarkdown(e.message ?: e.toString(), ui=ui)
-                    }
-                },
-        ui = ui,
-        reviseResponse = { userMessages: List<Pair<String, Role>> ->
-          detailDesigner.respond(
-            messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
-            input = toInput1(highLevelDesign),
-            api = api
-          )
-        },
-      ).call()
-      val toInput2 = { it: String -> listOf(it) }
-      val actorDesignParsedResponse: ParsedResponse<MetaAgentActors.AgentActorDesign> = Acceptable(
-        task = ui.newTask(),
-        userMessage = flowDesign.text,
-        heading = "Actor Design",
-        initialResponse = { it: String -> actorDesigner.answer(toInput2(it), api = api) },
-        outputFn = { design: ParsedResponse<MetaAgentActors.AgentActorDesign> ->
-                    try {
-                        renderMarkdown(design.toString(), ui=ui) + JsonUtil.toJson(design.obj)
-                    } catch (e: Throwable) {
-                        renderMarkdown(e.message ?: e.toString(), ui=ui)
-                    }
-                },
-        ui = ui,
-        reviseResponse = { userMessages: List<Pair<String, Role>> ->
-          actorDesigner.respond(
-            messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }.toTypedArray<ApiModel.ChatMessage>()),
-            input = toInput2(flowDesign.text),
-            api = api
-          )
-        },
-      ).call()
+        val toInput = { it: String -> listOf(it) }
+        val highLevelDesign = Acceptable(
+            task = ui.newTask(),
+            userMessage = input,
+            heading = renderMarkdown(input, ui = ui),
+            initialResponse = { it: String -> highLevelDesigner.answer(toInput(it), api = api) },
+            outputFn = { design -> renderMarkdown(design.toString(), ui = ui) },
+            ui = ui,
+            reviseResponse = { userMessages: List<Pair<String, Role>> ->
+                highLevelDesigner.respond(
+                    messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
+                        .toTypedArray<ApiModel.ChatMessage>()),
+                    input = toInput(input),
+                    api = api
+                )
+            },
+        ).call()
+        val toInput1 = { it: String -> listOf(it) }
+        val flowDesign = Acceptable(
+            task = ui.newTask(),
+            userMessage = highLevelDesign,
+            heading = "Flow Design",
+            initialResponse = { it: String -> detailDesigner.answer(toInput1(it), api = api) },
+            outputFn = { design: ParsedResponse<MetaAgentActors.AgentFlowDesign> ->
+                try {
+                    renderMarkdown(design.toString(), ui = ui) + JsonUtil.toJson(design.obj)
+                } catch (e: Throwable) {
+                    renderMarkdown(e.message ?: e.toString(), ui = ui)
+                }
+            },
+            ui = ui,
+            reviseResponse = { userMessages: List<Pair<String, Role>> ->
+                detailDesigner.respond(
+                    messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
+                        .toTypedArray<ApiModel.ChatMessage>()),
+                    input = toInput1(highLevelDesign),
+                    api = api
+                )
+            },
+        ).call()
+        val toInput2 = { it: String -> listOf(it) }
+        val actorDesignParsedResponse: ParsedResponse<MetaAgentActors.AgentActorDesign> = Acceptable(
+            task = ui.newTask(),
+            userMessage = flowDesign.text,
+            heading = "Actor Design",
+            initialResponse = { it: String -> actorDesigner.answer(toInput2(it), api = api) },
+            outputFn = { design: ParsedResponse<MetaAgentActors.AgentActorDesign> ->
+                try {
+                    renderMarkdown(design.toString(), ui = ui) + JsonUtil.toJson(design.obj)
+                } catch (e: Throwable) {
+                    renderMarkdown(e.message ?: e.toString(), ui = ui)
+                }
+            },
+            ui = ui,
+            reviseResponse = { userMessages: List<Pair<String, Role>> ->
+                actorDesigner.respond(
+                    messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
+                        .toTypedArray<ApiModel.ChatMessage>()),
+                    input = toInput2(flowDesign.text),
+                    api = api
+                )
+            },
+        ).call()
         return object : ParsedResponse<MetaAgentActors.AgentDesign>(MetaAgentActors.AgentDesign::class.java) {
             override val text get() = flowDesign.text + "\n" + actorDesignParsedResponse.text
             override val obj
@@ -404,12 +412,12 @@ open class MetaAgentAgent(
             task.header("Main Function")
             val codeRequest = CodingActor.CodeRequest(
                 messages = listOf(
-                    userMessage to ApiModel.Role.user,
-                    design.text to ApiModel.Role.assistant,
+                    userMessage to Role.user,
+                    design.text to Role.assistant,
                     "Implement `fun ${design.obj.name?.camelCase()}(${
                         listOf(design.obj.mainInput!!)
                             .joinToString(", ") { (it.name ?: "") + " : " + (it.type ?: "") }
-                    })`" to ApiModel.Role.user
+                    })`" to Role.user
                 ),
                 codePrefix = (standardImports + (actorImpls.values + flowStepCode.values)
                     .joinToString("\n\n") { it.trimIndent() }).sortCode(),
@@ -422,7 +430,7 @@ open class MetaAgentAgent(
           |```kotlin
           |$mainFunction
           |```
-          """.trimMargin(), ui=ui
+          """.trimMargin(), ui = ui
                 ), tag = "div"
             )
             task.complete()
@@ -460,11 +468,11 @@ open class MetaAgentAgent(
     ): Pair<String, String> {
         //language=HTML
         task.header("Actor: ${actorDesign.name}")
-        val type = actorDesign.type ?: ""
+        val type = actorDesign.type
         val codeRequest = CodingActor.CodeRequest(
             listOf(
-                userMessage to ApiModel.Role.user,
-                design.text to ApiModel.Role.assistant,
+                userMessage to Role.user,
+                design.text to Role.assistant,
                 "Implement `val ${(actorDesign.name).camelCase()} : ${
                     when (type.lowercase()) {
                         "simple" -> "SimpleActor"
@@ -474,7 +482,7 @@ open class MetaAgentAgent(
                         "tts" -> "TextToSpeechActor"
                         else -> throw IllegalArgumentException("Unknown actor type: $type")
                     }
-                }`" to ApiModel.Role.user
+                }`" to Role.user
             ),
             autoEvaluate = autoEvaluate
         )
@@ -496,7 +504,7 @@ open class MetaAgentAgent(
         |```kotlin
         |$code
         |```
-        """.trimMargin(), ui=ui
+        """.trimMargin(), ui = ui
             ), tag = "div"
         )
         task.complete()
@@ -535,11 +543,11 @@ open class MetaAgentAgent(
                         flowStepDesigner.answer(
                             CodingActor.CodeRequest(
                                 messages = listOf(
-                                    userMessage to ApiModel.Role.user,
-                                    design.text to ApiModel.Role.assistant,
+                                    userMessage to Role.user,
+                                    design.text to Role.assistant,
                                     "Implement `fun ${(logicFlowItem.name!!).camelCase()}(${
                                         logicFlowItem.inputs?.joinToString<MetaAgentActors.DataInfo>(", ") { (it.name ?: "") + " : " + (it.type ?: "") } ?: ""
-                                    })`" to ApiModel.Role.user
+                                    })`" to Role.user
                                 ),
                                 autoEvaluate = autoEvaluate,
                                 codePrefix = (actorImpls.values + flowImpls.values)
@@ -559,7 +567,7 @@ open class MetaAgentAgent(
             |```kotlin
             |$code
             |```
-            """.trimMargin(), ui=ui
+            """.trimMargin(), ui = ui
                     ), tag = "div"
                 )
                 message.complete()
@@ -572,10 +580,7 @@ open class MetaAgentAgent(
         return flowImpls
     }
 
-    companion object {
-
-
-    }
+    companion object
 }
 
 class MetaAgentActors(
@@ -638,7 +643,9 @@ class MetaAgentActors(
             null == actors -> "actors is required"
             actors.isEmpty() -> "actors is required"
             null != logicFlow.validate() -> logicFlow.validate()
-            !actors.all { null == it.validate() } -> actors.map { it.validate() }.filter { null != it }.joinToString("\n")
+            !actors.all { null == it.validate() } -> actors.map { it.validate() }.filter { null != it }
+                .joinToString("\n")
+
             else -> null
         }
     }
@@ -654,7 +661,9 @@ class MetaAgentActors(
         override fun validate(): String? = when {
             null == actors -> "actors is required"
             actors.isEmpty() -> "actors is required"
-            !actors.all { null == it.validate() } -> actors.map { it.validate() }.filter { null != it }.joinToString("\n")
+            !actors.all { null == it.validate() } -> actors.map { it.validate() }.filter { null != it }
+                .joinToString("\n")
+
             else -> null
         }
     }
@@ -668,14 +677,27 @@ class MetaAgentActors(
         @Description("Simple actors: string; Image actors: image; Coding actors: code; Text-to-speech actors: mp3; Parsed actors: a simple java class name for the data structure")
         val resultClass: String = "",
     ) : ValidatedObject {
-        val simpleClassName : String get() = resultClass.split(".").last()
+        val simpleClassName: String get() = resultClass.split(".").last()
         override fun validate(): String? = when {
             name.isEmpty() -> "name is required"
             name.chars().anyMatch { !Character.isJavaIdentifierPart(it) } -> "name must be a valid java identifier"
             type.isEmpty() -> "type is required"
-            type.lowercase().notIn("simple", "parsed", "coding", "image", "tts") -> "type must be simple, parsed, coding, tts, or image"
+            type.lowercase().notIn(
+                "simple",
+                "parsed",
+                "coding",
+                "image",
+                "tts"
+            ) -> "type must be simple, parsed, coding, tts, or image"
+
             resultClass.isEmpty() -> "resultType is required"
-            resultClass.lowercase().notIn("string", "code", "image", "mp3") && !validClassName(resultClass) -> "resultType must be string, code, image, mp3, or a valid class name"
+            resultClass.lowercase().notIn(
+                "string",
+                "code",
+                "image",
+                "mp3"
+            ) && !validClassName(resultClass) -> "resultType must be string, code, image, mp3, or a valid class name"
+
             else -> null
         }
 
@@ -1109,7 +1131,7 @@ class MetaAgentActors(
     ).apply { evalFormat = false }
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(MetaAgentActors::class.java)
+        val log = LoggerFactory.getLogger(MetaAgentActors::class.java)
         fun <T> T.notIn(vararg examples: T) = !examples.contains(this)
 
     }

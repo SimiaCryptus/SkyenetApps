@@ -9,30 +9,30 @@ import java.nio.file.Files
 
 class DatabaseServiceTests {
 
-  val databaseServices: DatabaseServices
-    get() {
-      val databaseServices = DatabaseServices(
-        "jdbc:postgresql://localhost:5432/postgres",
-        "postgres",
-      ) { "password" }
-      databaseServices.teardownSchema()
-      databaseServices.initializeSchema()
-      return databaseServices
-    }
+    val databaseServices: DatabaseServices
+        get() {
+            val databaseServices = DatabaseServices(
+                "jdbc:postgresql://localhost:5432/postgres",
+                "postgres",
+            ) { "password" }
+            databaseServices.teardownSchema()
+            databaseServices.initializeSchema()
+            return databaseServices
+        }
 
-  @Nested
-  inner class AuthenticationManagerTest : AuthenticationInterfaceTest(databaseServices.authenticationManager) {}
+    @Nested
+    inner class AuthenticationManagerTest : AuthenticationInterfaceTest(databaseServices.authenticationManager)
 
-  @Nested
-  inner class DataStorageTest : StorageInterfaceTest(
-    databaseServices.dataStorageFactory.invoke(
-      Files.createTempDirectory("dataStorageTest").toFile()
+    @Nested
+    inner class DataStorageTest : StorageInterfaceTest(
+        databaseServices.dataStorageFactory.invoke(
+            Files.createTempDirectory("dataStorageTest").toFile()
+        )
     )
-  ) {}
 
-  @Nested
-  inner class UsageManagerTest : UsageTest(databaseServices.usageManager) {}
+    @Nested
+    inner class UsageManagerTest : UsageTest(databaseServices.usageManager)
 
-  @Nested
-  inner class UserSettingsManagerTest : UserSettingsTest(databaseServices.userSettingsManager) {}
+    @Nested
+    inner class UserSettingsManagerTest : UserSettingsTest(databaseServices.userSettingsManager)
 }
