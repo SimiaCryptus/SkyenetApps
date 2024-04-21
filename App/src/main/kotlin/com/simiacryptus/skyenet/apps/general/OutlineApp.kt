@@ -5,6 +5,8 @@ import com.simiacryptus.jopenai.GPT4Tokenizer
 import com.simiacryptus.jopenai.describe.JsonDescriber
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.skyenet.TabbedDisplay
+import com.simiacryptus.skyenet.apps.general.OutlineManager.NodeList
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
@@ -121,21 +123,24 @@ class OutlineAgent(
     user,
     session
 ) {
+    private val tabbedDisplay = TabbedDisplay(ui.newTask())
+
     init {
         require(models.isNotEmpty())
     }
 
     @Suppress("UNCHECKED_CAST")
-    private val initial get() = getActor(OutlineActors.ActorType.INITIAL) as ParsedActor<OutlineManager.NodeList>
+    private val initial get() = getActor(OutlineActors.ActorType.INITIAL) as ParsedActor<NodeList>
     private val summary get() = getActor(OutlineActors.ActorType.FINAL) as SimpleActor
 
     @Suppress("UNCHECKED_CAST")
-    private val expand get() = getActor(OutlineActors.ActorType.EXPAND) as ParsedActor<OutlineManager.NodeList>
+    private val expand get() = getActor(OutlineActors.ActorType.EXPAND) as ParsedActor<NodeList>
     private val activeThreadCounter = AtomicInteger(0)
     private val tokenizer = GPT4Tokenizer(false)
 
     fun buildMap() {
-        val message = ui.newTask()
+        val message = ui.newTask(false)
+        tabbedDisplay["Content"] = message.placeholder
         val outlineManager = try {
             message.echo(renderMarkdown(this.userMessage, ui = ui))
             val root = initial.answer(listOf(this.userMessage), api = api)
@@ -149,7 +154,7 @@ class OutlineAgent(
         }
 
         if (models.isNotEmpty()) {
-            processRecursive(outlineManager, outlineManager.rootNode, models)
+            processRecursive(outlineManager, outlineManager.rootNode, models, message)
             while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
             while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
         }
@@ -157,17 +162,19 @@ class OutlineAgent(
         val sessionDir = dataStorage.getSessionDir(user, session)
         sessionDir.resolve("nodes.json").writeText(JsonUtil.toJson(outlineManager.nodes))
 
-        val finalOutlineMessage = ui.newTask()
+        val finalOutlineMessage = ui.newTask(false)
+        tabbedDisplay["Outline"] = finalOutlineMessage.placeholder
         finalOutlineMessage.header("Final Outline")
         val finalOutline = outlineManager.buildFinalOutline()
         finalOutlineMessage.verbose(JsonUtil.toJson(finalOutline))
-        val textOutline = finalOutline.getTextOutline()
+        val textOutline = finalOutline?.let { NodeList(it) }?.getTextOutline() ?: ""
         finalOutlineMessage.complete(renderMarkdown(textOutline, ui = ui))
         sessionDir.resolve("finalOutline.json").writeText(JsonUtil.toJson(finalOutline))
         sessionDir.resolve("textOutline.md").writeText(textOutline)
 
         if (showProjector) {
-            val projectorMessage = ui.newTask()
+            val projectorMessage = ui.newTask(false)
+            tabbedDisplay["Projector"] = projectorMessage.placeholder
             projectorMessage.header("Embedding Projector")
             try {
                 val response = TensorflowProjector(
@@ -177,7 +184,7 @@ class OutlineAgent(
                     session = ui,
                     userId = user,
                 ).writeTensorflowEmbeddingProjectorHtml(
-                    *outlineManager.getLeafDescriptions(finalOutline).toTypedArray()
+                    *outlineManager.getLeafDescriptions(finalOutline?.let { NodeList(it) }!!).toTypedArray()
                 )
                 projectorMessage.complete(response)
             } catch (e: Exception) {
@@ -187,10 +194,11 @@ class OutlineAgent(
         }
 
         if (writeFinalEssay) {
-            val finalRenderMessage = ui.newTask()
+            val finalRenderMessage = ui.newTask(false)
+            tabbedDisplay["Final Essay"] = finalRenderMessage.placeholder
             finalRenderMessage.header("Final Render")
             try {
-                val finalEssay = buildFinalEssay(finalOutline, outlineManager)
+                val finalEssay = buildFinalEssay(finalOutline?.let { NodeList(it) }!!, outlineManager)
                 sessionDir.resolve("finalEssay.md").writeText(finalEssay)
                 finalRenderMessage.complete(renderMarkdown(finalEssay, ui = ui))
             } catch (e: Exception) {
@@ -198,10 +206,11 @@ class OutlineAgent(
                 finalRenderMessage.error(ui, e)
             }
         }
+        tabbedDisplay.update()
     }
 
     private fun buildFinalEssay(
-        nodeList: OutlineManager.NodeList,
+        nodeList: NodeList,
         manager: OutlineManager
     ): String =
         if (tokenizer.estimateTokenCount(nodeList.getTextOutline()) > (summary.model.maxTotalTokens * 0.6).toInt()) {
@@ -213,19 +222,22 @@ class OutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlineManager.OutlinedText,
-        models: List<ChatModels>
+        models: List<ChatModels>,
+        task: SessionTask
     ) {
+        val tabbedDisplay = TabbedDisplay(task)
         val terminalNodeMap = node.outline.getTerminalNodeMap()
         if (terminalNodeMap.isEmpty()) {
             val errorMessage = "No terminal nodes: ${node.text}"
             log.warn(errorMessage)
-            ui.newTask().error(ui, RuntimeException(errorMessage))
+            task.error(ui, RuntimeException(errorMessage))
             return
         }
         for ((item, childNode) in terminalNodeMap) {
+            activeThreadCounter.incrementAndGet()
+            val message = ui.newTask(false)
+            tabbedDisplay[item] = message.placeholder
             pool.submit {
-                activeThreadCounter.incrementAndGet()
-                val message = ui.newTask()
                 try {
                     val newNode = processNode(node, item, manager, message, models.first()) ?: return@submit
                     synchronized(manager.expansionMap) {
@@ -235,11 +247,10 @@ class OutlineAgent(
                             val existingNode = manager.expansionMap[childNode]!!
                             val errorMessage = "Conflict: ${existingNode} vs ${newNode}"
                             log.warn(errorMessage)
-                            ui.newTask().error(ui, RuntimeException(errorMessage))
+                            message.error(ui, RuntimeException(errorMessage))
                         }
                     }
-                    message.complete()
-                    if (models.size > 1) processRecursive(manager, newNode, models.drop(1))
+                    if (models.size > 1) processRecursive(manager, newNode, models.drop(1), message)
                 } catch (e: Exception) {
                     log.warn("Error in processRecursive", e)
                     message.error(ui, e)
@@ -248,6 +259,7 @@ class OutlineAgent(
                 }
             }
         }
+        task.complete()
     }
 
     private fun processNode(
@@ -264,7 +276,7 @@ class OutlineAgent(
         message.header("Expand $sectionName")
         val answer = expand.withModel(model).answer(listOf(this.userMessage, parent.text, sectionName), api = api)
         message.add(renderMarkdown(answer.text, ui = ui))
-        message.verbose(JsonUtil.toJson(answer.obj))
+        message.verbose(JsonUtil.toJson(answer.obj), false)
         val newNode = OutlineManager.OutlinedText(answer.text, answer.obj)
         outlineManager.nodes.add(newNode)
         return newNode
@@ -295,7 +307,7 @@ interface OutlineActors {
         )
 
         private fun initialAuthor(temperature: Double, model: ChatModels, parsingModel: ChatModels) = ParsedActor(
-            OutlineManager.NodeList::class.java,
+            NodeList::class.java,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
             model = model,
             temperature = temperature,
@@ -308,16 +320,14 @@ interface OutlineActors {
             exampleInstance = exampleNodeList(),
         )
 
-        private fun exampleNodeList() = OutlineManager.NodeList(
+        private fun exampleNodeList() = NodeList(
             listOf(
                 OutlineManager.Node(name = "Main Idea", description = "Main Idea Description"),
                 OutlineManager.Node(
                     name = "Supporting Idea",
                     description = "Supporting Idea Description",
-                    children = OutlineManager.NodeList(
-                        listOf(
-                            OutlineManager.Node(name = "Sub Idea", description = "Sub Idea Description")
-                        )
+                    children = listOf(
+                        OutlineManager.Node(name = "Sub Idea", description = "Sub Idea Description")
                     )
                 )
             )
@@ -326,10 +336,9 @@ interface OutlineActors {
         private fun expansionAuthor(
             temperature: Double,
             parsingModel: ChatModels
-        ): ParsedActor<OutlineManager.NodeList> =
+        ): ParsedActor<NodeList> =
             ParsedActor(
-//        parserClass = OutlineParser::class.java,
-                resultClass = OutlineManager.NodeList::class.java,
+                resultClass = NodeList::class.java,
                 prompt = """You are a helpful writing assistant. Provide additional details about the topic.""",
                 name = "Expand",
                 model = parsingModel,

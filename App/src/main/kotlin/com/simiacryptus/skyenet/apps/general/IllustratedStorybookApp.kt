@@ -12,6 +12,7 @@ import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.skyenet.Acceptable
 import com.simiacryptus.skyenet.AgentPatterns
+import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.ClientManager
@@ -20,6 +21,7 @@ import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
@@ -111,6 +113,7 @@ open class IllustratedStorybookAgent(
         voiceSpeed = voiceSpeed,
     ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
 ) {
+   private val tabbedDisplay = TabbedDisplay(ui.newTask())
 
     @Suppress("UNCHECKED_CAST")
     private val storyGeneratorActor by lazy { getActor(STORY_GENERATOR_ACTOR) as ParsedActor<IllustratedStorybookActors.StoryData> }
@@ -121,22 +124,26 @@ open class IllustratedStorybookAgent(
     private val narratorActor by lazy { getActor(NARRATOR) as TextToSpeechActor }
 
     private fun agentSystemArchitecture(userPreferencesContent: UserPreferencesContent) {
-        val task = ui.newTask()
+        val task = ui.newTask(root = false).apply { tabbedDisplay["Generation"] = placeholder }
         try {
             task.header("Starting Storybook Generation Process")
 
             // Step 1: Generate the story text using the Story Generator Actor
             task.add("Generating the story based on user preferences...")
-            val storyData: IllustratedStorybookActors.StoryData = storyGeneratorActor(userPreferencesContent)
+            val storyData: IllustratedStorybookActors.StoryData = storyGeneratorActor(userPreferencesContent, task)
             task.add("Story generated successfully with title: '${storyData.title}'")
 
             // Step 2: Generate illustrations for each paragraph of the story
             task.add("Generating illustrations for the story...")
-            val illustrations = (storyData.paragraphs?.map { paragraph ->
+            val illustrationTabs = TabbedDisplay(task)
+            val illustrations = (storyData.paragraphs?.withIndex()?.map { (index, paragraph) ->
+                val task = ui.newTask(root = false)
+                illustrationTabs[index.toString()] = task.placeholder
                 pool.submit<Pair<String, BufferedImage>?> {
                     illustrationGeneratorActor(
                         paragraph,
-                        userPreferencesContent
+                        userPreferencesContent,
+                        task
                     )
                 }
             }?.toTypedArray() ?: emptyArray()).map { it.get() }
@@ -153,12 +160,14 @@ open class IllustratedStorybookAgent(
                     }
                 }
             }?.toTypedArray() ?: emptyArray()).map { it?.get() }
+            task.complete("Narration generated successfully.")
 
             // Step 3: Format the story and illustrations into an HTML document
-            task.add("Formatting the storybook into HTML...")
-            val htmlStorybook = htmlFormatter(storyData, illustrations, userPreferencesContent, narrations)
-            val savedStorybookPath = fileManager(htmlStorybook)
-            task.complete("<a href='$savedStorybookPath' target='_blank'>Storybook Ready!</a>")
+            val outputTask = ui.newTask(root = false).apply { tabbedDisplay["Story Output"] = placeholder }
+            outputTask.add("Formatting the storybook into HTML...")
+            val htmlStorybook = htmlFormatter(storyData, illustrations, userPreferencesContent, narrations, outputTask)
+            val savedStorybookPath = fileManager(htmlStorybook, outputTask)
+            outputTask.complete("<a href='$savedStorybookPath' target='_blank'>Storybook Ready!</a>")
         } catch (e: Throwable) {
             task.error(ui, e)
             throw e
@@ -166,12 +175,13 @@ open class IllustratedStorybookAgent(
     }
 
     fun inputHandler(userMessage: String) {
-        val task = ui.newTask()
+        val task = ui.newTask(root = false)
+       tabbedDisplay["User Input"] = task.placeholder
         try {
             task.echo(userMessage)
             val toInput = { it: String -> listOf(it) }
             val parsedInput = Acceptable<ParsedResponse<UserPreferencesContent>>(
-                task = ui.newTask(),
+                task = task,
                 userMessage = userMessage,
                 heading = renderMarkdown(userMessage, ui = ui),
                 initialResponse = { it: String -> requirementsActor.answer(toInput(it), api = api) },
@@ -190,13 +200,13 @@ open class IllustratedStorybookAgent(
                 ui = ui,
                 reviseResponse = { userMessages: List<Pair<String, Role>> ->
                     requirementsActor.respond(
-                        messages = (userMessages.map<Pair<String, Role>, ApiModel.ChatMessage> {
+                        messages = (userMessages.map {
                             ApiModel.ChatMessage(
                                 it.second,
                                 it.first.toContentList()
                             )
                         }.toTypedArray<ApiModel.ChatMessage>()),
-                        input = toInput(p1 = userMessage),
+                        input = toInput(userMessage),
                         api = api
                     )
                 },
@@ -213,9 +223,9 @@ open class IllustratedStorybookAgent(
         storyText: IllustratedStorybookActors.StoryData,
         illustrations: List<Pair<String, BufferedImage>?>,
         userPreferencesContent: UserPreferencesContent,
-        narrations: List<String?>
+        narrations: List<String?>,
+        task: SessionTask
     ): String {
-        val task = ui.newTask()
         try {
             task.header("Formatting Storybook")
             val htmlContent = StringBuilder()
@@ -319,8 +329,10 @@ open class IllustratedStorybookAgent(
     }
 
 
-    private fun fileManager(htmlStorybook: String): String {
-        val task = ui.newTask()
+    private fun fileManager(
+        htmlStorybook: String,
+        task: SessionTask
+    ): String {
         try {
             task.header("Saving Storybook File")
 
@@ -335,7 +347,7 @@ open class IllustratedStorybookAgent(
             // Write the HTML content to the file
             Files.writeString(filePath, htmlStorybook, StandardOpenOption.CREATE_NEW)
 
-            task.add("Storybook saved successfully at: $filePath")
+            task.verbose("Storybook saved successfully at: $filePath")
 
             // Return the path to the saved file as a string
             return "fileIndex/$session/$fileName"
@@ -351,9 +363,9 @@ open class IllustratedStorybookAgent(
     // Define the function for generating illustrations for a given story segment
     private fun illustrationGeneratorActor(
         segment: String,
-        userPreferencesContent: UserPreferencesContent
+        userPreferencesContent: UserPreferencesContent,
+        task: SessionTask
     ): Pair<String, BufferedImage>? {
-        val task = ui.newTask()
         try {
             //task.add(renderMarkdown(segment))
 
@@ -363,7 +375,7 @@ open class IllustratedStorybookAgent(
                 "The illustration should reflect the genre: ${userPreferencesContent.genre}",
                 "It should be appropriate for the target age group: ${userPreferencesContent.targetAgeGroup}",
                 "Please include the following elements if possible: ${
-                    userPreferencesContent.specificElements.joinToString(
+                    userPreferencesContent.specificElements?.joinToString(
                         ", "
                     )
                 }"
@@ -387,14 +399,16 @@ open class IllustratedStorybookAgent(
 
     // Define the structure for user preferences
     data class UserPreferencesContent(
-        val genre: String,
-        val targetAgeGroup: String,
-        val specificElements: List<String> // List of specific elements to include in the story
+        val genre: String? = null,
+        val targetAgeGroup: String? = null,
+        val specificElements: List<String>? = null
     )
 
     // Implement the storyGeneratorActor function
-    private fun storyGeneratorActor(userPreferencesContent: UserPreferencesContent): IllustratedStorybookActors.StoryData {
-        val task = ui.newTask()
+    private fun storyGeneratorActor(
+        userPreferencesContent: UserPreferencesContent,
+        task: SessionTask,
+    ): IllustratedStorybookActors.StoryData {
         try {
             task.header("Generating Story")
 
@@ -402,7 +416,7 @@ open class IllustratedStorybookAgent(
             val conversationThread = listOf(
                 "Genre: ${userPreferencesContent.genre}",
                 "Target Age Group: ${userPreferencesContent.targetAgeGroup}",
-                "Specific Elements: ${userPreferencesContent.specificElements.joinToString(", ")}"
+                "Specific Elements: ${userPreferencesContent.specificElements?.joinToString(", ")}"
             )
 
             // Generate the story using the storyGeneratorActor

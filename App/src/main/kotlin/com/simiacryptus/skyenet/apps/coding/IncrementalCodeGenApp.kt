@@ -174,7 +174,7 @@ class IncrementalCodeGenAgent(
                 taskBreakdownActor.respond(
                     messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
                         .toTypedArray<ApiModel.ChatMessage>()),
-                    input = toInput(p1 = userMessage),
+                    input = toInput(userMessage),
                     api = api
                 )
             },
@@ -346,7 +346,7 @@ class IncrementalCodeGenAgent(
                                         it.first.toContentList()
                                     )
                                 }.toTypedArray<ApiModel.ChatMessage>()),
-                                input = toInput(p1 = input1),
+                                input = toInput(input1),
                                 api = api
                             )
                         },
