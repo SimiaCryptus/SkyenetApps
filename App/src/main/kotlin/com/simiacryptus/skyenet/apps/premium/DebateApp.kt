@@ -5,6 +5,7 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
@@ -102,10 +103,13 @@ class DebateAgent(
     @Suppress("UNCHECKED_CAST")
     private val moderator get() = getActor(DebateActors.ActorType.MODERATOR) as ParsedActor<DebateActors.DebateSetup>
 
+    val tabs = TabbedDisplay(ui.newTask())
+
     fun debate(userMessage: String) {
 
         //language=HTML
-        ui.newTask().complete(
+        val mainTask = ui.newTask(false).apply { tabs["Main"] = placeholder }
+        mainTask.complete(
             """
       <style>
         .response-message-question {
@@ -118,32 +122,35 @@ class DebateAgent(
     """.trimIndent()
         )
 
-        val moderatorTask = ui.newTask()
-        moderatorTask.echo(MarkdownUtil.renderMarkdown(userMessage, ui = ui))
+        mainTask.echo(MarkdownUtil.renderMarkdown(userMessage, ui = ui))
         val moderatorResponse = this.moderator.answer(listOf(userMessage), api = api)
-        moderatorTask.add(MarkdownUtil.renderMarkdown(moderatorResponse.text, ui = ui))
-        moderatorTask.verbose(JsonUtil.toJson(moderatorResponse.obj))
-        moderatorTask.complete()
+        mainTask.add(MarkdownUtil.renderMarkdown(moderatorResponse.text, ui = ui))
+        mainTask.verbose(JsonUtil.toJson(moderatorResponse.obj))
+        mainTask.complete()
 
+        val questionTabs = TabbedDisplay(mainTask)
         val allStatements =
             (moderatorResponse.obj.questions?.list ?: emptyList()).parallelStream().flatMap { question ->
-                val questionTask = ui.newTask()
+                val questionTask = ui.newTask(false).apply { questionTabs[question.text!!] = placeholder }
                 questionTask.header(
                     MarkdownUtil.renderMarkdown(question.text ?: "", ui = ui).trim(),
                     classname = "response-message response-message-question"
                 )
                 try {
+                    val responseTabs = TabbedDisplay(questionTask)
                     val result = (moderatorResponse.obj.debaters?.list ?: emptyList())
                         .map { actor ->
-                            questionTask.header(
+                            val responseTask = ui.newTask(false).apply { responseTabs[actor.name!!] = placeholder }
+                            responseTask.header(
                                 actor.name?.trim() ?: "",
                                 classname = "response-message response-message-actor"
                             )
                             val response =
                                 debateActors.getActorConfig(actor).answer(listOf(question.text ?: ""), api = api)
                             outlines[actor.name!! + ": " + question.text!!] = response.obj
-                            questionTask.add(MarkdownUtil.renderMarkdown(response.text, ui = ui))
-                            questionTask.verbose(JsonUtil.toJson(response.obj))
+                            responseTask.add(MarkdownUtil.renderMarkdown(response.text, ui = ui))
+                            responseTask.verbose(JsonUtil.toJson(response.obj))
+                            responseTask.complete()
                             response.obj.arguments?.map { it.text ?: "" } ?: emptyList()
                         }
                     questionTask.complete()
@@ -155,7 +162,7 @@ class DebateAgent(
             }.toList() + (moderatorResponse.obj.questions?.list?.mapNotNull { it.text }
                 ?.filter { it.isNotBlank() } ?: emptyList())
 
-        ui.newTask().complete(
+        ui.newTask(false).apply { tabs["Projector"] = placeholder }.complete(
             TensorflowProjector(
                 api = api,
                 dataStorage = dataStorage,
@@ -170,11 +177,6 @@ class DebateAgent(
 }
 
 class DebateActors(val model: ChatModels, val temperature: Double) {
-
-    interface DebateParser : Function<String, DebateSetup> {
-        @Description("Dissect debate arguments into a recursive outline of the main ideas and supporting details.")
-        override fun apply(text: String): DebateSetup
-    }
 
     data class DebateSetup(
         val debaters: Debaters? = null,
@@ -244,7 +246,7 @@ class DebateActors(val model: ChatModels, val temperature: Double) {
     )
 
     private fun moderator() = ParsedActor(
-        DebateParser::class.java,
+        resultClass = DebateSetup::class.java,
         prompt = """You will take a user request, and plan a debate. You will introduce the debaters, and then provide a list of questions to ask.""",
         model = model,
         parsingModel = ChatModels.GPT35Turbo,

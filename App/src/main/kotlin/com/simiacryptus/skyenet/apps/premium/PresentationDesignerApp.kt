@@ -6,6 +6,9 @@ import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
+import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.jopenai.util.JsonUtil.toJson
+import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerActors.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.ClientManager
@@ -17,6 +20,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil
+import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
@@ -30,7 +34,7 @@ open class PresentationDesignerApp(
 
     override val description: String
         @Language("HTML")
-        get() = "<div>" + MarkdownUtil.renderMarkdown(
+        get() = "<div>" + renderMarkdown(
             """
         Welcome to the Presentation Designer, an app designed to help you create presentations with ease.
         
@@ -108,34 +112,36 @@ open class PresentationDesignerAgent(
     private val slideAuthor by lazy { getActor(ActorType.CONTENT_EXPANDER) as ParsedActor<SlideDetails> }
     private val slideLayout by lazy { getActor(ActorType.SLIDE_LAYOUT) as SimpleActor }
     private val slideSummary by lazy { getActor(ActorType.SLIDE_SUMMARY) as SimpleActor }
-    private val contentLayout by lazy { getActor(ActorType.CONTENT_LAYOUT) as SimpleActor }
     private val speakerNotes by lazy { getActor(ActorType.SPEAKER_NOTES) as ParsedActor<SpeakingNotes> }
     private val imageRenderer by lazy { getActor(ActorType.IMAGE_RENDERER) as ImageActor }
     private val narrator get() = getActor(ActorType.NARRATOR) as TextToSpeechActor
 
+    val tabs = TabbedDisplay(ui.newTask())
+
     fun main(userRequest: String) {
-        val task = ui.newTask()
+        val mainTask = ui.newTask(false).apply { tabs["Main"] = placeholder }
         try {
-            task.echo(userRequest)
-            task.header("Starting Presentation Generation")
+            mainTask.echo(userRequest)
+            mainTask.header("Starting Presentation Generation")
 
             // Step 1: Generate ideas based on the user's request
             val ideaListResponse = initialAuthor.answer(listOf(userRequest), api = api)
-            task.add(
-                MarkdownUtil.renderMarkdown(
-                    "Slides generated: \n${ideaListResponse.obj.slides.joinToString("\n") { "* " + it.title }}",
+            mainTask.add(
+                renderMarkdown(
+                    "Slides generated: \n${ideaListResponse.obj.slides?.joinToString("\n") { "* " + it.title }}",
                     ui = ui
                 )
             )
-
+            mainTask.verbose(toJson(ideaListResponse.obj))
             // Step 2: Expand the outline into detailed content
-            val content = ideaListResponse.obj.slides.mapNotNull { it.content }.map { slide ->
+            val content = ideaListResponse.obj.slides?.mapNotNull { it.content }?.map { slide ->
                 pool.submit<SlideDetails> { slideAuthor.answer(listOf(userRequest, slide), api = api).obj }
-            }.mapNotNull { it.get() }
+            }?.mapNotNull { it.get() }
 
             // Step 3: Style the slides and generate speaking notes
-            val styledSlidesAndNotes = content.withIndex().map { (idx, content) ->
-                val slideTask = ui.newTask()
+            val slideTabs = TabbedDisplay(mainTask)
+            val styledSlidesAndNotes = content?.withIndex()?.map { (idx, content) ->
+                val slideTask = ui.newTask(false).apply { slideTabs[idx.toString()] = placeholder }
                 slideTask.header("Generating slide $idx: ${content.title}")
                 pool.submit<SlideContents> {
                     try {
@@ -147,14 +153,14 @@ open class PresentationDesignerAgent(
                         slideTask.complete("Slide $idx complete.")
                     }
                 }
-            }.mapNotNull { it.get() }
+            }?.mapNotNull { it.get() } ?: emptyList()
 
             // Step 4: Present the results
-            writeReports(styledSlidesAndNotes, task)
+            writeReports(styledSlidesAndNotes, ui.newTask(false).apply { tabs["Output"] = placeholder })
 
-            task.complete("Presentation generation complete.")
+            mainTask.complete("Presentation generation complete.")
         } catch (e: Throwable) {
-            task.error(ui, e)
+            mainTask.error(ui, e)
             throw e
         }
     }
@@ -164,29 +170,32 @@ open class PresentationDesignerAgent(
         content: SlideDetails,
         task: SessionTask
     ): SlideContents {
-        val list = listOf(content.html!!)
+        val list = listOf(content.html ?: "")
         val image = imageRenderer.answer(list, api = api).image
         val imageStr = task.image(image)
             .toString() // eg <div><div class="response-message"><img src="fileIndex/G-20240110-96a96b54/fb5e6766-0d57-4914-a147-2924913f4927.png" /></div></div>
         val imageURL = imageStr.substringAfter("src=\"").substringBefore("\"")
-        val fullHtml = contentLayout.answer(list, api = api)
-        //language=HTML
-        task.add("""<div>$fullHtml</div>""".trimIndent())
         val summary = slideSummary.answer(list, api = api)
-        //language=HTML
-        task.add("""<div>${MarkdownUtil.renderMarkdown(summary, ui = ui)}</div>""".trimIndent())
-        val slideContent = slideLayout.answer(listOf(summary), api = api).replace("image.png", imageURL)
-        //language=HTML
-        task.add("""<div>$slideContent</div>""".trimIndent())
-        val speakingNotes = speakerNotes.answer(list, api = api).obj.content ?: ""
-        task.verbose(MarkdownUtil.renderMarkdown(speakingNotes, ui = ui), tag = "div")
-        val mp3data = partition(speakingNotes).map { narrator.answer(listOf(it), api = api).mp3data }
+        task.header("Summary")
+        task.add(renderMarkdown(summary, ui = ui))
+        val mp3data = partition(summary).map { narrator.answer(listOf(it), api = api).mp3data }
         val mp3links =
             mp3data.withIndex().map { (i, it) -> if (null != it) task.saveFile("slide$idx-$i.mp3", it) else "" }
         mp3links.forEach { task.add("""<audio preload="none" controls><source src='$it' type='audio/mpeg'></audio>""") }
+        val slideContent = slideLayout.answer(list, api = api)
+            .trim()
+            .replace("image.png", imageURL)
+            .removePrefix("```html\n")
+            .removeSuffix("\n```")
+        task.header("Content")
+        task.add(renderMarkdown("```html\n${
+            slideContent.replace("<", "&lt;").replace(">", "&gt;")
+        }\n```"))
+        val speakingNotes = speakerNotes.answer(list, api = api).obj.content ?: ""
+        task.header("Speaking Notes")
+        task.add(renderMarkdown(speakingNotes, ui = ui), tag = "div")
         return SlideContents(
             slideContent = slideContent,
-            fullContent = fullHtml,
             speakingNotes = speakingNotes,
             image = imageStr,
             mp3links = mp3links,
@@ -262,7 +271,7 @@ open class PresentationDesignerAgent(
                 }
           |  <div class='slide-notes'>
           |  ${
-                    MarkdownUtil.renderMarkdown(
+                    renderMarkdown(
                         """
           |```markdown
           |${it.speakingNotes}
@@ -271,7 +280,6 @@ open class PresentationDesignerAgent(
                 }
           |</div>
           |  <div class='slide-content'>${it.slideContent.replace(refBase, "")}</div>
-          |  <div class='slide-content'>${it.fullContent.replace(refBase, "")}</div>
           |</div>
           |
           """.trimMargin()
@@ -309,8 +317,7 @@ open class PresentationDesignerAgent(
                     } ?: ""
                 }
           |  <div class='slide-content'>${it.slideContent.replace(refBase, "")}</div>
-          |  <div class='slide-content'>${it.fullContent.replace(refBase, "")}</div>
-          |  <div class='slide-notes'>${MarkdownUtil.renderMarkdown(it.speakingNotes, ui = ui)}</div>
+          |  <div class='slide-notes'>${renderMarkdown(it.speakingNotes, ui = ui)}</div>
           |</div>
           |
           """.trimMargin()
@@ -320,7 +327,7 @@ open class PresentationDesignerAgent(
           |</html>
           """.trimMargin()
         )
-        task.add("<a href='${refBase}combined.html'>Combined report generated</a>")
+        task.complete("<a href='${refBase}combined.html'>Combined report generated</a>")
     }
 
     private val css = """
@@ -383,7 +390,6 @@ open class PresentationDesignerAgent(
 
     data class SlideContents(
         val slideContent: String,
-        val fullContent: String,
         val speakingNotes: String,
         val image: String,
         val mp3links: List<String>? = null,
@@ -415,22 +421,22 @@ class PresentationDesignerActors(
     // Define the data class to represent an outline item
     data class SlideInfo(
         @Description("The title of the slide.")
-        val title: String,
+        val title: String? = null,
         @Description("The detailed content for each outline point.")
         val content: String? = null
     ) : ValidatedObject {
         override fun validate() = when {
-            title.isBlank() -> "title is required"
+            title.isNullOrBlank() -> "title is required"
             else -> null
         }
     }
 
     // Define the data class to represent the entire outline
     data class Outline(
-        val slides: List<SlideInfo>
+        val slides: List<SlideInfo>? = null,
     ) : ValidatedObject {
         override fun validate() = when {
-            slides.isEmpty() -> "items are required"
+            slides.isNullOrEmpty() -> "items are required"
             else -> null
         }
     }
@@ -475,16 +481,7 @@ class PresentationDesignerActors(
         When you receive content, format it using HTML and CSS to create a professional and polished look.
         The HTML output should be contained within a div with class="slide" with an aspect ratio of 16:9.
         In addition, incorporate a single image into the slide named "image.png" with proper sizing and placement.
-        """.trimIndent(),
-        name = "StyleFormatter",
-        model = ChatModels.GPT35Turbo,
-        temperature = 0.3
-    )
-
-    private val contentFormatter = SimpleActor(
-        prompt = """
-        You are a style formatter. Your task is to apply visual styling to the content provided to you. 
-        When you receive content, format it using HTML and CSS to create a professional and polished look.
+        Output raw HTML with inline CSS styling.
         """.trimIndent(),
         name = "StyleFormatter",
         model = ChatModels.GPT35Turbo,
@@ -502,13 +499,11 @@ class PresentationDesignerActors(
     }
 
     private val speakerNotes = ParsedActor(
-//    parserClass = RefinerParser::class.java,
         resultClass = SpeakingNotes::class.java,
         model = ChatModels.GPT35Turbo,
         prompt = """
             You are an assistant that creates speaking transcripts from content. 
-            Given a piece of content, transform it into the input for a text-to-speech system.
-            Do not use formatting or HTML tags. Use capitalization and punctuation for emphasis.
+            Given a piece of content, transform it into markdown-formatted speaking notes.
         """.trimIndent(),
         parsingModel = ChatModels.GPT35Turbo,
     )
@@ -529,7 +524,6 @@ class PresentationDesignerActors(
     enum class ActorType {
         INITIAL_AUTHOR,
         CONTENT_EXPANDER,
-        CONTENT_LAYOUT,
         SLIDE_SUMMARY,
         SLIDE_LAYOUT,
         SPEAKER_NOTES,
@@ -542,7 +536,6 @@ class PresentationDesignerActors(
         ActorType.CONTENT_EXPANDER to contentExpander,
         ActorType.SLIDE_LAYOUT to slideFormatter,
         ActorType.SLIDE_SUMMARY to slideSummarizer,
-        ActorType.CONTENT_LAYOUT to contentFormatter,
         ActorType.SPEAKER_NOTES to speakerNotes,
         ActorType.IMAGE_RENDERER to imageRenderer,
         ActorType.NARRATOR to narrator,
