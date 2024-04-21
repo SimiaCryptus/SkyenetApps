@@ -21,6 +21,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
+import org.apache.commons.text.StringEscapeUtils
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
@@ -188,9 +189,11 @@ open class PresentationDesignerAgent(
             .removePrefix("```html\n")
             .removeSuffix("\n```")
         task.header("Content")
-        task.add(renderMarkdown("```html\n${
-            slideContent.replace("<", "&lt;").replace(">", "&gt;")
-        }\n```"))
+        val escapeHtml4 = StringEscapeUtils.escapeHtml4(
+            slideContent
+            //.replace("<", "&lt;").replace(">", "&gt;")
+        )
+        task.add(renderMarkdown("```html\n$escapeHtml4\n```"))
         val speakingNotes = speakerNotes.answer(list, api = api).obj.content ?: ""
         task.header("Speaking Notes")
         task.add(renderMarkdown(speakingNotes, ui = ui), tag = "div")
