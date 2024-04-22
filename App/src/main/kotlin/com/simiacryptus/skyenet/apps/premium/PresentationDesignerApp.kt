@@ -223,6 +223,14 @@ open class PresentationDesignerAgent(
           |
           |${
                 slideContents.withIndex().joinToString("\n") { (i, it) ->
+                    dataStorage.getSessionDir(user, session).resolve("slide_$i.html").writeText("""  
+                      |<html>
+                      |<body>
+                      |${it.slideContent.replace(refBase, "")}
+                      |</body>
+                      |</html>
+                    """.trimMargin())
+                    task.add("<a href='${refBase}slide_$i.html'>Slide $i generated</a>")
                     """
           |
           |<div class='slide-container' id='slide$i'>
@@ -236,7 +244,7 @@ open class PresentationDesignerAgent(
                             }' type='audio/mpeg'></audio>"""
                         } ?: ""
                     }
-          |  <div class='slide-content'>${it.slideContent.replace(refBase, "")}</div>
+          |  <iframe src="slide_$i.html" class='slide-content' style="width: 100%; height: 600px; border: none;"></iframe>
           |</div>
           |
           """.trimMargin()
