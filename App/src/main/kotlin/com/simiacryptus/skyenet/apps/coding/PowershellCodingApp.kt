@@ -51,6 +51,7 @@ class PowershellCodingApp : ApplicationServer(
             ),
             temperature = (settings?.temperature ?: 0.1),
             model = (settings?.model!!),
+            mainTask = ui.newTask(),
         ).start(
             userMessage = userMessage,
         )

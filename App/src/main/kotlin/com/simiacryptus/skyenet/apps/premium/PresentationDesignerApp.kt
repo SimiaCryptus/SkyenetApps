@@ -6,7 +6,6 @@ import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.jopenai.util.JsonUtil
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerActors.*
@@ -19,9 +18,8 @@ import com.simiacryptus.skyenet.core.util.StringSplitter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
-import com.simiacryptus.skyenet.webui.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
-import org.apache.commons.text.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
@@ -110,10 +108,9 @@ open class PresentationDesignerAgent(
 
     @Suppress("UNCHECKED_CAST")
     private val initialAuthor by lazy { getActor(ActorType.INITIAL_AUTHOR) as ParsedActor<Outline> }
-    private val slideAuthor by lazy { getActor(ActorType.CONTENT_EXPANDER) as ParsedActor<SlideDetails> }
+    private val slideAuthor by lazy { getActor(ActorType.CONTENT_EXPANDER) as SimpleActor }
     private val slideLayout by lazy { getActor(ActorType.SLIDE_LAYOUT) as SimpleActor }
     private val slideSummary by lazy { getActor(ActorType.SLIDE_SUMMARY) as SimpleActor }
-    private val speakerNotes by lazy { getActor(ActorType.SPEAKER_NOTES) as ParsedActor<SpeakingNotes> }
     private val imageRenderer by lazy { getActor(ActorType.IMAGE_RENDERER) as ImageActor }
     private val narrator get() = getActor(ActorType.NARRATOR) as TextToSpeechActor
 
@@ -127,32 +124,16 @@ open class PresentationDesignerAgent(
 
             // Step 1: Generate ideas based on the user's request
             val ideaListResponse = initialAuthor.answer(listOf(userRequest), api = api)
-            mainTask.add(
-                renderMarkdown(
-                    "Slides generated: \n${ideaListResponse.obj.slides?.joinToString("\n") { "* " + it.title }}",
-                    ui = ui
-                )
-            )
+            mainTask.add(renderMarkdown(ideaListResponse.text, ui = ui))
             mainTask.verbose(toJson(ideaListResponse.obj))
-            // Step 2: Expand the outline into detailed content
-            val content = ideaListResponse.obj.slides?.mapNotNull { it.content }?.map { slide ->
-                pool.submit<SlideDetails> { slideAuthor.answer(listOf(userRequest, slide), api = api).obj }
-            }?.mapNotNull { it.get() }
 
             // Step 3: Style the slides and generate speaking notes
             val slideTabs = TabbedDisplay(mainTask)
-            val styledSlidesAndNotes = content?.withIndex()?.map { (idx, content) ->
+            val styledSlidesAndNotes = ideaListResponse.obj.slides?.withIndex()?.map { (idx, slide) ->
                 val slideTask = ui.newTask(false).apply { slideTabs[idx.toString()] = placeholder }
-                slideTask.header("Generating slide $idx: ${content.title}")
+                slideTask.header("Generating slide $idx: ${slide.title}")
                 pool.submit<SlideContents> {
-                    try {
-                        slideContents(idx, content, slideTask)
-                    } catch (e: Throwable) {
-                        slideTask.error(ui, e)
-                        null
-                    } finally {
-                        slideTask.complete("Slide $idx complete.")
-                    }
+                    slideContents(userRequest, slide, slideTask, idx, ideaListResponse.text)
                 }
             }?.mapNotNull { it.get() } ?: emptyList()
 
@@ -167,48 +148,89 @@ open class PresentationDesignerAgent(
     }
 
     private fun slideContents(
+        userRequest: String,
+        slide: SlideInfo,
+        slideTask: SessionTask,
         idx: Int,
-        content: SlideDetails,
-        task: SessionTask
-    ): SlideContents {
-        val list = listOf(content.html ?: "")
+        text: String
+    ) = try {
+        val slideTabs = TabbedDisplay(slideTask)
+        var slideTask = slideTask
+
+        val content = slideAuthor.answer(
+            listOf(
+                userRequest,
+                text,
+                """
+                |Expand ${slide.title}
+                |
+                |${slide.content}
+                """.trimMargin()
+            ), api = api
+        )
+        slideTask = ui.newTask(false).apply { slideTabs["Details"] = placeholder }
+        slideTask.add(renderMarkdown(content, ui = ui))
+        val list = listOf(content)
         val image = imageRenderer.answer(list, api = api).image
-        val imageStr = task.image(image)
-            .toString() // eg <div><div class="response-message"><img src="fileIndex/G-20240110-96a96b54/fb5e6766-0d57-4914-a147-2924913f4927.png" /></div></div>
+        val imageStr = slideTask.image(image).toString()
         val imageURL = imageStr.substringAfter("src=\"").substringBefore("\"")
+
+
         val summary = slideSummary.answer(list, api = api)
-        task.header("Summary")
-        task.add(renderMarkdown(summary, ui = ui))
+        slideTask = ui.newTask(false).apply { slideTabs["Summary"] = placeholder }
+        slideTask.header("Summary")
+        slideTask.add(renderMarkdown(summary, ui = ui))
         val mp3data = partition(summary).map { narrator.answer(listOf(it), api = api).mp3data }
         val mp3links =
-            mp3data.withIndex().map { (i, it) -> if (null != it) task.saveFile("slide$idx-$i.mp3", it) else "" }
-        mp3links.forEach { task.add("""<audio preload="none" controls><source src='$it' type='audio/mpeg'></audio>""") }
+            mp3data.withIndex().map { (i, it) -> if (null != it) slideTask.saveFile("slide$idx-$i.mp3", it) else "" }
+        mp3links.forEach { slideTask.add("""<audio preload="none" controls><source src='$it' type='audio/mpeg'></audio>""") }
         val slideContent = slideLayout.answer(list, api = api)
             .trim()
             .replace("image.png", imageURL)
             .removePrefix("```html\n")
             .removeSuffix("\n```")
-        task.header("Content")
-        val escapeHtml4 = StringEscapeUtils.escapeHtml4(
-            slideContent
-            //.replace("<", "&lt;").replace(">", "&gt;")
+        val refBase = "fileIndex/$session/"
+        dataStorage.getSessionDir(user, session).resolve("slide_$idx.html").writeText(
+            """  
+                      |<html>
+                      |<body>
+                      |${slideContent.replace(refBase, "")}
+                      |</body>
+                      |</html>
+                    """.trimMargin()
         )
-        task.add(renderMarkdown("```html\n$escapeHtml4\n```"))
-        val speakingNotes = speakerNotes.answer(list, api = api).obj.content ?: ""
-        task.header("Speaking Notes")
-        task.add(renderMarkdown(speakingNotes, ui = ui), tag = "div")
-        return SlideContents(
+        slideTask = ui.newTask(false).apply { slideTabs["Slide"] = placeholder }
+        slideTask.header("Content")
+        slideTask.add(renderMarkdown("```html\n${escapeHtml4(slideContent)}\n```"))
+        slideTask.add("<a href='${refBase}slide_$idx.html'>Slide $idx generated</a>")
+        //ui.newTask(false)
+        slideTask.apply {
+            //reportTabs[i.toString()] = placeholder
+            complete("""
+                |<iframe src="${refBase}slide_$idx.html" class='slide-content' style="width: 100%; height: 600px; border: none;"></iframe>
+                """.trimMargin())
+        }
+
+
+        SlideContents(
             slideContent = slideContent,
-            speakingNotes = speakingNotes,
+            speakingNotes = summary,
             image = imageStr,
             mp3links = mp3links,
         )
+    } catch (e: Throwable) {
+        slideTask.error(ui, e)
+        null
+    } finally {
+        slideTask.complete("Slide $idx complete.")
     }
 
     private fun writeReports(
         slideContents: List<SlideContents>,
         task: SessionTask
     ) {
+        val reportTabs = TabbedDisplay(task)
+        val reportTask = ui.newTask(false).apply { reportTabs["Slides"] = placeholder }
         val refBase = "fileIndex/$session/"
         dataStorage.getSessionDir(user, session).resolve("slides.html").writeText(
             """
@@ -222,20 +244,18 @@ open class PresentationDesignerAgent(
           |$playAll
           |
           |${
-                slideContents.withIndex().joinToString("\n") { (i, it) ->
-                    dataStorage.getSessionDir(user, session).resolve("slide_$i.html").writeText("""  
-                      |<html>
-                      |<body>
-                      |${it.slideContent.replace(refBase, "")}
-                      |</body>
-                      |</html>
-                    """.trimMargin())
-                    task.add("<a href='${refBase}slide_$i.html'>Slide $i generated</a>")
+                slideContents.withIndex().joinToString("\n") { (i, slide) ->
+                    ui.newTask(false).apply {
+                        reportTabs[i.toString()] = placeholder 
+                        complete("""
+                            |<iframe src="${refBase}slide_$i.html" class='slide-content' style="width: 100%; height: 600px; border: none;"></iframe>
+                            """.trimMargin())
+                    }
                     """
           |
           |<div class='slide-container' id='slide$i'>
           |  ${
-                        it.mp3links?.joinToString("\n") { mp3link ->
+                        slide.mp3links?.joinToString("\n") { mp3link ->
                             """<audio preload="none" controls><source src='${
                                 mp3link.replace(
                                     refBase,
@@ -253,7 +273,7 @@ open class PresentationDesignerAgent(
           |</body>
           |</html>
           """.trimMargin())
-        task.add("<a href='${refBase}slides.html'>Slides generated</a>")
+        reportTask.add("<a href='${refBase}slides.html'>Slides generated</a>")
 
         dataStorage.getSessionDir(user, session).resolve("notes.html").writeText("""
           |<html>
@@ -299,7 +319,7 @@ open class PresentationDesignerAgent(
           |</body>
           |</html>
           """.trimMargin())
-        task.add("<a href='${refBase}notes.html'>Notes generated</a>")
+        reportTask.add("<a href='${refBase}notes.html'>Notes generated</a>")
 
         dataStorage.getSessionDir(user, session).resolve("combined.html").writeText("""
           |<html>
@@ -338,7 +358,7 @@ open class PresentationDesignerAgent(
           |</html>
           """.trimMargin()
         )
-        task.complete("<a href='${refBase}combined.html'>Combined report generated</a>")
+        reportTask.complete("<a href='${refBase}combined.html'>Combined report generated</a>")
     }
 
     private val css = """
@@ -454,32 +474,30 @@ class PresentationDesignerActors(
 
     data class SlideDetails(
         val title: String? = null,
-        val html: String? = null,
+        val details: String? = null,
     ) : ValidatedObject {
         override fun validate() = when {
             title.isNullOrBlank() -> "Title is required"
-            html.isNullOrBlank() -> "HTML is required"
+            details.isNullOrBlank() -> "HTML is required"
             else -> null
         }
     }
 
 
-    private val contentExpander = ParsedActor(
+    private val contentExpander = SimpleActor(
         model = ChatModels.GPT4Turbo,
         prompt = """
       You are an assistant that expands outlines into detailed content. 
-      Given an outline for a slide in a presentation, provide a comprehensive explanation or description for it.
+      Given content for a presentation and a topic/slide to expand, provide detailed content for that slide.
       """.trimIndent(),
-        parsingModel = ChatModels.GPT35Turbo,
-//    parserClass = SlideDetailsParser::class.java
-        resultClass = SlideDetails::class.java,
     )
 
 
     private val slideSummarizer = SimpleActor(
         prompt = """
-        You are a writing assistant. Your task is to summarize content from a speech. 
-        When you receive content, summarize it into about 100 words.
+        You are a presentation assistant. Your task is to create a speaking transcript from content. 
+        When you receive content, rewrite it in a more concise and engaging form.
+        Do not include formatting in the output.
         """.trimIndent(),
         name = "StyleFormatter",
         model = ChatModels.GPT35Turbo,
@@ -490,33 +508,13 @@ class PresentationDesignerActors(
         prompt = """
         You are a presentation slide designer. Your task is to present content it in a visually appealing and consumable form. 
         When you receive content, format it using HTML and CSS to create a professional and polished look.
-        The HTML output should be contained within a div with class="slide" with an aspect ratio of 16:9.
-        In addition, incorporate a single image into the slide named "image.png" with proper sizing and placement.
+        The HTML output should be contained within a div with class="slide" with an aspect ratio of about 16:9.
+        In addition, decorate the slide with an image named "image.png" with proper sizing and placement.
         Output raw HTML with inline CSS styling.
         """.trimIndent(),
         name = "StyleFormatter",
         model = ChatModels.GPT35Turbo,
         temperature = 0.3
-    )
-
-    data class SpeakingNotes(
-        @Description("The markdown-formatted speaking notes.")
-        val content: String? = null
-    ) : ValidatedObject {
-        override fun validate() = when {
-            content.isNullOrBlank() -> "Refined content is required"
-            else -> null
-        }
-    }
-
-    private val speakerNotes = ParsedActor(
-        resultClass = SpeakingNotes::class.java,
-        model = ChatModels.GPT35Turbo,
-        prompt = """
-            You are an assistant that creates speaking transcripts from content. 
-            Given a piece of content, transform it into markdown-formatted speaking notes.
-        """.trimIndent(),
-        parsingModel = ChatModels.GPT35Turbo,
     )
 
     private val imageRenderer = ImageActor(
@@ -547,7 +545,6 @@ class PresentationDesignerActors(
         ActorType.CONTENT_EXPANDER to contentExpander,
         ActorType.SLIDE_LAYOUT to slideFormatter,
         ActorType.SLIDE_SUMMARY to slideSummarizer,
-        ActorType.SPEAKER_NOTES to speakerNotes,
         ActorType.IMAGE_RENDERER to imageRenderer,
         ActorType.NARRATOR to narrator,
     )
