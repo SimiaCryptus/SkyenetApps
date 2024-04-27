@@ -14,7 +14,7 @@ class DatabaseServiceTests {
             val databaseServices = DatabaseServices(
                 "jdbc:postgresql://localhost:5432/postgres",
                 "postgres",
-            ) { "password" }
+            ) { "postgres" }
             databaseServices.teardownSchema()
             databaseServices.initializeSchema()
             return databaseServices

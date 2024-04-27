@@ -3,6 +3,8 @@ package com.simiacryptus.skyenet.platform
 import com.simiacryptus.jopenai.ApiModel
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.OpenAIModel
+import com.simiacryptus.jopenai.util.JsonUtil.fromJson
+import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.core.platform.*
 import com.simiacryptus.skyenet.core.platform.file.DataStorage
 import com.simiacryptus.skyenet.core.util.getModel
@@ -11,6 +13,8 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.reflect.jvm.javaType
+import kotlin.reflect.typeOf
 
 open class DatabaseServices(
     private val jdbcUrl: String,
@@ -94,12 +98,11 @@ open class DatabaseServices(
                 connection.createStatement().use { statement ->
                     statement.execute(
                         """
-                CREATE TABLE IF NOT EXISTS user_settings (
-                    user_id VARCHAR(255) PRIMARY KEY,
-                    api_key VARCHAR(255),
-                    api_base VARCHAR(255),
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
-                );
+               CREATE TABLE IF NOT EXISTS user_settings (
+                   user_id VARCHAR(255) PRIMARY KEY,
+                   settings JSON,
+                   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+               );
             """.trimIndent()
                     )
                 }
@@ -328,10 +331,12 @@ open class DatabaseServices(
                     setString(1, user.id)
                     executeQuery().use { resultSet ->
                         if (resultSet.next()) {
-                            return@useConnection UserSettingsInterface.UserSettings(
-                                apiKeys = mapOf(APIProvider.OpenAI to resultSet.getString("api_key")),
-                                apiBase = mapOf(APIProvider.OpenAI to resultSet.getString("api_base")),
-                            )
+                           val settingsJson = resultSet.getString("settings")
+                           val settingsMap = fromJson<Map<String,Object>>(settingsJson, typeOf<Map<*,*>>().javaType)
+                           return@useConnection UserSettingsInterface.UserSettings(
+                               apiKeys = (settingsMap["apiKeys"] as Map<String, String>).mapKeys { APIProvider.valueOf(it.key) },
+                               apiBase = (settingsMap["apiBase"] as Map<String, String>).mapKeys { APIProvider.valueOf(it.key) },
+                           )
                         }
                     }
                 }
@@ -348,14 +353,18 @@ open class DatabaseServices(
                     upsertUser(connection, user)
                     connection.prepareStatement(
                         """
-            INSERT INTO user_settings (user_id, api_key)
-            VALUES (?, ?)
-            ON CONFLICT (user_id) DO UPDATE
-            SET api_key = EXCLUDED.api_key
-            """.trimIndent()
+                       INSERT INTO user_settings (user_id, settings)
+                       VALUES (?, ?::json)
+                       ON CONFLICT (user_id) DO UPDATE
+                       SET settings = EXCLUDED.settings
+                        """.trimIndent()
                     ).apply {
                         setString(1, user.id)
-                        setString(2, settings.apiKeys[APIProvider.OpenAI])
+                       val settingsJson = toJson(mapOf(
+                           "apiKeys" to settings.apiKeys,
+                           "apiBase" to settings.apiBase
+                       ))
+                       setString(2, settingsJson)
                         execute()
                     }
                     connection.commit()
@@ -495,4 +504,3 @@ open class DatabaseServices(
 
     }
 }
-
