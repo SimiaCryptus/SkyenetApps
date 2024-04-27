@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
 
 
 open class AutomatedLessonPlannerArchitectureApp(
-    applicationName: String = "Automated Lesson Planner",
+    applicationName: String = "Automated Lesson Planner v1.0",
     domainName: String,
 ) : ApplicationServer(
     applicationName = applicationName,

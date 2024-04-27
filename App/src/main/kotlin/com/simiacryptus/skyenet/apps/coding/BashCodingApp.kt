@@ -10,7 +10,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import java.io.File
 
 class BashCodingApp : ApplicationServer(
-    applicationName = "Bash Coding Assistant v1.0",
+    applicationName = "Bash Coding Assistant v1.1",
     path = "/bash",
 ) {
 

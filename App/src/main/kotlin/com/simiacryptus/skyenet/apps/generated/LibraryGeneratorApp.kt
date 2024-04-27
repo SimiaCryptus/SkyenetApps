@@ -20,7 +20,7 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
 open class LibraryGeneratorApp(
-    applicationName: String = "Software Libary Assistant",
+    applicationName: String = "Software Libary Assistant v1.0",
     domainName: String,
 ) : ApplicationServer(
     applicationName = applicationName,

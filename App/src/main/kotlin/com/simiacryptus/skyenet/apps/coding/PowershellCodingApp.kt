@@ -10,7 +10,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import java.io.File
 
 class PowershellCodingApp : ApplicationServer(
-    applicationName = "Powershell Coding Assistant v1.0",
+    applicationName = "Powershell Coding Assistant v1.1",
     path = "/powershell",
 ) {
 

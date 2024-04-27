@@ -10,7 +10,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain
 
 class AwsCodingApp : ApplicationServer(
-    applicationName = "AWS Coding Assistant v1.0",
+    applicationName = "AWS Coding Assistant v1.1",
     path = "/aws",
 ) {
     override fun userMessage(

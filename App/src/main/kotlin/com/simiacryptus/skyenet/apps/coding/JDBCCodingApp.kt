@@ -12,7 +12,7 @@ import java.sql.DriverManager
 import java.util.function.Consumer
 
 class JDBCCodingApp : ApplicationServer(
-    applicationName = "JDBC Coding Assistant v1.0",
+    applicationName = "JDBC Coding Assistant v1.1",
     path = "/jdbc",
 ) {
     override fun userMessage(

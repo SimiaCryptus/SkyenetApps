@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 
 
 open class SoftwareProjectGeneratorApp(
-    applicationName: String = "SoftwareProjectGenerator",
+    applicationName: String = "SoftwareProjectGenerator v1.0",
     temperature: Double = 0.1,
 ) : ApplicationServer(
     applicationName = applicationName,

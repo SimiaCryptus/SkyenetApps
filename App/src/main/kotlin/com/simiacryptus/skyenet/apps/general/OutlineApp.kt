@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
 open class OutlineApp(
-    applicationName: String = "Outline Expansion Concept Map v1.0",
+    applicationName: String = "Outline Expansion Concept Map v1.1",
     val domainName: String,
 ) : ApplicationServer(
     applicationName = applicationName,

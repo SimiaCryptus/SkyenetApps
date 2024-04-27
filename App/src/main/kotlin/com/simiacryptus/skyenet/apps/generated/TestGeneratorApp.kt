@@ -18,7 +18,7 @@ import com.simiacryptus.skyenet.webui.util.MarkdownUtil
 import org.slf4j.LoggerFactory
 
 open class TestGeneratorApp(
-    applicationName: String = "Test Generator",
+    applicationName: String = "Test Generator v1.0",
     path: String = "/testgenerator",
 ) : ApplicationServer(
     applicationName = applicationName,

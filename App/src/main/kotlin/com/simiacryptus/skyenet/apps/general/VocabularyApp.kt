@@ -28,7 +28,7 @@ import java.awt.image.BufferedImage
 
 
 open class VocabularyApp(
-    applicationName: String = "Vocabulary List Generator",
+    applicationName: String = "Vocabulary List Generator v1.0",
     path: String = "/vocabulary",
 ) : ApplicationServer(
     applicationName = applicationName,

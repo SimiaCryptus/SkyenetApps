@@ -31,7 +31,7 @@ import java.util.function.Function
 import kotlin.reflect.KClass
 
 open class MetaAgentApp(
-    applicationName: String = "Meta-Agent-Agent v1.0",
+    applicationName: String = "Meta-Agent-Agent v1.1",
     temperature: Double = 0.1,
 ) : ApplicationServer(
     applicationName = applicationName,

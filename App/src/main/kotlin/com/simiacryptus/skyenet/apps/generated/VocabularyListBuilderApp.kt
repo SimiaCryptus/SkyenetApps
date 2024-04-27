@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 
 
 open class VocabularyListBuilderApp(
-    applicationName: String = "Vocabulary List Builder",
+    applicationName: String = "Vocabulary List Builder v1.0",
     path: String = "vocabulary-list-builder",
 ) : ApplicationServer(
     applicationName = applicationName,

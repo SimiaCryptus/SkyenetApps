@@ -30,7 +30,7 @@ import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 
 open class IllustratedStorybookApp(
-    applicationName: String = "Illustrated Storybook Generator v1.0",
+    applicationName: String = "Illustrated Storybook Generator v1.1",
     domainName: String
 ) : ApplicationServer(
     applicationName = applicationName,

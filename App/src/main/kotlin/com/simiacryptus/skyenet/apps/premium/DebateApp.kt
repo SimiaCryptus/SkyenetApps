@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
 import java.util.function.Function
 
 open class DebateApp(
-    applicationName: String = "Automated Debate Concept Map v1.2",
+    applicationName: String = "Automated Debate Concept Map v1.3",
     val domainName: String,
 ) : ApplicationServer(
     applicationName = applicationName,

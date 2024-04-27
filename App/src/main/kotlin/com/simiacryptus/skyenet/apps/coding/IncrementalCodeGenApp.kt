@@ -23,7 +23,7 @@ import java.util.concurrent.Future
 import java.util.concurrent.ThreadPoolExecutor
 
 class IncrementalCodeGenApp(
-    applicationName: String = "Incremental Code Generation v1.0",
+    applicationName: String = "Incremental Code Generation v1.1",
     path: String = "/incremental_codegen",
     domainName: String = "localhost",
 ) : ApplicationServer(

@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory
 
 
 open class PresentationDesignerApp(
-    applicationName: String = "Presentation Generator v1.3",
+    applicationName: String = "Presentation Generator v1.4",
 ) : ApplicationServer(
     applicationName = applicationName,
     path = "/presentation",
