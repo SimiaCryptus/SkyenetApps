@@ -9,7 +9,7 @@ import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
-import com.simiacryptus.skyenet.Acceptable
+import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.VocabularyActors.ActorType.*
@@ -111,7 +111,7 @@ open class VocabularyAgent(
         val task: SessionTask = ui.newTask(false).apply { tabs["Generation"] = placeholder }
         try {
             val toInput = { it: String -> listOf(it) }
-            val parsedInput = Acceptable(
+            val parsedInput = Discussable(
                 task = task,
                 userMessage = userInput,
                 heading = renderMarkdown(userInput, ui = ui),

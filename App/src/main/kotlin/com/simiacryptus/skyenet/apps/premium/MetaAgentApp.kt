@@ -8,7 +8,7 @@ import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil
-import com.simiacryptus.skyenet.Acceptable
+import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.camelCase
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.imports
@@ -326,7 +326,7 @@ open class MetaAgentAgent(
 
     private fun initialDesign(input: String): ParsedResponse<MetaAgentActors.AgentDesign> {
         val toInput = { it: String -> listOf(it) }
-        val highLevelDesign = Acceptable(
+        val highLevelDesign = Discussable(
             task = ui.newTask(),
             userMessage = input,
             heading = renderMarkdown(input, ui = ui),
@@ -343,7 +343,7 @@ open class MetaAgentAgent(
             },
         ).call()
         val toInput1 = { it: String -> listOf(it) }
-        val flowDesign = Acceptable(
+        val flowDesign = Discussable(
             task = ui.newTask(),
             userMessage = highLevelDesign,
             heading = "Flow Design",
@@ -366,7 +366,7 @@ open class MetaAgentAgent(
             },
         ).call()
         val toInput2 = { it: String -> listOf(it) }
-        val actorDesignParsedResponse: ParsedResponse<MetaAgentActors.AgentActorDesign> = Acceptable(
+        val actorDesignParsedResponse: ParsedResponse<MetaAgentActors.AgentActorDesign> = Discussable(
             task = ui.newTask(),
             userMessage = flowDesign.text,
             heading = "Actor Design",

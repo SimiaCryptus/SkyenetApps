@@ -6,7 +6,7 @@ import com.simiacryptus.jopenai.ApiModel.Role
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
-import com.simiacryptus.skyenet.Acceptable
+import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
@@ -155,7 +155,7 @@ class IncrementalCodeGenAgent(
 
     fun startProcess(userMessage: String) {
         val toInput = { it: String -> listOf(userMessage, it) }
-        val highLevelPlan = Acceptable(
+        val highLevelPlan = Discussable(
             task = ui.newTask(),
             userMessage = userMessage,
             heading = userMessage,
@@ -320,7 +320,7 @@ class IncrementalCodeGenAgent(
                             it
                         )
                     }
-                    val subPlan = Acceptable(
+                    val subPlan = Discussable(
                         task = ui.newTask(),
                         userMessage = input1,
                         heading = "Expand ${subTask.description ?: ""}",

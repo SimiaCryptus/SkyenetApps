@@ -10,7 +10,7 @@ import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil
-import com.simiacryptus.skyenet.Acceptable
+import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType.*
@@ -180,7 +180,7 @@ open class IllustratedStorybookAgent(
         try {
             task.echo(userMessage)
             val toInput = { it: String -> listOf(it) }
-            val parsedInput = Acceptable<ParsedResponse<UserPreferencesContent>>(
+            val parsedInput = Discussable<ParsedResponse<UserPreferencesContent>>(
                 task = task,
                 userMessage = userMessage,
                 heading = renderMarkdown(userMessage, ui = ui),
