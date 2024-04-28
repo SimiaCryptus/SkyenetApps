@@ -328,7 +328,7 @@ open class MetaAgentAgent(
         val toInput = { it: String -> listOf(it) }
         val highLevelDesign = Discussable(
             task = ui.newTask(),
-            userMessage = input,
+            userMessage = { input },
             heading = renderMarkdown(input, ui = ui),
             initialResponse = { it: String -> highLevelDesigner.answer(toInput(it), api = api) },
             outputFn = { design -> renderMarkdown(design.toString(), ui = ui) },
@@ -345,7 +345,7 @@ open class MetaAgentAgent(
         val toInput1 = { it: String -> listOf(it) }
         val flowDesign = Discussable(
             task = ui.newTask(),
-            userMessage = highLevelDesign,
+            userMessage = { highLevelDesign },
             heading = "Flow Design",
             initialResponse = { it: String -> detailDesigner.answer(toInput1(it), api = api) },
             outputFn = { design: ParsedResponse<MetaAgentActors.AgentFlowDesign> ->
@@ -368,7 +368,7 @@ open class MetaAgentAgent(
         val toInput2 = { it: String -> listOf(it) }
         val actorDesignParsedResponse: ParsedResponse<MetaAgentActors.AgentActorDesign> = Discussable(
             task = ui.newTask(),
-            userMessage = flowDesign.text,
+            userMessage = { flowDesign.text },
             heading = "Actor Design",
             initialResponse = { it: String -> actorDesigner.answer(toInput2(it), api = api) },
             outputFn = { design: ParsedResponse<MetaAgentActors.AgentActorDesign> ->

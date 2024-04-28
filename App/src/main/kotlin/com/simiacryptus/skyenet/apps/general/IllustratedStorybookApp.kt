@@ -182,7 +182,7 @@ open class IllustratedStorybookAgent(
             val toInput = { it: String -> listOf(it) }
             val parsedInput = Discussable<ParsedResponse<UserPreferencesContent>>(
                 task = task,
-                userMessage = userMessage,
+                userMessage = { userMessage },
                 heading = renderMarkdown(userMessage, ui = ui),
                 initialResponse = { it: String -> requirementsActor.answer(toInput(it), api = api) },
                 outputFn = { design: ParsedResponse<UserPreferencesContent> ->

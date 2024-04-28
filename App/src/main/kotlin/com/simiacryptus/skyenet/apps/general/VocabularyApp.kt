@@ -113,7 +113,7 @@ open class VocabularyAgent(
             val toInput = { it: String -> listOf(it) }
             val parsedInput = Discussable(
                 task = task,
-                userMessage = userInput,
+                userMessage = { userInput },
                 heading = renderMarkdown(userInput, ui = ui),
                 initialResponse = { it: String -> inputProcessorActor.answer(toInput(it), api = api) },
                 outputFn = { design ->

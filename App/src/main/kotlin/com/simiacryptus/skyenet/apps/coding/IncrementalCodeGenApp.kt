@@ -157,7 +157,7 @@ class IncrementalCodeGenAgent(
         val toInput = { it: String -> listOf(userMessage, it) }
         val highLevelPlan = Discussable(
             task = ui.newTask(),
-            userMessage = userMessage,
+            userMessage = { userMessage },
             heading = userMessage,
             initialResponse = { it: String -> taskBreakdownActor.answer(toInput(it), api = api) },
             outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
@@ -322,7 +322,7 @@ class IncrementalCodeGenAgent(
                     }
                     val subPlan = Discussable(
                         task = ui.newTask(),
-                        userMessage = input1,
+                        userMessage = { input1 },
                         heading = "Expand ${subTask.description ?: ""}",
                         initialResponse = { it: String -> taskBreakdownActor.answer(toInput(it), api = api) },
                         outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
