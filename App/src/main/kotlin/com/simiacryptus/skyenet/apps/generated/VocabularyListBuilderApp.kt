@@ -144,7 +144,7 @@ open class VocabularyListBuilderAgent(
 
 
 class VocabularyListBuilderActors(
-    val model: OpenAITextModel = ChatModels.GPT4Turbo,
+    val model: OpenAITextModel = ChatModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 

@@ -397,7 +397,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
 
 
 class AutomatedLessonPlannerArchitectureActors(
-    val model: OpenAITextModel = ChatModels.GPT4Turbo,
+    val model: OpenAITextModel = ChatModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 

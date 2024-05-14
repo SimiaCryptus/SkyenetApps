@@ -36,9 +36,9 @@ open class VocabularyApp(
 ) {
 
     data class Settings(
-        val model: ChatModels = ChatModels.GPT4Turbo,
+        val model: ChatModels = ChatModels.GPT4o,
         val temperature: Double = 0.1,
-        val parsingModel: ChatModels = ChatModels.GPT4Turbo,
+        val parsingModel: ChatModels = ChatModels.GPT4o,
         val imageModel: ImageModels = ImageModels.DallE3,
     )
 
@@ -214,7 +214,7 @@ open class VocabularyAgent(
 }
 
 class VocabularyActors(
-    val model: ChatModels = ChatModels.GPT4Turbo,
+    val model: ChatModels = ChatModels.GPT4o,
     val parsingModel: ChatModels = ChatModels.GPT35Turbo,
     val imageModel: ImageModels = ImageModels.DallE3,
     val temperature: Double = 0.3,

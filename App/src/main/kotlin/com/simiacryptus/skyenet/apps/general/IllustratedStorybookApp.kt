@@ -48,7 +48,7 @@ open class IllustratedStorybookApp(
         ) + "</div>"
 
     data class Settings(
-        val model: OpenAITextModel? = ChatModels.GPT4Turbo,
+        val model: OpenAITextModel? = ChatModels.GPT4o,
         val temperature: Double? = 0.5,
         val imageModel: ImageModels? = ImageModels.DallE3,
         val voice: String? = "alloy",
@@ -99,7 +99,7 @@ open class IllustratedStorybookAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = ChatModels.GPT4Turbo,
+    model: OpenAITextModel = ChatModels.GPT4o,
     temperature: Double = 0.3,
     imageModel: ImageModels = ImageModels.DallE2,
     val voice: String = "alloy",
@@ -440,7 +440,7 @@ open class IllustratedStorybookAgent(
 }
 
 class IllustratedStorybookActors(
-    val model: OpenAITextModel = ChatModels.GPT4Turbo,
+    val model: OpenAITextModel = ChatModels.GPT4o,
     val temperature: Double = 0.3,
     val imageModel: ImageModels = ImageModels.DallE2,
     voice: String = "alloy",
@@ -480,7 +480,7 @@ class IllustratedStorybookActors(
     private val storyGeneratorActor = ParsedActor(
 //    parserClass = StoryDataParser::class.java,
         resultClass = StoryData::class.java,
-        model = ChatModels.GPT4Turbo,
+        model = ChatModels.GPT4o,
         parsingModel = ChatModels.GPT35Turbo,
         prompt = """
             You are an AI creating a story for a digital storybook. Generate a story that includes a title, storyline, dialogue, and descriptions.

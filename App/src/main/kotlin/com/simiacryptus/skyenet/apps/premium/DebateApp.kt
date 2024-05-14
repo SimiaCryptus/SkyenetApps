@@ -89,7 +89,7 @@ class DebateAgent(
     userId: User?,
     session: Session,
     val ui: ApplicationInterface,
-    val model: ChatModels = ChatModels.GPT4Turbo,
+    val model: ChatModels = ChatModels.GPT4o,
     val temperature: Double = 0.3,
     private val debateActors: DebateActors = DebateActors(model, temperature)
 ) : ActorSystem<DebateActors.ActorType>(

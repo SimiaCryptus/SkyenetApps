@@ -131,7 +131,7 @@ open class TestGeneratorAgent(
 
 
 class TestGeneratorActors(
-    val model: OpenAITextModel = ChatModels.GPT4Turbo,
+    val model: OpenAITextModel = ChatModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 

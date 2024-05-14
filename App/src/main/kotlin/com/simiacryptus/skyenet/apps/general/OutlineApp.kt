@@ -50,7 +50,7 @@ open class OutlineApp(
 
     data class Settings(
         val models: List<ChatModels> = listOf(
-            ChatModels.GPT4Turbo,
+            ChatModels.GPT4o,
             ChatModels.GPT35Turbo
         ),
         val parsingModel: ChatModels = ChatModels.GPT35Turbo,

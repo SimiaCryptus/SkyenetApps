@@ -53,21 +53,21 @@ open class AppServer(
     //    private val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
     override val childWebApps by lazy {
         listOf(
-            ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName)),
-            ChildWebApp("/incremental_codegen", IncrementalCodeGenApp(domainName = domainName)),
-            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName)),
-            ChildWebApp("/meta_agent", MetaAgentApp()),
-            ChildWebApp("/debate", DebateApp(domainName = domainName)),
-            ChildWebApp("/presentation", PresentationDesignerApp()),
-            ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName)),
-            ChildWebApp("/vocabulary", VocabularyApp()),
-            ChildWebApp("/testgenerator", TestGeneratorApp()),
-            ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName)),
-            ChildWebApp("/aws", AwsCodingApp()),
-            ChildWebApp("/bash", BashCodingApp()),
-            ChildWebApp("/powershell", PowershellCodingApp()),
-            ChildWebApp("/webdev", WebDevApp()),
-            ChildWebApp("/jdbc", JDBCCodingApp()),
+            ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName), "IllustratedStorybook.png"),
+            ChildWebApp("/incremental_codegen", IncrementalCodeGenApp(domainName = domainName), null),
+            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName), "outline.png"),
+            ChildWebApp("/meta_agent", MetaAgentApp(), "MetaAgent.png"),
+            ChildWebApp("/debate", DebateApp(domainName = domainName), "Debate.png"),
+            ChildWebApp("/presentation", PresentationDesignerApp(), "PresentationDesigner.png"),
+            ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName), null),
+            ChildWebApp("/vocabulary", VocabularyApp(), "Vocabulary.png"),
+            ChildWebApp("/testgenerator", TestGeneratorApp(), null),
+            ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName), null),
+            ChildWebApp("/aws", AwsCodingApp(), "awscoding.png"),
+            ChildWebApp("/bash", BashCodingApp(), "bashcoding.png"),
+            ChildWebApp("/powershell", PowershellCodingApp(), "powershell.png"),
+            ChildWebApp("/webdev", WebDevApp(), "webdev.png"),
+            ChildWebApp("/jdbc", JDBCCodingApp(), "JDBCCoding.png"),
         )
     }
 
@@ -223,6 +223,7 @@ open class AppServer(
                     """
             <tr>
                 <td>
+                    ${if(!app.thumbnail.isNullOrBlank()) """<img src="${app.thumbnail}" alt="${app.server.applicationName}" class="app-thumbnail"/>""" else ""}
                     ${app.server.applicationName} <span class="app-type" style='background-color: ${typeColor(type)}'>$type</span>
                 </td>
                 <td>
@@ -265,6 +266,3 @@ open class AppServer(
 
 
 }
-
-
-

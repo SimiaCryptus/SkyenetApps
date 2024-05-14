@@ -431,7 +431,7 @@ open class PresentationDesignerAgent(
 
 
 class PresentationDesignerActors(
-    val model: OpenAITextModel = ChatModels.GPT4Turbo,
+    val model: OpenAITextModel = ChatModels.GPT4o,
     val temperature: Double = 0.3,
     voice: String = "alloy",
     voiceSpeed: Double = 1.0,
@@ -441,7 +441,7 @@ class PresentationDesignerActors(
     private val initialAuthor = ParsedActor(
 //    parserClass = OutlineParser::class.java,
         resultClass = Outline::class.java,
-        model = ChatModels.GPT4Turbo,
+        model = ChatModels.GPT4o,
         parsingModel = ChatModels.GPT35Turbo,
         prompt = """
             You are a high-level presentation planner. Based on an input topic, provide a list of slides with a brief description of each.
@@ -485,7 +485,7 @@ class PresentationDesignerActors(
 
 
     private val contentExpander = SimpleActor(
-        model = ChatModels.GPT4Turbo,
+        model = ChatModels.GPT4o,
         prompt = """
       You are an assistant that expands outlines into detailed content. 
       Given content for a presentation and a topic/slide to expand, provide detailed content for that slide.

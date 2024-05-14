@@ -59,7 +59,7 @@ open class MetaAgentApp(
         }</div>"
 
     data class Settings(
-        val model: ChatModels = ChatModels.GPT4Turbo,
+        val model: ChatModels = ChatModels.GPT4o,
         val validateCode: Boolean = true,
         val temperature: Double = 0.2,
         val budget: Double = 2.0,
@@ -289,7 +289,7 @@ open class MetaAgentAgent(
         |$standardImports
         |
         |class ${classBaseName}Actors(
-        |    val model: ChatModels = ChatModels.GPT4Turbo,
+        |    val model: ChatModels = ChatModels.GPT4o,
         |    val temperature: Double = 0.3,
         |) {
         |
@@ -586,7 +586,7 @@ open class MetaAgentAgent(
 class MetaAgentActors(
     private val interpreterClass: KClass<out Interpreter> = KotlinInterpreter::class,
     val symbols: Map<String, Any> = mapOf(),
-    val model: ChatModels = ChatModels.GPT4Turbo,
+    val model: ChatModels = ChatModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 
@@ -795,7 +795,7 @@ class MetaAgentActors(
         """.trimIndent().trim(),
         model = model,
         temperature = temperature,
-        parsingModel = ChatModels.GPT4Turbo
+        parsingModel = ChatModels.GPT4o
     )
 
 
@@ -972,7 +972,7 @@ class MetaAgentActors(
         |
         |fun exampleParsedActor() = ParsedActor<ExampleResult>(
         |    parserClass = ExampleParser::class.java,
-        |    model = ChatModels.GPT4Turbo,
+        |    model = ChatModels.GPT4o,
         |    prompt = ""${'"'}
         |            |You are a question answering assistant.
         |            |""${'"'}.trimMargin().trim(),
@@ -1017,7 +1017,7 @@ class MetaAgentActors(
         |    name: String? = interpreterClass.simpleName,
         |    val details: String? = null,
         |    model: ChatModels = ChatModels.GPT35Turbo,
-        |    val fallbackModel: ChatModels = ChatModels.GPT4Turbo,
+        |    val fallbackModel: ChatModels = ChatModels.GPT4o,
         |    temperature: Double = 0.1,
         |    private val fixIterations: Int = 3,
         |    private val fixRetries: Int = 2,

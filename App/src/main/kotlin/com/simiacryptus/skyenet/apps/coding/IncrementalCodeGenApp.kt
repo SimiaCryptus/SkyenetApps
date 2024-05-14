@@ -31,7 +31,7 @@ class IncrementalCodeGenApp(
     path = path,
 ) {
     data class Settings(
-        val model: ChatModels = ChatModels.GPT4Turbo,
+        val model: ChatModels = ChatModels.GPT4o,
         val parsingModel: ChatModels = ChatModels.GPT35Turbo,
         val temperature: Double = 0.2,
         val budget: Double = 2.0,
@@ -58,7 +58,7 @@ class IncrementalCodeGenApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT4Turbo,
+                model = settings?.model ?: ChatModels.GPT4o,
                 parsingModel = settings?.parsingModel ?: ChatModels.GPT35Turbo,
                 temperature = settings?.temperature ?: 0.3,
             ).startProcess(userMessage = userMessage)
@@ -78,7 +78,7 @@ class IncrementalCodeGenAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModels = ChatModels.GPT4Turbo,
+    model: ChatModels = ChatModels.GPT4o,
     parsingModel: ChatModels = ChatModels.GPT35Turbo,
     temperature: Double = 0.3,
     val actorMap: Map<ActorTypes, BaseActor<*, *>> = mapOf<ActorTypes, BaseActor<*, *>>(
