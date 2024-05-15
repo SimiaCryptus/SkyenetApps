@@ -27,7 +27,6 @@ import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
-import com.simiacryptus.skyenet.webui.servlet.ToolServlet
 import com.simiacryptus.skyenet.webui.servlet.WelcomeServlet
 import com.simiacryptus.skyenet.webui.util.Selenium2S3
 import org.intellij.lang.annotations.Language
@@ -261,8 +260,7 @@ open class AppServer(
                 else -> "blue"
             }
         }
-    override val toolServlet: ToolServlet?
-        get() = null
+//    override val toolServlet: ToolServlet? get() = null
 
 
 }

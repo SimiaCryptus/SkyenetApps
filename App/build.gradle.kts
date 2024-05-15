@@ -35,7 +35,7 @@ java {
 }
 
 val jetty_version = "11.0.18"
-val skyenet_version = "1.0.69"
+val skyenet_version = "1.0.71"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 val jackson_version = "2.17.0"
@@ -52,6 +52,9 @@ dependencies {
   implementation(group = "com.simiacryptus.skyenet", name = "kotlin", version = skyenet_version)
   implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
   implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
+
+  implementation("org.openapitools:openapi-generator:7.3.0")
+  implementation("org.openapitools:openapi-generator-cli:7.3.0")
 
   //org.postgresql.Driver
   implementation("org.postgresql:postgresql:42.7.1")
