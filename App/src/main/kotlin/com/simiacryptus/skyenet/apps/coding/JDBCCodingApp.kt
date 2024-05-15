@@ -28,7 +28,7 @@ class JDBCCodingApp : ApplicationServer(
             settings.jdbcUser,
             settings.jdbcPassword
         )
-        object : ToolAgent<KotlinInterpreter>(
+        object : CodingAgent<KotlinInterpreter>(
             api = api,
             dataStorage = dataStorage,
             session = session,
@@ -38,8 +38,9 @@ class JDBCCodingApp : ApplicationServer(
             symbols = getSymbols(jdbcConnection),
             temperature = (settings.temperature ?: 0.1),
             model = settings.model,
+            mainTask = ui.newTask(),
         ) {
-            override fun getInterpreterString(): String = JDBCCodingApp::class.java.name
+//            override fun getInterpreterString(): String = JDBCCodingApp::class.java.name
 
         }.start(
             userMessage = userMessage,
