@@ -117,7 +117,7 @@ open class MetaAgentAgent(
             //"dataStorage" to dataStorage,
             "ui" to ui,
             "api" to api,
-            "pool" to ApplicationServices.clientManager.getPool(session, user, dataStorage),
+            "pool" to ApplicationServices.clientManager.getPool(session, user),
         ),
         model = model,
         temperature = temperature,

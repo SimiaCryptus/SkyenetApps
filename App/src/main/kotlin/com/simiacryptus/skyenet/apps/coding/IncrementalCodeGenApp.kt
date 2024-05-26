@@ -179,7 +179,7 @@ class IncrementalCodeGenAgent(
                 )
             },
         ).call()
-        val pool: ThreadPoolExecutor = clientManager.getPool(session, user, dataStorage)
+        val pool: ThreadPoolExecutor = clientManager.getPool(session, user)
         val genState = GenState(
             subTasks = highLevelPlan.obj.tasksByID?.toMutableMap() ?: mutableMapOf(),
             generatedCodes = mutableMapOf(),
