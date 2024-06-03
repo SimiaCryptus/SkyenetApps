@@ -22,6 +22,10 @@ open class DatabaseServices(
     private val password: () -> String = { "" }
 ) {
 
+    init {
+        Class.forName("org.postgresql.Driver");
+    }
+
     private val connectionPool = mutableSetOf<Connection>()
 
     private fun <T> useConnection(fn: (Connection) -> T): T {

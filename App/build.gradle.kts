@@ -43,7 +43,7 @@ val jupiter_version = "5.10.1"
 dependencies {
   implementation("org.postgresql:postgresql:42.7.1")
 
-  implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.59")
+  implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.60")
 
   implementation("org.apache.commons:commons-text:1.11.0")
 
@@ -166,46 +166,9 @@ val optimizedJar by tasks.register("optimizedJar",ShadowJar::class) {
       !dependency.moduleGroup.contains("simiacryptus")
     }
   }
-
-//  doFirst {
-//    this@registering.includedDependencies.forEach { file ->
-//      try {
-//        zipTree(file).visit {
-//          if (this.isDirectory) return@visit
-//          when {
-//            isPruned(this.path) -> {
-//              if (verbose) println("${this.path} pruned from plugin:${file.name} as $path")
-//              exclude(this.path)
-//            }
-//
-//            else -> {
-//              if (verbose) println("${this.path} included in plugin:${file.name} as $path")
-//            }
-//          }
-//        }
-//      } catch (e: Exception) {
-//        println("Error processing $file")
-//        e.printStackTrace()
-//        throw e
-//      }
-//    }
-//  }
 }
 
 tasks.named("build") {
 //    dependsOn(fullShadowJar)
   dependsOn(optimizedJar)
 }
-
-fun isPruned(path: String) = when {
-  path.startsWith("com/simiacryptus") -> false
-
-  else -> true
-}
-
-// GENERATED CODE
-
-// Pruned: 295328
-// Required Classes: 25487
-
-// Pruned:
