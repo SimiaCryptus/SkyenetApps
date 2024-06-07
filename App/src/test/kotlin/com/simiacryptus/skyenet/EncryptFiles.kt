@@ -10,22 +10,21 @@ object EncryptFiles {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        /*
+        * Input: C:\Users\andre\code\GmailUtils\src\main\resources\client_secret_647304571255-5mil7mhisamqjtacvl78u1n4gap2oer6.apps.googleusercontent.com.json
+        * Output: C:\Users\andre\code\GmailUtils\src\main\resources\client_secret_google_oauth.json.kms
+        * */
         val encryptedData = ApplicationServices.cloud!!.encrypt(
-            JsonUtil.toJson(
-                OAuthPatreon.PatreonOAuthInfo(
-                    name = "apps.simiacrypt.us",
-                    clientId = "hvn76GkA9zc7-VN7pyX5BkzKRCP206wf2bjynGESl0faancYN8iqFzxpm9azhBj0",
-                    apiVersion = "2",
-                    clientSecret = "",
-                    creatorAccessToken = "",
-                    creatorRefreshToken = ""
+            Files.readAllBytes(
+                Paths.get(
+                    """C:\Users\andre\code\GmailUtils\src\main\resources\openai.key.json"""
                 )
-            ).encodeToByteArray(),
+            ),
             "arn:aws:kms:us-east-1:470240306861:key/a1340b89-64e6-480c-a44c-e7bc0c70dcb1"
         ) ?: throw RuntimeException("Unable to encrypt data")
         Files.write(
             Paths.get(
-                """C:\Users\andre\code\SkyenetApps\src\main\resources\patreon.json.kms"""
+                """C:\Users\andre\code\GmailUtils\src\main\resources\openai.key.json.kms"""
             ), encryptedData.toByteArray()
         )
     }
