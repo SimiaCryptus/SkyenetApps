@@ -10,8 +10,8 @@ import com.simiacryptus.jopenai.models.OpenAITextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil
-import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.AgentPatterns
+import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.*
@@ -24,6 +24,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.nio.file.Files
@@ -57,6 +58,7 @@ open class IllustratedStorybookApp(
     )
 
     override val settingsClass: Class<*> get() = Settings::class.java
+
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T? = Settings() as T
 
@@ -113,7 +115,7 @@ open class IllustratedStorybookAgent(
         voiceSpeed = voiceSpeed,
     ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
 ) {
-   private val tabbedDisplay = TabbedDisplay(ui.newTask())
+    private val tabbedDisplay = TabbedDisplay(ui.newTask())
 
     @Suppress("UNCHECKED_CAST")
     private val storyGeneratorActor by lazy { getActor(STORY_GENERATOR_ACTOR) as ParsedActor<IllustratedStorybookActors.StoryData> }
@@ -165,7 +167,7 @@ open class IllustratedStorybookAgent(
             // Step 3: Format the story and illustrations into an HTML document
             val outputTask = ui.newTask(root = false).apply { tabbedDisplay["Story Output"] = placeholder }
             outputTask.add("Formatting the storybook into HTML...")
-            val htmlStorybook = htmlFormatter(storyData, illustrations, userPreferencesContent, narrations, outputTask)
+            val htmlStorybook = htmlFormatter(storyData, illustrations, narrations, outputTask)
             val savedStorybookPath = fileManager(htmlStorybook, outputTask)
             outputTask.complete("<a href='$savedStorybookPath' target='_blank'>Storybook Ready!</a>")
         } catch (e: Throwable) {
@@ -176,7 +178,7 @@ open class IllustratedStorybookAgent(
 
     fun inputHandler(userMessage: String) {
         val task = ui.newTask(root = false)
-       tabbedDisplay["User Input"] = task.placeholder
+        tabbedDisplay["User Input"] = task.placeholder
         try {
             task.echo(userMessage)
             val toInput = { it: String -> listOf(it) }
@@ -222,7 +224,6 @@ open class IllustratedStorybookAgent(
     private fun htmlFormatter(
         storyText: IllustratedStorybookActors.StoryData,
         illustrations: List<Pair<String, BufferedImage>?>,
-        userPreferencesContent: UserPreferencesContent,
         narrations: List<String?>,
         task: SessionTask
     ): String {
@@ -241,15 +242,39 @@ open class IllustratedStorybookAgent(
         |        font-family: 'Arial', sans-serif;
         |    }
         |
+        |    @media print {
+        |        .story-page {
+        |            page-break-after: always;
+        |            width: 100vw;
+        |            height: 80vh;
+        |        }
+        |        .story-title {
+        |            page-break-after: always;
+        |            width: 100vw;
+        |            height: 90vh;
+        |            vertical-align: center;
+        |        }
+        |        audio {
+        |            display: none;
+        |        }
+        |        button {
+        |            display: none;
+        |        }
+        |    }
+        |
         |    .story-title {
         |        text-align: center;
-        |        font-size: 2em;
+        |        font-size: 2.5em;
         |        margin-top: 20px;
+        |        height: 20vh;
         |    }
         |
         |    .story-paragraph {
         |        text-align: justify;
+        |        font-size: 1.75em;
         |        margin: 15px;
+        |        line-height: 1.5;
+        |        font-family: cursive;
         |    }
         |
         |    .story-illustration {
@@ -258,10 +283,39 @@ open class IllustratedStorybookAgent(
         |    }
         |
         |    .story-illustration img {
-        |        max-width: 100%;
+        |        max-width: 75%;
         |        height: auto;
         |    }
+        |    
+        |    body {
+        |        font-family: 'Arial', sans-serif;
+        |    }
+        |
         |</style>
+        |<script>
+        |document.getElementById('playAll').addEventListener('click', function() {
+        |  const slides = document.querySelectorAll('.story-page');
+        |  let currentSlide = 0;
+        |  function playNext() {
+        |    if (currentSlide >= slides.length) return;
+        |    const slide = slides[currentSlide];
+        |    const audio = slide.querySelector('audio');
+        |    const image = slide.querySelector('.story-illustration');
+        |    if (audio) {
+        |      image.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        |      audio.play();
+        |      audio.onended = function() {
+        |        currentSlide++;
+        |        playNext();
+        |      };
+        |    } else {
+        |      currentSlide++;
+        |      playNext();
+        |    }
+        |  }
+        |  playNext();
+        |});
+        |</script>
         |<div class='story-title'>
         |  ${storyText.title}
         |  <button id='playAll'>Play All</button>
@@ -378,7 +432,8 @@ open class IllustratedStorybookAgent(
                     userPreferencesContent.specificElements?.joinToString(
                         ", "
                     )
-                }"
+                }",
+                "The illustration style should be: ${userPreferencesContent.illustrationStyle}"
             )
 
             // Generate the illustration using the illustrationGeneratorActor
@@ -401,7 +456,17 @@ open class IllustratedStorybookAgent(
     data class UserPreferencesContent(
         val genre: String? = null,
         val targetAgeGroup: String? = null,
-        val specificElements: List<String>? = null
+        val specificElements: List<String>? = null,
+        val writingStyle: String? = null,
+        val characterDetails: List<CharacterDetail>? = null,
+        val purpose: String? = null,
+        val illustrationStyle: String? = null
+    )
+
+    data class CharacterDetail(
+        val name: String? = null,
+        val description: String? = null,
+        val role: String? = null
     )
 
     // Implement the storyGeneratorActor function
@@ -416,7 +481,10 @@ open class IllustratedStorybookAgent(
             val conversationThread = listOf(
                 "Genre: ${userPreferencesContent.genre}",
                 "Target Age Group: ${userPreferencesContent.targetAgeGroup}",
-                "Specific Elements: ${userPreferencesContent.specificElements?.joinToString(", ")}"
+                "Specific Elements: ${userPreferencesContent.specificElements?.joinToString(", ")}",
+                "Writing Style: ${userPreferencesContent.writingStyle}",
+                "Character Details: ${userPreferencesContent.characterDetails?.joinToString(", ")}",
+                "Purpose/Point: ${userPreferencesContent.purpose}"
             )
 
             // Generate the story using the storyGeneratorActor
@@ -467,25 +535,25 @@ class IllustratedStorybookActors(
     }
 
     private val requirementsActor = ParsedActor(
-//    parserClass = UserPreferencesContentParser::class.java,
         resultClass = IllustratedStorybookAgent.UserPreferencesContent::class.java,
         model = ChatModels.GPT35Turbo,
         parsingModel = ChatModels.GPT35Turbo,
         prompt = """
-            You are helping gather requirements for a storybook. 
-            Respond to the user by suggesting a genre, target age group, and specific elements to include in the story.
-        """.trimIndent()
+            |You are helping gather requirements for a storybook.
+            |Respond to the user by suggesting a genre, target age group, specific elements to include in the story,
+            |writing style, character details, purpose/point of the writing, and the illustration style.
+         """.trimMargin()
     )
 
     private val storyGeneratorActor = ParsedActor(
-//    parserClass = StoryDataParser::class.java,
         resultClass = StoryData::class.java,
         model = ChatModels.GPT4o,
         parsingModel = ChatModels.GPT35Turbo,
         prompt = """
-            You are an AI creating a story for a digital storybook. Generate a story that includes a title, storyline, dialogue, and descriptions.
-            The story should be engaging and suitable for the specified target age group and genre.
-        """.trimIndent()
+            |You are an AI creating a story for a digital storybook. Generate a story that includes a title, storyline, dialogue, and descriptions.
+            |The story should be engaging and suitable for the specified target age group and genre.
+            |The story should also reflect the specified writing style, include the provided character details, and align with the purpose/point of the writing.
+        """.trimMargin()
     )
 
 
@@ -517,6 +585,6 @@ class IllustratedStorybookActors(
 
 
     companion object {
-        val log = LoggerFactory.getLogger(IllustratedStorybookActors::class.java)
+        val log: Logger = LoggerFactory.getLogger(IllustratedStorybookActors::class.java)
     }
 }
