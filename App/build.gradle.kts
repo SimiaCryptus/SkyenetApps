@@ -35,7 +35,7 @@ java {
 }
 
 val jetty_version = "11.0.18"
-val skyenet_version = "1.0.78"
+val skyenet_version = "1.0.80"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 val jackson_version = "2.17.0"
@@ -43,7 +43,7 @@ val jupiter_version = "5.10.1"
 dependencies {
   implementation("org.postgresql:postgresql:42.7.1")
 
-  implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.61")
+  implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.0.63")
 
   implementation("org.apache.commons:commons-text:1.11.0")
 
