@@ -19,6 +19,7 @@ import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.seleniumFactory
+import com.simiacryptus.skyenet.core.platform.ApplicationServicesConfig
 import com.simiacryptus.skyenet.core.platform.AuthorizationInterface.OperationType
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
@@ -34,6 +35,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest
+import java.io.File
 
 
 open class AppServer(
@@ -83,6 +85,7 @@ open class AppServer(
     }
 
     override fun setupPlatform() {
+        ApplicationServicesConfig.dataStorageRoot = File(".skyenet").absoluteFile
         super.setupPlatform()
         authorizationManager = object : AuthorizationManager() {
             override fun matches(user: User?, line: String): Boolean {
@@ -101,29 +104,29 @@ open class AppServer(
                     var newHTML = html
                     newHTML = newHTML.replace(
                         "</body>", """
-            <style>
-            #footer {
-                position: fixed;
-                bottom: 0;
-                right: 20px;
-                width: 100%;
-                text-align: right;
-                z-index: 1000;
-            }
-            #footer a {
-                color: #4f80a4;
-                text-decoration: none;
-                font-weight: bold;
-            }
-            #footer a:hover {
-                text-decoration: underline;
-            }
-            </style>
-            <footer id="footer">
-                <a href="https://apps.simiacrypt.us/" target="_blank">Powered by Apps.Simiacrypt.us</a>
-            </footer>
-            </body>
-          """.trimIndent()
+                        <style>
+                        #footer {
+                            position: fixed;
+                            bottom: 0;
+                            right: 20px;
+                            width: 100%;
+                            text-align: right;
+                            z-index: 1000;
+                        }
+                        #footer a {
+                            color: #4f80a4;
+                            text-decoration: none;
+                            font-weight: bold;
+                        }
+                        #footer a:hover {
+                            text-decoration: underline;
+                        }
+                        </style>
+                        <footer id="footer">
+                            <a href="https://apps.simiacrypt.us/" target="_blank">Powered by Apps.Simiacrypt.us</a>
+                        </footer>
+                        </body>
+                      """.trimIndent()
                     )
                     super.saveHTML(newHTML, saveRoot, filename)
                 }
@@ -150,10 +153,8 @@ open class AppServer(
 
     private fun getPassword() = (System.getProperties()["db.password"] as String).run {
         when {
-            // e.g. arn:aws:secretsmanager:us-east-1:470240306861:secret:rds!cluster-2068049d-7d46-402b-b2c6-aff3bde9553d-SHe1Bs
             startsWith("arn:aws:secretsmanager:us-east-1:") -> {
                 val plaintextSecret: String = fetchPlaintextSecret(this, Region.US_EAST_1)
-                //println("Plaintext secret: $plaintextSecret")
                 val secretJson = JsonUtil.fromJson<Map<String, String>>(plaintextSecret, Map::class.java)
                 secretJson["password"] as String
             }

@@ -52,7 +52,6 @@ open class DatabaseServices(
 
     fun register() {
         ApplicationServices.authenticationManager = authenticationManager
-        ApplicationServices.dataStorageFactory = dataStorageFactory
         ApplicationServices.usageManager = usageManager
         ApplicationServices.userSettingsManager = userSettingsManager
         if (System.getProperty("DBRESET", "false").toBoolean()) teardownSchema()
@@ -495,8 +494,6 @@ open class DatabaseServices(
             execute()
         }
     }
-
-    val dataStorageFactory: (File) -> StorageInterface = { storageRoot -> DataStorage(storageRoot) }
 
     companion object {
         @JvmStatic
