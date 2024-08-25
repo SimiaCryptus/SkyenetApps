@@ -35,31 +35,31 @@ object JarTool {
             }
         }
     }
-
-    private fun isPrivate(to: String) =
-        (pluginAccessMap[to] ?: throw IllegalStateException(to)).and(Opcodes.ACC_PRIVATE) != 0
-
-    private fun isPublic(to: String) =
-        (pluginAccessMap[to] ?: throw IllegalStateException(to)).and(Opcodes.ACC_PUBLIC) != 0
-
-    val pluginJarClasses by lazy { readJarClasses(pluginJar) }
-    val pluginClasspath by lazy {
-        analyzeJar(pluginJarClasses)
-            .filter {
-                when {
-                    !pluginJarClasses.containsKey(it.to) -> false
-                    !pluginJarClasses.containsKey(it.from) -> false
-                    else -> true
-                }
-            }
-            .apply { require(isNotEmpty()) }.groupBy { it.from }
-    }
-
-    val pluginAccessMap by lazy {
-        classAccessMap(pluginJarClasses).entries.map {
-            it.key to it.value
-        }.toMap()
-    }
+//
+//    private fun isPrivate(to: String) =
+//        (pluginAccessMap[to] ?: throw IllegalStateException(to)).and(Opcodes.ACC_PRIVATE) != 0
+//
+//    private fun isPublic(to: String) =
+//        (pluginAccessMap[to] ?: throw IllegalStateException(to)).and(Opcodes.ACC_PUBLIC) != 0
+//
+//    val pluginJarClasses by lazy { readJarClasses(pluginJar) }
+//    val pluginClasspath by lazy {
+//        analyzeJar(pluginJarClasses)
+//            .filter {
+//                when {
+//                    !pluginJarClasses.containsKey(it.to) -> false
+//                    !pluginJarClasses.containsKey(it.from) -> false
+//                    else -> true
+//                }
+//            }
+//            .apply { require(isNotEmpty()) }.groupBy { it.from }
+//    }
+//
+//    val pluginAccessMap by lazy {
+//        classAccessMap(pluginJarClasses).entries.map {
+//            it.key to it.value
+//        }.toMap()
+//    }
 
     val classloadLogClasses by lazy {
         classloadLog?.let {
@@ -69,44 +69,44 @@ object JarTool {
         } ?: sortedSetOf()
     }
 
-    val requiredClasses: SortedSet<String> by lazy {
-        val requirementMap = downstreamMap(pluginClasspath.values.flatten())
-        (((requiredRoots).distinct().flatMap {
-            downstream(requirementMap, it, mutableSetOf(it))
-        } + classloadLogClasses).toSet()).toSortedSet()
-    }
+//    val requiredClasses: SortedSet<String> by lazy {
+//        val requirementMap = downstreamMap(pluginClasspath.values.flatten())
+//        (((requiredRoots).distinct().flatMap {
+//            downstream(requirementMap, it, mutableSetOf(it))
+//        } + classloadLogClasses).toSet()).toSortedSet()
+//    }
+//
+//    val deadWeight by lazy {
+//        pluginClasspath.keys
+//            .filter { !requiredClasses.contains(it) }
+//            .filter { !classloadLogClasses.contains(it) }
+//            .toSortedSet()
+//    }
 
-    val deadWeight by lazy {
-        pluginClasspath.keys
-            .filter { !requiredClasses.contains(it) }
-            .filter { !classloadLogClasses.contains(it) }
-            .toSortedSet()
-    }
-
-    @JvmStatic
-    fun main(args: Array<String>) {
-        val code = """      
-      // GENERATED CODE
-
-      // Pruned: ${deadWeight.size}
-      // Required Classes: ${requiredClasses.size}
-      
-      // Pruned:
-      fun isPruned(path: String) = ${
-            getRuleExpression(
-                (deadWeight).map { it.classToPath + ".class" }.toSet(),
-                (pluginClasspath.keys
-                    .filter { !deadWeight.contains(it) }
-                    .map { it.classToPath + ".class" }).toSortedSet(),
-                true
-            )
-        }    
-      """.trimIndent()
-
-        val text = buildFile.readText()
-        val start = text.indexOf("// GENERATED CODE")
-        buildFile.writeText(text.substring(0, start) + code)
-        println(code)
-    }
+//    @JvmStatic
+//    fun main(args: Array<String>) {
+//        val code = """
+//      // GENERATED CODE
+//
+//      // Pruned: ${deadWeight.size}
+//      // Required Classes: ${requiredClasses.size}
+//
+//      // Pruned:
+//      fun isPruned(path: String) = ${
+//            getRuleExpression(
+//                (deadWeight).map { it.classToPath + ".class" }.toSet(),
+//                (pluginClasspath.keys
+//                    .filter { !deadWeight.contains(it) }
+//                    .map { it.classToPath + ".class" }).toSortedSet(),
+//                true
+//            )
+//        }
+//      """.trimIndent()
+//
+//        val text = buildFile.readText()
+//        val start = text.indexOf("// GENERATED CODE")
+//        buildFile.writeText(text.substring(0, start) + code)
+//        println(code)
+//    }
 
 }
