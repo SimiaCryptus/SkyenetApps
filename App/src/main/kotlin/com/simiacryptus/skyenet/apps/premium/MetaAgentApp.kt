@@ -85,7 +85,7 @@ open class MetaAgentApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT35Turbo,
+                model = settings?.model ?: ChatModels.GPT4oMini,
                 autoEvaluate = settings?.validateCode ?: true,
                 temperature = settings?.temperature ?: 0.3,
             ).buildAgent(userMessage = userMessage)
@@ -106,7 +106,7 @@ open class MetaAgentAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModels = ChatModels.GPT35Turbo,
+    model: ChatModels = ChatModels.GPT4oMini,
     var autoEvaluate: Boolean = true,
     temperature: Double = 0.3,
 ) : ActorSystem<MetaAgentActors.ActorType>(
@@ -830,7 +830,7 @@ class MetaAgentActors(
         """.trimIndent().trim(),
         model = model,
         temperature = temperature,
-        parsingModel = ChatModels.GPT35Turbo
+        parsingModel = ChatModels.GPT4oMini
     )
 
     @Language("Markdown")

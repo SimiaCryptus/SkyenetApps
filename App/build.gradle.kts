@@ -7,7 +7,7 @@ plugins {
   `maven-publish`
   id("signing")
   id("com.github.johnrengelman.shadow") version "8.1.1"
-  id("org.jetbrains.kotlin.jvm") version "2.0.0-Beta5"
+  id("org.jetbrains.kotlin.jvm") version "2.0.20"
 }
 
 fun properties(key: String) = project.findProperty(key).toString()
@@ -34,16 +34,16 @@ java {
   targetCompatibility = JavaVersion.VERSION_17
 }
 
-val jetty_version = "11.0.18"
+val jetty_version = "11.0.24"
 val skyenet_version = "1.2.0"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
-val jackson_version = "2.17.0"
+val jackson_version = "2.17.2"
 val jupiter_version = "5.10.1"
 dependencies {
   implementation("org.postgresql:postgresql:42.7.1")
 
-  implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.0")
+  implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.2")
 
   implementation("org.apache.commons:commons-text:1.11.0")
 
@@ -61,7 +61,7 @@ dependencies {
 
   implementation("com.zaxxer:HikariCP:5.1.0")
   implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.16.1")
-  implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.21.9")
+  implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.27.23")
   implementation("org.jsoup:jsoup:1.17.2")
 
   implementation("com.google.api-client:google-api-client:1.35.2")
@@ -88,11 +88,11 @@ dependencies {
 
   implementation(group = "commons-io", name = "commons-io", version = "2.15.0")
   implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
-  implementation(platform("software.amazon.awssdk:bom:2.21.9"))
+  implementation(platform("software.amazon.awssdk:bom:2.27.23"))
   implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.21.29")
   implementation(group = "software.amazon.awssdk", name = "sso", version = "2.21.29")
 
-  implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.9")
+  implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.16")
   implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.4.11")
   implementation(group = "ch.qos.logback", name = "logback-core", version = "1.4.11")
 

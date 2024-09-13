@@ -51,9 +51,9 @@ open class OutlineApp(
     data class Settings(
         val models: List<ChatModels> = listOf(
             ChatModels.GPT4o,
-            ChatModels.GPT35Turbo
+            ChatModels.GPT4oMini
         ),
-        val parsingModel: ChatModels = ChatModels.GPT35Turbo,
+        val parsingModel: ChatModels = ChatModels.GPT4oMini,
         val temperature: Double = 0.3,
         val minTokensForExpansion: Int = 16,
         val showProjector: Boolean = true,

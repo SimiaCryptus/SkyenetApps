@@ -42,7 +42,7 @@ open class PresentationDesignerApp(
         ) + "</div>"
 
     data class Settings(
-        val model: OpenAITextModel = ChatModels.GPT35Turbo,
+        val model: OpenAITextModel = ChatModels.GPT4oMini,
         val temperature: Double = 0.1,
         val voice: String? = "alloy",
         val voiceSpeed: Double? = 1.0,
@@ -70,7 +70,7 @@ open class PresentationDesignerApp(
                 dataStorage = dataStorage,
                 ui = ui,
                 api = api,
-                model = settings?.model ?: ChatModels.GPT35Turbo,
+                model = settings?.model ?: ChatModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
                 voice = settings?.voice ?: "alloy",
                 voiceSpeed = settings?.voiceSpeed ?: 1.0,
@@ -93,7 +93,7 @@ open class PresentationDesignerAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = ChatModels.GPT35Turbo,
+    model: OpenAITextModel = ChatModels.GPT4oMini,
     temperature: Double = 0.3,
     val voice: String = "alloy",
     val voiceSpeed: Double = 1.0,
@@ -442,7 +442,7 @@ class PresentationDesignerActors(
 //    parserClass = OutlineParser::class.java,
         resultClass = Outline::class.java,
         model = ChatModels.GPT4o,
-        parsingModel = ChatModels.GPT35Turbo,
+        parsingModel = ChatModels.GPT4oMini,
         prompt = """
             You are a high-level presentation planner. Based on an input topic, provide a list of slides with a brief description of each.
         """.trimIndent()
@@ -500,7 +500,7 @@ class PresentationDesignerActors(
         Do not include formatting in the output.
         """.trimIndent(),
         name = "StyleFormatter",
-        model = ChatModels.GPT35Turbo,
+        model = ChatModels.GPT4oMini,
         temperature = 0.3
     )
 
@@ -513,7 +513,7 @@ class PresentationDesignerActors(
         Output raw HTML with inline CSS styling.
         """.trimIndent(),
         name = "StyleFormatter",
-        model = ChatModels.GPT35Turbo,
+        model = ChatModels.GPT4oMini,
         temperature = 0.3
     )
 
@@ -524,11 +524,11 @@ class PresentationDesignerActors(
         """.trimIndent(),
         name = "ImageRenderer",
         imageModel = ImageModels.DallE3,
-        textModel = ChatModels.GPT35Turbo,
+        textModel = ChatModels.GPT4oMini,
         temperature = 0.3
     )
 
-    private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = ChatModels.GPT35Turbo)
+    private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = ChatModels.GPT4oMini)
 
     enum class ActorType {
         INITIAL_AUTHOR,

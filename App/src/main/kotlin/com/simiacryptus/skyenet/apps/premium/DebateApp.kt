@@ -28,7 +28,7 @@ open class DebateApp(
     path = "/debate",
 ) {
     data class Settings(
-        val model: ChatModels = ChatModels.GPT35Turbo,
+        val model: ChatModels = ChatModels.GPT4oMini,
         val temperature: Double = 0.2,
         val budget: Double = 2.0,
     )
@@ -69,7 +69,7 @@ open class DebateApp(
                 userId = user,
                 session = session,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT35Turbo,
+                model = settings?.model ?: ChatModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
             ).debate(userMessage)
         } catch (e: Throwable) {
@@ -253,7 +253,7 @@ class DebateActors(val model: ChatModels, val temperature: Double) {
             |Details about you: ${actor.description}
         """.trimMargin(),
         model = model,
-        parsingModel = ChatModels.GPT35Turbo,
+        parsingModel = ChatModels.GPT4oMini,
         temperature = temperature,
     )
 
@@ -265,7 +265,7 @@ class DebateActors(val model: ChatModels, val temperature: Double) {
             Debaters should be chosen as recognized experts in the field with household name status.
             """.trimIndent(),
         model = model,
-        parsingModel = ChatModels.GPT35Turbo,
+        parsingModel = ChatModels.GPT4oMini,
         temperature = temperature,
     )
 

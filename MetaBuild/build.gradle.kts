@@ -5,7 +5,7 @@ plugins {
   `java-library`
   `maven-publish`
   id("signing")
-  id("org.jetbrains.kotlin.jvm") version "2.0.0-Beta5"
+  id("org.jetbrains.kotlin.jvm") version "2.0.20"
 }
 
 fun properties(key: String) = project.findProperty(key).toString()
@@ -37,7 +37,7 @@ dependencies {
   testImplementation(group = "ch.qos.logback", name = "logback-classic", version = "1.4.11")
   testImplementation(group = "ch.qos.logback", name = "logback-core", version = "1.4.11")
   testImplementation("org.ow2.asm:asm:9.6")
-  testImplementation("org.jetbrains.kotlin", name = "kotlin-script-runtime", version = "2.0.0-Beta5")
+  testImplementation("org.jetbrains.kotlin", name = "kotlin-script-runtime", version = "2.0.20")
 }
 
 

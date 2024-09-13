@@ -23,7 +23,7 @@ open class SoftwareProjectGeneratorApp(
 ) {
 
     data class Settings(
-        val model: OpenAITextModel = ChatModels.GPT35Turbo,
+        val model: OpenAITextModel = ChatModels.GPT4oMini,
         val temperature: Double = 0.1,
         val budget: Double = 2.0,
     )
@@ -49,7 +49,7 @@ open class SoftwareProjectGeneratorApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT35Turbo,
+                model = settings?.model ?: ChatModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
             ).softwareProjectGenerator(userMessage)
         } catch (e: Throwable) {
@@ -70,7 +70,7 @@ open class SoftwareProjectGeneratorAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = ChatModels.GPT35Turbo,
+    model: OpenAITextModel = ChatModels.GPT4oMini,
     temperature: Double = 0.3,
 ) : ActorSystem<SoftwareProjectGeneratorActors.ActorType>(
     SoftwareProjectGeneratorActors(
@@ -147,7 +147,7 @@ class SoftwareProjectGeneratorActors(
             You are a software project generator. You will assist users in creating the scaffolding for their software projects by interpreting their requirements and generating the necessary code and project structure.
         """.trimIndent(),
         name = "SoftwareProjectGenerator",
-        model = ChatModels.GPT35Turbo,
+        model = ChatModels.GPT4oMini,
         temperature = 0.3
     )
 
@@ -157,9 +157,9 @@ class SoftwareProjectGeneratorActors(
 //    parserClass = IdentityParser::class.java,
         resultClass = String::class.java,
         prompt = "You are a sophisticated AI capable of understanding and generating text based on input.",
-        model = ChatModels.GPT35Turbo,
+        model = ChatModels.GPT4oMini,
         temperature = 0.3,
-        parsingModel = ChatModels.GPT35Turbo
+        parsingModel = ChatModels.GPT4oMini
     )
 
     enum class ActorType {
