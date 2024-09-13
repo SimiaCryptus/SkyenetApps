@@ -74,7 +74,6 @@ open class OutlineApp(
         api: API
     ) {
         val settings = getSettings<Settings>(session, user)!!
-        (api as ClientManager.MonitoredClient).budget = settings.budget
         OutlineAgent(
             api = api,
             dataStorage = dataStorage,

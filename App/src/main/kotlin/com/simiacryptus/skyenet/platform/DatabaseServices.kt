@@ -236,8 +236,8 @@ open class DatabaseServices(
                         setString(1, session.toString())
                         setString(2, apiKey)
                         setString(3, model.modelName)
-                        setInt(4, tokens.prompt_tokens)
-                        setInt(5, tokens.completion_tokens)
+                        setLong(4, tokens.prompt_tokens)
+                        setLong(5, tokens.completion_tokens)
                         setDouble(6, tokens.cost ?: 0.0)
                         setString(7, getDateWindow())
                         execute()
@@ -275,8 +275,8 @@ open class DatabaseServices(
                     val map = HashMap<OpenAIModel, ApiModel.Usage>()
                     while (resultSet.next()) {
                         val modelName = resultSet.getString("model")
-                        val inputTokens = resultSet.getInt("input_tokens")
-                        val outputTokens = resultSet.getInt("output_tokens")
+                        val inputTokens = resultSet.getLong("input_tokens")
+                        val outputTokens = resultSet.getLong("output_tokens")
                         val cost = resultSet.getDouble("cost")
                         map[getModel(modelName) ?: continue] = ApiModel.Usage(
                             prompt_tokens = inputTokens,
@@ -306,8 +306,8 @@ open class DatabaseServices(
                         val map = HashMap<OpenAIModel, ApiModel.Usage>()
                         while (resultSet.next()) {
                             val modelName = resultSet.getString("model")
-                            val inputTokens = resultSet.getInt("input_tokens")
-                            val outputTokens = resultSet.getInt("output_tokens")
+                            val inputTokens = resultSet.getLong("input_tokens")
+                            val outputTokens = resultSet.getLong("output_tokens")
                             val cost = resultSet.getDouble("cost")
                             map[getModel(modelName) ?: continue] = ApiModel.Usage(
                                 prompt_tokens = inputTokens,

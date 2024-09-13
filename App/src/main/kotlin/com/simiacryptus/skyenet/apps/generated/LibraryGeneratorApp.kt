@@ -47,7 +47,6 @@ open class LibraryGeneratorApp(
     ) {
         try {
             val settings = getSettings<Settings>(session, user)
-            (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
             LibraryGeneratorAgent(
                 user = user,
                 session = session,

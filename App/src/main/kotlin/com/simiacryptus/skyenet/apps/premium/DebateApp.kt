@@ -62,7 +62,6 @@ open class DebateApp(
     ) {
         try {
             val settings = getSettings<Settings>(session, user)
-            (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
             DebateAgent(
                 api = api,
                 dataStorage = dataStorage,

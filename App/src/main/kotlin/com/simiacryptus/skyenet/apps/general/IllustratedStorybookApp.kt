@@ -71,7 +71,6 @@ open class IllustratedStorybookApp(
     ) {
         try {
             val settings = getSettings<Settings>(session, user)
-            (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
             IllustratedStorybookAgent(
                 user = user,
                 session = session,

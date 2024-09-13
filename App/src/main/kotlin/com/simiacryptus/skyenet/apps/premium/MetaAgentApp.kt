@@ -78,7 +78,6 @@ open class MetaAgentApp(
     ) {
         try {
             val settings = getSettings<Settings>(session, user)
-            (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
             MetaAgentAgent(
                 user = user,
                 session = session,

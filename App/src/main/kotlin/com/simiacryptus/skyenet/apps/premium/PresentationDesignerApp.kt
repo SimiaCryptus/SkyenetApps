@@ -63,7 +63,6 @@ open class PresentationDesignerApp(
     ) {
         try {
             val settings = getSettings<Settings>(session, user)
-            (api as ClientManager.MonitoredClient).budget = settings?.budget ?: 2.0
             PresentationDesignerAgent(
                 user = user,
                 session = session,

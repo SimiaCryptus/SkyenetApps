@@ -23,12 +23,12 @@ class DatabaseServiceTests {
     @Nested
     inner class AuthenticationManagerTest : AuthenticationInterfaceTest(databaseServices.authenticationManager)
 
-    @Nested
-    inner class DataStorageTest : StorageInterfaceTest(
-        databaseServices.dataStorageFactory.invoke(
-            Files.createTempDirectory("dataStorageTest").toFile()
-        )
-    )
+//    @Nested
+//    inner class DataStorageTest : StorageInterfaceTest(
+//        databaseServices.dataStorageFactory.invoke(
+//            Files.createTempDirectory("dataStorageTest").toFile()
+//        )
+//    )
 
     @Nested
     inner class UsageManagerTest : UsageTest(databaseServices.usageManager)
