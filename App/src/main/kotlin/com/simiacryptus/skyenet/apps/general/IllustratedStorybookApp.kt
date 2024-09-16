@@ -49,7 +49,7 @@ open class IllustratedStorybookApp(
         ) + "</div>"
 
     data class Settings(
-        val model: OpenAITextModel? = ChatModels.GPT4o,
+        val model: OpenAITextModel? = OpenAIModels.GPT4o,
         val temperature: Double? = 0.5,
         val imageModel: ImageModels? = ImageModels.DallE3,
         val voice: String? = "alloy",
@@ -77,7 +77,7 @@ open class IllustratedStorybookApp(
                 dataStorage = dataStorage,
                 ui = ui,
                 api = api,
-                model = settings?.model ?: ChatModels.GPT4oMini,
+                model = settings?.model ?: OpenAIModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
                 imageModel = settings?.imageModel ?: ImageModels.DallE2,
                 voice = settings?.voice ?: "alloy",
@@ -100,7 +100,7 @@ open class IllustratedStorybookAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = ChatModels.GPT4o,
+    model: OpenAITextModel = OpenAIModels.GPT4o,
     temperature: Double = 0.3,
     imageModel: ImageModels = ImageModels.DallE2,
     val voice: String = "alloy",
@@ -507,7 +507,7 @@ open class IllustratedStorybookAgent(
 }
 
 class IllustratedStorybookActors(
-    val model: OpenAITextModel = ChatModels.GPT4o,
+    val model: OpenAITextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
     val imageModel: ImageModels = ImageModels.DallE2,
     voice: String = "alloy",
@@ -535,8 +535,8 @@ class IllustratedStorybookActors(
 
     private val requirementsActor = ParsedActor(
         resultClass = IllustratedStorybookAgent.UserPreferencesContent::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             |You are helping gather requirements for a storybook.
             |Respond to the user by suggesting a genre, target age group, specific elements to include in the story,
@@ -546,8 +546,8 @@ class IllustratedStorybookActors(
 
     private val storyGeneratorActor = ParsedActor(
         resultClass = StoryData::class.java,
-        model = ChatModels.GPT4o,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4o,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             |You are an AI creating a story for a digital storybook. Generate a story that includes a title, storyline, dialogue, and descriptions.
             |The story should be engaging and suitable for the specified target age group and genre.
@@ -563,10 +563,10 @@ class IllustratedStorybookActors(
         temperature = 0.5, // Adjust temperature for creativity vs. coherence
         width = 1024, // Width of the generated image
         height = 1024, // Height of the generated image
-        textModel = ChatModels.GPT4oMini
+        textModel = OpenAIModels.GPT4oMini
     )
 
-    private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = ChatModels.GPT4oMini)
+    private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = OpenAIModels.GPT4oMini)
 
     enum class ActorType {
         REQUIREMENTS_ACTOR,

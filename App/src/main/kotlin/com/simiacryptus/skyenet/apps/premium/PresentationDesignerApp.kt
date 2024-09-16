@@ -42,7 +42,7 @@ open class PresentationDesignerApp(
         ) + "</div>"
 
     data class Settings(
-        val model: OpenAITextModel = ChatModels.GPT4oMini,
+        val model: OpenAITextModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
         val voice: String? = "alloy",
         val voiceSpeed: Double? = 1.0,
@@ -69,7 +69,7 @@ open class PresentationDesignerApp(
                 dataStorage = dataStorage,
                 ui = ui,
                 api = api,
-                model = settings?.model ?: ChatModels.GPT4oMini,
+                model = settings?.model ?: OpenAIModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
                 voice = settings?.voice ?: "alloy",
                 voiceSpeed = settings?.voiceSpeed ?: 1.0,
@@ -92,7 +92,7 @@ open class PresentationDesignerAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = ChatModels.GPT4oMini,
+    model: OpenAITextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
     val voice: String = "alloy",
     val voiceSpeed: Double = 1.0,
@@ -430,7 +430,7 @@ open class PresentationDesignerAgent(
 
 
 class PresentationDesignerActors(
-    val model: OpenAITextModel = ChatModels.GPT4o,
+    val model: OpenAITextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
     voice: String = "alloy",
     voiceSpeed: Double = 1.0,
@@ -440,8 +440,8 @@ class PresentationDesignerActors(
     private val initialAuthor = ParsedActor(
 //    parserClass = OutlineParser::class.java,
         resultClass = Outline::class.java,
-        model = ChatModels.GPT4o,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4o,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are a high-level presentation planner. Based on an input topic, provide a list of slides with a brief description of each.
         """.trimIndent()
@@ -484,7 +484,7 @@ class PresentationDesignerActors(
 
 
     private val contentExpander = SimpleActor(
-        model = ChatModels.GPT4o,
+        model = OpenAIModels.GPT4o,
         prompt = """
       You are an assistant that expands outlines into detailed content. 
       Given content for a presentation and a topic/slide to expand, provide detailed content for that slide.
@@ -499,7 +499,7 @@ class PresentationDesignerActors(
         Do not include formatting in the output.
         """.trimIndent(),
         name = "StyleFormatter",
-        model = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
         temperature = 0.3
     )
 
@@ -512,7 +512,7 @@ class PresentationDesignerActors(
         Output raw HTML with inline CSS styling.
         """.trimIndent(),
         name = "StyleFormatter",
-        model = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
         temperature = 0.3
     )
 
@@ -523,11 +523,11 @@ class PresentationDesignerActors(
         """.trimIndent(),
         name = "ImageRenderer",
         imageModel = ImageModels.DallE3,
-        textModel = ChatModels.GPT4oMini,
+        textModel = OpenAIModels.GPT4oMini,
         temperature = 0.3
     )
 
-    private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = ChatModels.GPT4oMini)
+    private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = OpenAIModels.GPT4oMini)
 
     enum class ActorType {
         INITIAL_AUTHOR,

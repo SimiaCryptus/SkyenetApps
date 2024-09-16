@@ -31,8 +31,8 @@ class IncrementalCodeGenApp(
     path = path,
 ) {
     data class Settings(
-        val model: ChatModels = ChatModels.GPT4o,
-        val parsingModel: ChatModels = ChatModels.GPT4oMini,
+        val model: ChatModels = OpenAIModels.GPT4o,
+        val parsingModel: ChatModels = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.2,
         val budget: Double = 2.0,
     )
@@ -57,8 +57,8 @@ class IncrementalCodeGenApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT4o,
-                parsingModel = settings?.parsingModel ?: ChatModels.GPT4oMini,
+                model = settings?.model ?: OpenAIModels.GPT4o,
+                parsingModel = settings?.parsingModel ?: OpenAIModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
             ).startProcess(userMessage = userMessage)
         } catch (e: Throwable) {
@@ -77,8 +77,8 @@ class IncrementalCodeGenAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModels = ChatModels.GPT4o,
-    parsingModel: ChatModels = ChatModels.GPT4oMini,
+    model: ChatModels = OpenAIModels.GPT4o,
+    parsingModel: ChatModels = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
     val actorMap: Map<ActorTypes, BaseActor<*, *>> = mapOf<ActorTypes, BaseActor<*, *>>(
         ActorTypes.TaskBreakdown to ParsedActor(

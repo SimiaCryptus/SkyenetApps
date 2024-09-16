@@ -74,7 +74,7 @@ graph TD;
 
 ### Integration with JOpenAI API
 
-The application leverages the JOpenAI API for AI functionalities, specifically using the `ChatModels.GPT35Turbo` model by default. The `API` class is used to communicate with the API, sending user inputs and receiving AI-generated responses.
+The application leverages the JOpenAI API for AI functionalities, specifically using the `OpenAIModels.GPT35Turbo` model by default. The `API` class is used to communicate with the API, sending user inputs and receiving AI-generated responses.
 
 
 ### Conclusion
@@ -152,7 +152,7 @@ The `Settings` data class encapsulates user-specific settings, including AWS reg
 - **region**: AWS region ID. Defaults to the region provided by `DefaultAwsRegionProviderChain`.
 - **profile**: AWS profile name. Defaults to "default".
 - **temperature**: Controls the randomness of AI responses. Defaults to 0.1.
-- **model**: Specifies the OpenAI model to use. Defaults to `ChatModels.GPT35Turbo`.
+- **model**: Specifies the OpenAI model to use. Defaults to `OpenAIModels.GPT35Turbo`.
 
 
 ### User Interaction Flow

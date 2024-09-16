@@ -28,7 +28,7 @@ open class LibraryGeneratorApp(
 ) {
 
     data class Settings(
-        val model: OpenAITextModel = ChatModels.GPT4oMini,
+        val model: OpenAITextModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
         val budget: Double = 2.0,
     )
@@ -53,7 +53,7 @@ open class LibraryGeneratorApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT4oMini,
+                model = settings?.model ?: OpenAIModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
             ).pseudocodeBreakdown(userMessage)
         } catch (e: Throwable) {
@@ -74,7 +74,7 @@ open class LibraryGeneratorAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = ChatModels.GPT4oMini,
+    model: OpenAITextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
 ) : ActorSystem<LibraryGeneratorActors.ActorType>(
     LibraryGeneratorActors(
@@ -478,7 +478,7 @@ open class LibraryGeneratorAgent(
 class LibraryGeneratorActors(
     val ui: ApplicationInterface,
     val api: API,
-    val model: OpenAITextModel = ChatModels.GPT4o,
+    val model: OpenAITextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 
@@ -498,8 +498,8 @@ class LibraryGeneratorActors(
     private val requirementInterpreter = ParsedActor(
 //    parserClass = RequirementInterpreter::class.java,
         resultClass = InterpretationResult::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are an assistant that interprets software requirements. Analyze the following description and extract the required data structures and functions.
         """.trimIndent()
@@ -532,8 +532,8 @@ class LibraryGeneratorActors(
         prompt = """
             You are an AI that designs data structures based on specified requirements. Given a description, create a data structure with appropriate fields and types.
         """.trimIndent(),
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         temperature = 0.3
     )
 
@@ -564,8 +564,8 @@ class LibraryGeneratorActors(
     private val functionArchitect = ParsedActor(
 //    parserClass = FunctionOutlineParser::class.java,
         resultClass = FunctionOutline::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are an AI that outlines software functions. Given a description, you will provide the function name, parameters, and return type.
             """.trimIndent()
@@ -578,7 +578,7 @@ class LibraryGeneratorActors(
             "ui" to ui,
             "api" to api,
         ),
-        model = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
         details = """
             You are a code synthesizer.
             
@@ -605,7 +605,7 @@ class LibraryGeneratorActors(
             The documentation should explain the purpose of the code, how it works, and how to use it.
             Include descriptions of any classes, methods, parameters, and return values.
         """.trimIndent(),
-        model = ChatModels.GPT4oMini
+        model = OpenAIModels.GPT4oMini
     )
 
 
@@ -628,11 +628,11 @@ class LibraryGeneratorActors(
     private val testCaseCreator = ParsedActor(
 //    parserClass = TestCaseParser::class.java,
         resultClass = TestCase::class.java,
-        model = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
         prompt = """
       You are an assistant that creates detailed test cases for software functions. Given a description of a function and its expected behavior, generate a test case with the following structure: a brief description, the input for the test case, and the expected output.
     """.trimMargin().trim(),
-        parsingModel = ChatModels.GPT4oMini
+        parsingModel = OpenAIModels.GPT4oMini
     )
 
 
@@ -652,13 +652,13 @@ class LibraryGeneratorActors(
     private val qualityAssessor = ParsedActor(
 //    parserClass = QualityReviewParser::class.java,
         resultClass = QualityReview::class.java,
-        model = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
         prompt = """
             You are an assistant that reviews the quality of generated code, documentation, and test cases.
             Assess the quality based on best practices, correctness, and completeness.
             If the quality is not satisfactory, provide specific feedback for improvement.
         """.trimIndent(),
-        parsingModel = ChatModels.GPT4oMini
+        parsingModel = OpenAIModels.GPT4oMini
     )
 
 
@@ -666,7 +666,7 @@ class LibraryGeneratorActors(
         prompt = """
             You are an output formatter. Your job is to take the generated code, documentation, and test cases and format them neatly for presentation. Ensure that the code is properly indented and commented, the documentation is clear and concise, and the test cases are well-organized and easy to understand.
         """.trimIndent(),
-        model = ChatModels.GPT4oMini
+        model = OpenAIModels.GPT4oMini
     )
 
     enum class ActorType {

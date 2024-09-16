@@ -48,7 +48,7 @@ class AwsCodingApp : ApplicationServer(
         val region: String? = DefaultAwsRegionProviderChain().region.id(),
         val profile: String? = "default",
         val temperature: Double? = 0.1,
-        val model: ChatModels = ChatModels.GPT4oMini,
+        val model: ChatModels = OpenAIModels.GPT4oMini,
     )
 
     override val settingsClass: Class<*> get() = Settings::class.java

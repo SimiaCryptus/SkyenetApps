@@ -19,7 +19,7 @@ class BashCodingApp : ApplicationServer(
         val workingDir: String = ".",
         val language: String = "bash",
         val command: List<String> = listOf("bash"),
-        val model: ChatModels = ChatModels.GPT4oMini,
+        val model: ChatModels = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
     )
 

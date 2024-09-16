@@ -24,7 +24,7 @@ open class VocabularyListBuilderApp(
 ) {
 
     data class Settings(
-        val model: OpenAITextModel = ChatModels.GPT4oMini,
+        val model: OpenAITextModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
     )
 
@@ -47,7 +47,7 @@ open class VocabularyListBuilderApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT4oMini,
+                model = settings?.model ?: OpenAIModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
             ).vocabularyListBuilder(userMessage)
         } catch (e: Throwable) {
@@ -68,7 +68,7 @@ open class VocabularyListBuilderAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = ChatModels.GPT4oMini,
+    model: OpenAITextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
 ) : ActorSystem<VocabularyListBuilderActors.ActorType>(VocabularyListBuilderActors(
     model = model,
@@ -144,7 +144,7 @@ open class VocabularyListBuilderAgent(
 
 
 class VocabularyListBuilderActors(
-    val model: OpenAITextModel = ChatModels.GPT4o,
+    val model: OpenAITextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 
@@ -163,8 +163,8 @@ class VocabularyListBuilderActors(
     private val definitionActor = ParsedActor(
 //    parserClass = DefinitionParser::class.java,
         resultClass = DefinitionOutput::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are a definition generator. For each term, define the term in the given style for the given target audience. Ensure the definition is engaging and understandable.
         """.trimIndent()
@@ -176,7 +176,7 @@ class VocabularyListBuilderActors(
             You are an illustration guidance assistant. Your task is to create detailed textual descriptions for illustrations based on the given term and illustration preferences such as style, color scheme, and specific elements to include. Use your creativity to suggest engaging and relevant visuals that accurately represent the term and adhere to the specified preferences.
         """.trimIndent().trim(),
         name = "Illustration Guidance Assistant",
-        model = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
         temperature = 0.3
     )
 
@@ -193,8 +193,8 @@ class VocabularyListBuilderActors(
     private val feedbackActor = ParsedActor(
 //    parserClass = FeedbackParser::class.java,
         resultClass = FeedbackOutput::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are an assistant that refines content based on user feedback. Improve the content according to the feedback provided.
         """.trimIndent().trim()
@@ -203,8 +203,8 @@ class VocabularyListBuilderActors(
     private val parseInputActor = ParsedActor(
 //    parserClass = TermInputParser::class.java,
         resultClass = VocabularyListBuilderAgent.TermInput::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are a parser that extracts the term, definition style, target audience, and illustration preferences from the user input.
         """.trimIndent().trim()

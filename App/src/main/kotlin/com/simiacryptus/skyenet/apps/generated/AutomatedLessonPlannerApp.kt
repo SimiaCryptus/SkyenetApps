@@ -29,7 +29,7 @@ open class AutomatedLessonPlannerArchitectureApp(
 ) {
 
     data class Settings(
-        val model: OpenAITextModel = ChatModels.GPT4oMini,
+        val model: OpenAITextModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
         val budget: Double = 2.0,
     )
@@ -54,7 +54,7 @@ open class AutomatedLessonPlannerArchitectureApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT4oMini,
+                model = settings?.model ?: OpenAIModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
             ).automatedLessonPlannerArchitecture(userMessage)
         } catch (e: Throwable) {
@@ -75,7 +75,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = ChatModels.GPT4oMini,
+    model: OpenAITextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
 ) : ActorSystem<AutomatedLessonPlannerArchitectureActors.ActorType>(
     AutomatedLessonPlannerArchitectureActors(
@@ -396,7 +396,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
 
 
 class AutomatedLessonPlannerArchitectureActors(
-    val model: OpenAITextModel = ChatModels.GPT4o,
+    val model: OpenAITextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 
@@ -420,12 +420,12 @@ class AutomatedLessonPlannerArchitectureActors(
     private val curriculumMapperActor = ParsedActor(
 //    parserClass = CurriculumMappingParser::class.java,
         resultClass = CurriculumMapping::class.java,
-        model = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
         prompt = """
             You are an assistant that maps learning objectives to curriculum standards.
             Given a list of learning objectives, provide the corresponding curriculum standards.
         """.trimIndent(),
-        parsingModel = ChatModels.GPT4oMini
+        parsingModel = OpenAIModels.GPT4oMini
     )
 
 
@@ -445,8 +445,8 @@ class AutomatedLessonPlannerArchitectureActors(
     private val resourceAllocatorActor = ParsedActor(
 //    parserClass = ResourceAllocatorParser::class.java,
         resultClass = ResourceAllocation::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are an assistant that suggests educational activities based on a list of available resources.
             Given a list of resources, provide a list of possible activities that can be conducted using these resources.
@@ -498,8 +498,8 @@ class AutomatedLessonPlannerArchitectureActors(
     private val timeManagerActor = ParsedActor(
 //    parserClass = TimeManagerParser::class.java,
         resultClass = LessonTimeline::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are an assistant that creates a timeline for a lesson plan.
             Given a list of activities and their descriptions, along with the total lesson time, 
@@ -537,8 +537,8 @@ class AutomatedLessonPlannerArchitectureActors(
     private val assessmentPlannerActor = ParsedActor(
 //    parserClass = AssessmentPlanParser::class.java,
         resultClass = AssessmentPlan::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are an assistant specializing in educational assessment. Your task is to recommend assessment methods that align with specific learning objectives. For each learning objective provided, suggest one or more assessment methods that effectively measure student understanding and mastery.
             
@@ -558,7 +558,7 @@ class AutomatedLessonPlannerArchitectureActors(
             Provide options for teachers to customize their lesson plans.
             Listen to the teacher's requests and incorporate their preferences into the lesson plan.
         """.trimIndent(),
-        model = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
     )
 
 
@@ -578,8 +578,8 @@ class AutomatedLessonPlannerArchitectureActors(
     private val feedbackAnalyzerActor = ParsedActor(
 //    parserClass = FeedbackParser::class.java,
         resultClass = FeedbackAnalysis::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are an assistant that analyzes teacher feedback on lesson plans to suggest improvements.
             Analyze the following feedback and provide suggestions for improvement.

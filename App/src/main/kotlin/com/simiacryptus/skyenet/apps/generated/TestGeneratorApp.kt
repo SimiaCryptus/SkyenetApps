@@ -26,7 +26,7 @@ open class TestGeneratorApp(
 ) {
 
     data class Settings(
-        val model: OpenAITextModel = ChatModels.GPT4oMini,
+        val model: OpenAITextModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
     )
 
@@ -50,7 +50,7 @@ open class TestGeneratorApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT4oMini,
+                model = settings?.model ?: OpenAIModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
             ).testGenerator(userMessage)
         } catch (e: Throwable) {
@@ -70,7 +70,7 @@ open class TestGeneratorAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = ChatModels.GPT4oMini,
+    model: OpenAITextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
 ) : ActorSystem<ActorType>(
     TestGeneratorActors(
@@ -131,7 +131,7 @@ open class TestGeneratorAgent(
 
 
 class TestGeneratorActors(
-    val model: OpenAITextModel = ChatModels.GPT4o,
+    val model: OpenAITextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 
@@ -144,8 +144,8 @@ class TestGeneratorActors(
     private val inputHandler = ParsedActor(
 //    parserClass = TaskParser::class.java,
         resultClass = TaskInfo::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             You are an AI-based automated assistant capable of processing user requests and generating responses. Given a task description, provide a summary of the task and any relevant details to guide the subsequent steps in the process.
         """.trimIndent()
@@ -164,8 +164,8 @@ class TestGeneratorActors(
     private val topicIdentificationActor = ParsedActor(
 //    parserClass = TopicIdentificationParser::class.java,
         resultClass = TopicIdentificationResult::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             Given a piece of text, identify the key topics and associated keywords. For each topic, provide a concise name and a list of relevant keywords.
         """.trimIndent().trim()
@@ -185,8 +185,8 @@ class TestGeneratorActors(
     private val questionGenerationActor = ParsedActor(
 //    parserClass = QuestionSetParser::class.java,
         resultClass = QuestionSet::class.java,
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
             Given a topic, generate a set of quiz questions. Include multiple-choice, true/false, and short answer questions of varying difficulty levels.
         """.trimIndent()
@@ -221,8 +221,8 @@ class TestGeneratorActors(
         prompt = """
             You are an assistant capable of generating answers for quiz questions. For each question, generate multiple answers, indicating which are correct or incorrect, and provide explanations for the correctness of each answer.
         """.trimIndent(),
-        model = ChatModels.GPT4oMini,
-        parsingModel = ChatModels.GPT4oMini,
+        model = OpenAIModels.GPT4oMini,
+        parsingModel = OpenAIModels.GPT4oMini,
         temperature = 0.3
     )
 

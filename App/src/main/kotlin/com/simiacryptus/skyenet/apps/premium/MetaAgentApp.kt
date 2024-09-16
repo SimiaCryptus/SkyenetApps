@@ -59,7 +59,7 @@ open class MetaAgentApp(
         }</div>"
 
     data class Settings(
-        val model: ChatModels = ChatModels.GPT4o,
+        val model: ChatModels = OpenAIModels.GPT4o,
         val validateCode: Boolean = true,
         val temperature: Double = 0.2,
         val budget: Double = 2.0,
@@ -84,7 +84,7 @@ open class MetaAgentApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT4oMini,
+                model = settings?.model ?: OpenAIModels.GPT4oMini,
                 autoEvaluate = settings?.validateCode ?: true,
                 temperature = settings?.temperature ?: 0.3,
             ).buildAgent(userMessage = userMessage)
@@ -105,7 +105,7 @@ open class MetaAgentAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModels = ChatModels.GPT4oMini,
+    model: ChatModels = OpenAIModels.GPT4oMini,
     var autoEvaluate: Boolean = true,
     temperature: Double = 0.3,
 ) : ActorSystem<MetaAgentActors.ActorType>(
@@ -214,7 +214,7 @@ open class MetaAgentAgent(
         |) {
         |
         |    data class Settings(
-        |        val model: ChatModels = ChatModels.GPT35Turbo,
+        |        val model: ChatModels = OpenAIModels.GPT35Turbo,
         |        val temperature: Double = 0.1,
         |    )
         |    override val settingsClass: Class<*> get() = Settings::class.java
@@ -235,7 +235,7 @@ open class MetaAgentAgent(
         |                dataStorage = dataStorage,
         |                api = api,
         |                ui = ui,
-        |                model = settings?.model ?: ChatModels.GPT35Turbo,
+        |                model = settings?.model ?: OpenAIModels.GPT35Turbo,
         |                temperature = settings?.temperature ?: 0.3,
         |            ).${design.obj.name?.camelCase()}(userMessage)
         |        } catch (e: Throwable) {
@@ -259,7 +259,7 @@ open class MetaAgentAgent(
         |    dataStorage: StorageInterface,
         |    val ui: ApplicationInterface,
         |    val api: API,
-        |    model: ChatModels = ChatModels.GPT35Turbo,
+        |    model: ChatModels = OpenAIModels.GPT35Turbo,
         |    temperature: Double = 0.3,
         |) : ActorSystem<${classBaseName}Actors.ActorType>(${classBaseName}Actors(
         |    model = model,
@@ -288,7 +288,7 @@ open class MetaAgentAgent(
         |$standardImports
         |
         |class ${classBaseName}Actors(
-        |    val model: ChatModels = ChatModels.GPT4o,
+        |    val model: ChatModels = OpenAIModels.GPT4o,
         |    val temperature: Double = 0.3,
         |) {
         |
@@ -585,7 +585,7 @@ open class MetaAgentAgent(
 class MetaAgentActors(
     private val interpreterClass: KClass<out Interpreter> = KotlinInterpreter::class,
     val symbols: Map<String, Any> = mapOf(),
-    val model: ChatModels = ChatModels.GPT4o,
+    val model: ChatModels = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 
@@ -794,7 +794,7 @@ class MetaAgentActors(
         """.trimIndent().trim(),
         model = model,
         temperature = temperature,
-        parsingModel = ChatModels.GPT4o
+        parsingModel = OpenAIModels.GPT4o
     )
 
 
@@ -829,7 +829,7 @@ class MetaAgentActors(
         """.trimIndent().trim(),
         model = model,
         temperature = temperature,
-        parsingModel = ChatModels.GPT4oMini
+        parsingModel = OpenAIModels.GPT4oMini
     )
 
     @Language("Markdown")
@@ -851,7 +851,7 @@ class MetaAgentActors(
         |class SimpleActor(
         |    prompt: String,
         |    name: String? = null,
-        |    model: ChatModels = ChatModels.GPT35Turbo,
+        |    model: ChatModels = OpenAIModels.GPT35Turbo,
         |    temperature: Double = 0.3,
         |)
         |```
@@ -895,7 +895,7 @@ class MetaAgentActors(
         |class ImageActor(
         |    prompt: String = "Transform the user request into an image generation prompt that the user will like",
         |    name: String? = null,
-        |    textModel: ChatModels = ChatModels.GPT35Turbo,
+        |    textModel: ChatModels = OpenAIModels.GPT35Turbo,
         |    val imageModel: ImageModels = ImageModels.DallE2,
         |    temperature: Double = 0.3,
         |    val width: Int = 1024,
@@ -941,7 +941,7 @@ class MetaAgentActors(
         |    val parserClass: Class<out Function<String, T>>,
         |    prompt: String,
         |    val action: String? = null,
-        |    model: ChatModels = ChatModels.GPT35Turbo,
+        |    model: ChatModels = OpenAIModels.GPT35Turbo,
         |    temperature: Double = 0.3,
         |)
         |```
@@ -971,7 +971,7 @@ class MetaAgentActors(
         |
         |fun exampleParsedActor() = ParsedActor<ExampleResult>(
         |    parserClass = ExampleParser::class.java,
-        |    model = ChatModels.GPT4o,
+        |    model = OpenAIModels.GPT4o,
         |    prompt = ""${'"'}
         |            |You are a question answering assistant.
         |            |""${'"'}.trimMargin().trim(),
@@ -1015,8 +1015,8 @@ class MetaAgentActors(
         |    ),
         |    name: String? = interpreterClass.simpleName,
         |    val details: String? = null,
-        |    model: ChatModels = ChatModels.GPT35Turbo,
-        |    val fallbackModel: ChatModels = ChatModels.GPT4o,
+        |    model: ChatModels = OpenAIModels.GPT35Turbo,
+        |    val fallbackModel: ChatModels = OpenAIModels.GPT4o,
         |    temperature: Double = 0.1,
         |    private val fixIterations: Int = 3,
         |    private val fixRetries: Int = 2,

@@ -36,9 +36,9 @@ open class VocabularyApp(
 ) {
 
     data class Settings(
-        val model: ChatModels = ChatModels.GPT4o,
+        val model: ChatModels = OpenAIModels.GPT4o,
         val temperature: Double = 0.1,
-        val parsingModel: ChatModels = ChatModels.GPT4o,
+        val parsingModel: ChatModels = OpenAIModels.GPT4o,
         val imageModel: ImageModels = ImageModels.DallE3,
     )
 
@@ -62,8 +62,8 @@ open class VocabularyApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: ChatModels.GPT4oMini,
-                parsingModel = settings?.parsingModel ?: ChatModels.GPT4oMini,
+                model = settings?.model ?: OpenAIModels.GPT4oMini,
+                parsingModel = settings?.parsingModel ?: OpenAIModels.GPT4oMini,
                 imageModel = settings?.imageModel ?: ImageModels.DallE3,
                 temperature = settings?.temperature ?: 0.3,
                 path = path
@@ -86,8 +86,8 @@ open class VocabularyAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModels = ChatModels.GPT4oMini,
-    val parsingModel: ChatModels = ChatModels.GPT4oMini,
+    model: ChatModels = OpenAIModels.GPT4oMini,
+    val parsingModel: ChatModels = OpenAIModels.GPT4oMini,
     val imageModel: ImageModels = ImageModels.DallE3,
     temperature: Double = 0.3,
     val path: String,
@@ -214,8 +214,8 @@ open class VocabularyAgent(
 }
 
 class VocabularyActors(
-    val model: ChatModels = ChatModels.GPT4o,
-    val parsingModel: ChatModels = ChatModels.GPT4oMini,
+    val model: ChatModels = OpenAIModels.GPT4o,
+    val parsingModel: ChatModels = OpenAIModels.GPT4oMini,
     val imageModel: ImageModels = ImageModels.DallE3,
     val temperature: Double = 0.3,
 ) {
