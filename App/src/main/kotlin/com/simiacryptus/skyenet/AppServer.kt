@@ -10,18 +10,17 @@ import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.apps.general.VocabularyApp
 import com.simiacryptus.skyenet.apps.general.WebDevApp
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
+import com.simiacryptus.skyenet.apps.generated.CreativeWritingAssistantApp
 import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
 import com.simiacryptus.skyenet.apps.generated.TestGeneratorApp
 import com.simiacryptus.skyenet.apps.hybrid.IncrementalCodeGenApp
 import com.simiacryptus.skyenet.apps.premium.DebateApp
-import com.simiacryptus.skyenet.apps.premium.MetaAgentApp
+import com.simiacryptus.skyenet.apps.premium.meta.MetaAgentApp
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.seleniumFactory
 import com.simiacryptus.skyenet.core.platform.ApplicationServicesConfig
-import com.simiacryptus.skyenet.core.platform.AuthorizationInterface.OperationType
-import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.platform.DatabaseServices
@@ -58,6 +57,7 @@ open class AppServer(
             ChildWebApp("/incremental_codegen", IncrementalCodeGenApp(domainName = domainName), null),
             ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName), "outline.png"),
             ChildWebApp("/meta_agent", MetaAgentApp(), "MetaAgent.png"),
+            ChildWebApp("/creative_writing", CreativeWritingAssistantApp("/creative_writing"), "CreativeWriting.png"),
             ChildWebApp("/debate", DebateApp(domainName = domainName), "Debate.png"),
             ChildWebApp("/presentation", PresentationDesignerApp(), "PresentationDesigner.png"),
             ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName), null),
@@ -164,7 +164,7 @@ open class AppServer(
     }
 
     override val welcomeServlet: WelcomeServlet
-        get() = object : WelcomeServlet(this) {
+        get() = object : WelcomeServlet(this@AppServer) {
 
             val videoHtml = """<div style="width: 30%; float: right; margin: 1em;">
                 <video controls width='100%'>
@@ -216,50 +216,6 @@ open class AppServer(
             
         """.trimIndent()
 
-            override fun appRow(app: ChildWebApp, user: User?) = when {
-                !authorizationManager.isAuthorized(app.server.javaClass, user, OperationType.Read) -> ""
-                else -> {
-                    val type = app.server.javaClass.packageName.split(".").last()
-                    """
-            <tr>
-                <td>
-                    ${if(!app.thumbnail.isNullOrBlank()) """<img src="${app.thumbnail}" alt="${app.server.applicationName}" class="app-thumbnail"/>""" else ""}
-                    ${app.server.applicationName} <span class="app-type" style='background-color: ${typeColor(type)}'>$type</span>
-                </td>
-                <td>
-                    <a  href="javascript:void(0);" onclick="showModal('${app.path}/sessions')">List Sessions</a>
-                </td>
-                <td>
-                    ${
-                        when {
-                            !authorizationManager.isAuthorized(app.server.javaClass, user, OperationType.Public) -> ""
-                            else ->
-                                """<a class="new-session-link" href="${app.path}/#${StorageInterface.newGlobalID()}">New Public Session</a>"""
-                        }
-                    }
-                </td>
-                <td>
-                    ${
-                        when {
-                            !authorizationManager.isAuthorized(app.server.javaClass, user, OperationType.Write) -> ""
-                            else ->
-                                """<a class="new-session-link" href="${app.path}/#${StorageInterface.newUserID()}">New Private Session</a>"""
-                        }
-                    }
-                </td>
-            </tr>
-        """.trimIndent()
-                }
-            }
-
-            private fun typeColor(type: String) = when (type) {
-                "premium" -> "aqua"
-                "generated" -> "black"
-                "general" -> "darkgreen"
-                "coding" -> "blueviolet"
-                "beta" -> "red"
-                else -> "blue"
-            }
         }
 //    override val toolServlet: ToolServlet? get() = null
 

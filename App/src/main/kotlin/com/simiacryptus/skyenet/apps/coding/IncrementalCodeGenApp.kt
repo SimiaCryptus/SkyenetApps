@@ -7,11 +7,10 @@ import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.jopenai.util.JsonUtil.toJson
-import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.AgentPatterns
+import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
-import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
@@ -81,39 +80,9 @@ class IncrementalCodeGenAgent(
     model: ChatModels = OpenAIModels.GPT4o,
     parsingModel: ChatModels = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
-    val actorMap: Map<ActorTypes, BaseActor<*, *>> = mapOf<ActorTypes, BaseActor<*, *>>(
-        ActorTypes.TaskBreakdown to ParsedActor(
-            resultClass = TaskBreakdownResult::class.java,
-            prompt = """
-      Analyze the user request and break it down into smaller, actionable tasks suitable for direct implementation in code.
-      Each task should be clearly defined, with explicit mention of any specific requirements, constraints, and the expected outcome.
-      Prioritize tasks based on dependencies and logical sequence of implementation. Provide a brief rationale for the division and ordering of tasks.
-      """.trimIndent(),
-            model = model,
-            parsingModel = parsingModel,
-            temperature = temperature,
-        ),
-        ActorTypes.CodeGenerator to CodingActor(
-            interpreterClass = KotlinInterpreter::class,
-            symbols = mapOf(),
-            details = """
-      Generate code that fulfills the specified tasks, ensuring the code is not only efficient and readable but also adheres to best practices in software development.
-      The code should be well-structured, with clear separation of concerns and modularity to facilitate future maintenance and scalability.
-      Include inline comments to explain complex logic, important decisions, and the purpose of major functions and modules. Consider edge cases and error handling in your implementation.
-      """.trimIndent(),
-            model = model,
-            temperature = temperature,
-        ),
-        ActorTypes.CodeReviewer to SimpleActor(
-            prompt = """
-      Conduct a comprehensive review of the generated code, focusing on its efficiency, readability, maintainability, and adherence to coding standards and best practices.
-      Evaluate the code's structure, naming conventions, modularity, and use of design patterns. Identify any potential improvements and provide specific, actionable suggestions for enhancing the code's quality, performance, and readability. Highlight any areas that may be prone to errors or bugs.
-      """.trimIndent(),
-            model = model,
-            temperature = temperature,
-
-            ),
-        ActorTypes.DocumentationGenerator to SimpleActor(
+) : PoolSystem(dataStorage, user, session) {
+    private val documentationGeneratorActor by lazy {
+        SimpleActor(
             prompt = """
       Create detailed and clear documentation for the provided code, covering its purpose, functionality, inputs, outputs, and any assumptions or limitations.
       Use a structured and consistent format that facilitates easy understanding and navigation. Include code examples where applicable, and explain the rationale behind key design decisions and algorithm choices.
@@ -122,14 +91,7 @@ class IncrementalCodeGenAgent(
             model = model,
             temperature = temperature,
         )
-    )
-) : ActorSystem<IncrementalCodeGenAgent.ActorTypes>(
-    actorMap.map { it.key.name to it.value }.toMap(),
-    dataStorage,
-    user,
-    session
-) {
-    val documentationGeneratorActor by lazy { actorMap[ActorTypes.DocumentationGenerator] as SimpleActor }
+    }
 
     data class TaskBreakdownResult(
         val tasksByID: Map<String, Task>? = null,
@@ -150,8 +112,32 @@ class IncrementalCodeGenAgent(
         Documentation,
     }
 
-    val taskBreakdownActor by lazy { actorMap[ActorTypes.TaskBreakdown] as ParsedActor<TaskBreakdownResult> }
-    val codeGeneratorActor by lazy { actorMap[ActorTypes.CodeGenerator] as CodingActor }
+    private val taskBreakdownActor by lazy {
+        ParsedActor(
+            resultClass = TaskBreakdownResult::class.java,
+            prompt = """
+      Analyze the user request and break it down into smaller, actionable tasks suitable for direct implementation in code.
+      Each task should be clearly defined, with explicit mention of any specific requirements, constraints, and the expected outcome.
+      Prioritize tasks based on dependencies and logical sequence of implementation. Provide a brief rationale for the division and ordering of tasks.
+      """.trimIndent(),
+            model = model,
+            parsingModel = parsingModel,
+            temperature = temperature,
+        )
+    }
+    private val codeGeneratorActor by lazy {
+        CodingActor(
+            interpreterClass = KotlinInterpreter::class,
+            symbols = mapOf(),
+            details = """
+      Generate code that fulfills the specified tasks, ensuring the code is not only efficient and readable but also adheres to best practices in software development.
+      The code should be well-structured, with clear separation of concerns and modularity to facilitate future maintenance and scalability.
+      Include inline comments to explain complex logic, important decisions, and the purpose of major functions and modules. Consider edge cases and error handling in your implementation.
+      """.trimIndent(),
+            model = model,
+            temperature = temperature,
+        )
+    }
 
     fun startProcess(userMessage: String) {
         val toInput = { it: String -> listOf(userMessage, it) }
@@ -226,13 +212,13 @@ class IncrementalCodeGenAgent(
             }
             genState.completedTasks.joinToString("\n") { taskId ->
                 """
-          // ${genState.subTasks[taskId]?.description ?: "Unknown"}
-          ${genState.generatedCodes[taskId]?.code ?: ""}
-        """.trimIndent()
+            |// ${genState.subTasks[taskId]?.description ?: "Unknown"}
+            |${genState.generatedCodes[taskId]?.code ?: ""}
+            """.trimMargin()
             }.let { summary ->
                 ui.newTask().complete(
                     renderMarkdown(
-                        "# Completed Code\n```kotlin\n${summary.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}\n```",
+                        "# Completed Code\n```kotlin\n${summary.let { it }}\n```",
                         ui = ui
                     )
                 )
@@ -284,7 +270,7 @@ class IncrementalCodeGenAgent(
                 TaskType.Coding_General, TaskType.Coding_Tests, TaskType.Coding_Schema -> {
                     task.add(
                         renderMarkdown(
-                            "Prior Code:\n```kotlin\n${priorCode.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}\n```",
+                            "Prior Code:\n```kotlin\n${priorCode.let { it }}\n```",
                             ui = ui
                         )
                     )
@@ -298,7 +284,7 @@ class IncrementalCodeGenAgent(
                     val codeResult = codeGeneratorActor.answer(codeRequest, api)
                     task.complete(
                         renderMarkdown(
-                            "## Generated Code\n```kotlin\n${codeResult.code.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}\n```\n",
+                            "## Generated Code\n```kotlin\n${codeResult.code.let { it }}\n```\n",
                             ui = ui
                         )
                     )
@@ -445,13 +431,6 @@ class IncrementalCodeGenAgent(
             }
         }
         return graphBuilder.toString()
-    }
-
-    enum class ActorTypes {
-        TaskBreakdown,
-        CodeGenerator,
-        CodeReviewer,
-        DocumentationGenerator,
     }
 
     companion object {

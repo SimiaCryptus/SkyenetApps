@@ -1,8 +1,8 @@
 package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.models.OpenAITextModel
@@ -11,7 +11,7 @@ import com.simiacryptus.jopenai.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerActors.*
 import com.simiacryptus.skyenet.core.actors.*
-import com.simiacryptus.skyenet.core.platform.ClientManager
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
@@ -20,7 +20,6 @@ import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
-import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
@@ -50,6 +49,8 @@ open class PresentationDesignerApp(
         val budget: Double = 2.0,
     )
 
+    var openAI = OpenAIClient()
+
     override val settingsClass: Class<*> get() = Settings::class.java
 
     @Suppress("UNCHECKED_CAST")
@@ -69,7 +70,8 @@ open class PresentationDesignerApp(
                 session = session,
                 dataStorage = dataStorage,
                 ui = ui,
-                api = api,
+                chat = api,
+                openAI = openAI,
                 model = settings?.model ?: OpenAIModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
                 voice = settings?.voice ?: "alloy",
@@ -92,7 +94,8 @@ open class PresentationDesignerAgent(
     session: Session,
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
-    val api: API,
+    val chat: API,
+    val openAI: OpenAIClient,
     model: OpenAITextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
     val voice: String = "alloy",
@@ -123,7 +126,7 @@ open class PresentationDesignerAgent(
             mainTask.header("Starting Presentation Generation")
 
             // Step 1: Generate ideas based on the user's request
-            val ideaListResponse = initialAuthor.answer(listOf(userRequest), api = api)
+            val ideaListResponse = initialAuthor.answer(listOf(userRequest), api = chat)
             mainTask.add(renderMarkdown(ideaListResponse.text, ui = ui))
             mainTask.verbose(toJson(ideaListResponse.obj))
 
@@ -166,25 +169,31 @@ open class PresentationDesignerAgent(
                 |
                 |${slide.content}
                 """.trimMargin()
-            ), api = api
+            ), api = chat
         )
         slideTask = ui.newTask(false).apply { slideTabs["Details"] = placeholder }
         slideTask.add(renderMarkdown(content, ui = ui))
         val list = listOf(content)
-        val image = imageRenderer.answer(list, api = api).image
+        val image = imageRenderer.setImageAPI(
+            ApplicationServices.clientManager.getOpenAIClient(session, user)
+        ).answer(list, api = chat).image
         val imageStr = slideTask.image(image).toString()
         val imageURL = imageStr.substringAfter("src=\"").substringBefore("\"")
 
 
-        val summary = slideSummary.answer(list, api = api)
+        val summary = slideSummary.answer(list, api = chat)
         slideTask = ui.newTask(false).apply { slideTabs["Summary"] = placeholder }
         slideTask.header("Summary")
         slideTask.add(renderMarkdown(summary, ui = ui))
-        val mp3data = partition(summary).map { narrator.answer(listOf(it), api = api).mp3data }
+        val mp3data = partition(summary).map {
+            narrator.setOpenAI(
+                ApplicationServices.clientManager.getOpenAIClient(session, user)
+            ).answer(listOf(it), api = chat).mp3data
+        }
         val mp3links =
             mp3data.withIndex().map { (i, it) -> if (null != it) slideTask.saveFile("slide$idx-$i.mp3", it) else "" }
         mp3links.forEach { slideTask.add("""<audio preload="none" controls><source src='$it' type='audio/mpeg'></audio>""") }
-        val slideContent = slideLayout.answer(list, api = api)
+        val slideContent = slideLayout.answer(list, api = chat)
             .trim()
             .replace("image.png", imageURL)
             .removePrefix("```html\n")
@@ -201,7 +210,7 @@ open class PresentationDesignerAgent(
         )
         slideTask = ui.newTask(false).apply { slideTabs["Slide"] = placeholder }
         slideTask.header("Content")
-        slideTask.add(renderMarkdown("```html\n${escapeHtml4(slideContent)}\n```"))
+        slideTask.add(renderMarkdown("```html\n${slideContent}\n```"))
         slideTask.add("<a href='${refBase}slide_$idx.html'>Slide $idx generated</a>")
         //ui.newTask(false)
         slideTask.apply {
@@ -437,10 +446,24 @@ class PresentationDesignerActors(
     voiceSpeed: Double = 1.0,
 ) {
 
-
     private val initialAuthor = ParsedActor(
-//    parserClass = OutlineParser::class.java,
         resultClass = Outline::class.java,
+        exampleInstance = Outline(
+            slides = listOf(
+                SlideInfo(
+                    title = "Introduction",
+                    content = "Introduce the topic and provide an overview of the presentation."
+                ),
+                SlideInfo(
+                    title = "Main Points",
+                    content = "List the main points that will be covered in the presentation."
+                ),
+                SlideInfo(
+                    title = "Conclusion",
+                    content = "Summarize the main points and provide a call to action."
+                )
+            )
+        ),
         model = OpenAIModels.GPT4o,
         parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
@@ -448,8 +471,6 @@ class PresentationDesignerActors(
         """.trimIndent()
     )
 
-
-    // Define the data class to represent an outline item
     data class SlideInfo(
         @Description("The title of the slide.")
         val title: String? = null,
@@ -462,7 +483,6 @@ class PresentationDesignerActors(
         }
     }
 
-    // Define the data class to represent the entire outline
     data class Outline(
         val slides: List<SlideInfo>? = null,
     ) : ValidatedObject {
@@ -472,18 +492,6 @@ class PresentationDesignerActors(
         }
     }
 
-    data class SlideDetails(
-        val title: String? = null,
-        val details: String? = null,
-    ) : ValidatedObject {
-        override fun validate() = when {
-            title.isNullOrBlank() -> "Title is required"
-            details.isNullOrBlank() -> "HTML is required"
-            else -> null
-        }
-    }
-
-
     private val contentExpander = SimpleActor(
         model = OpenAIModels.GPT4o,
         prompt = """
@@ -491,7 +499,6 @@ class PresentationDesignerActors(
       Given content for a presentation and a topic/slide to expand, provide detailed content for that slide.
       """.trimIndent(),
     )
-
 
     private val slideSummarizer = SimpleActor(
         prompt = """
@@ -535,7 +542,6 @@ class PresentationDesignerActors(
         CONTENT_EXPANDER,
         SLIDE_SUMMARY,
         SLIDE_LAYOUT,
-        SPEAKER_NOTES,
         IMAGE_RENDERER,
         NARRATOR,
     }

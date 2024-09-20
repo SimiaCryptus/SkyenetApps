@@ -16,10 +16,7 @@ import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.*
-import com.simiacryptus.skyenet.core.platform.ClientManager
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.StorageInterface
-import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.*
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
@@ -155,7 +152,9 @@ open class IllustratedStorybookAgent(
             val narrations = (storyData.paragraphs?.withIndex()?.map { (idx, paragraph) ->
                 if (paragraph.isBlank()) return@map null
                 pool.submit<String> {
-                    narratorActor.answer(listOf(paragraph), api).mp3data?.let {
+                    narratorActor.setOpenAI(
+                        ApplicationServices.clientManager.getOpenAIClient(session,user)
+                    ).answer(listOf(paragraph), api).mp3data?.let {
                         val fileLocation = task.saveFile("narration$idx.mp3", it)
                         task.add("""<audio preload="none" controls><source src='$fileLocation' type='audio/mpeg'></audio>""")
                         fileLocation
@@ -437,7 +436,9 @@ open class IllustratedStorybookAgent(
             )
 
             // Generate the illustration using the illustrationGeneratorActor
-            val illustrationResponse = illustrationGeneratorActor.answer(conversationThread, api = api)
+            val illustrationResponse = illustrationGeneratorActor.setImageAPI(
+                ApplicationServices.clientManager.getOpenAIClient(session,user)
+            ).answer(conversationThread, api = api)
 
             // Log the AgentSystemArchitectureActors.image description
             task.add(renderMarkdown(illustrationResponse.text, ui = ui), className = "illustration-caption")

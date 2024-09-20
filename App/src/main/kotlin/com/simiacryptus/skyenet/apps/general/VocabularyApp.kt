@@ -15,6 +15,7 @@ import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.VocabularyActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.StorageInterface.Companion.long64
@@ -161,7 +162,9 @@ open class VocabularyAgent(
                         task.header(term)
                         task.add(renderMarkdown(definition, ui = ui))
 
-                        val illustration = illustrationGeneratorActor.answer(
+                        val illustration = illustrationGeneratorActor.setImageAPI(
+                            ApplicationServices.clientManager.getOpenAIClient(session,user)
+                        ).answer(
                             listOf(
                                 "Generate an illustration that visually represents the term '$term' to ${parsedInput.targetAudience} in a '${parsedInput.style}' style."
                             ), api = api
