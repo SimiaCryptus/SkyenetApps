@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet
 
-import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 import java.nio.file.Files

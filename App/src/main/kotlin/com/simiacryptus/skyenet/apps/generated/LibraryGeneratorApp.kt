@@ -1,7 +1,7 @@
 package com.simiacryptus.skyenet.apps.generated
 
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ApiModel
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.OpenAIModels

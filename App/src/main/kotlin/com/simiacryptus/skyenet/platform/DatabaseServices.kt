@@ -1,10 +1,10 @@
 package com.simiacryptus.skyenet.platform
 
-import com.simiacryptus.jopenai.ApiModel
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.OpenAIModel
-import com.simiacryptus.jopenai.util.JsonUtil.fromJson
-import com.simiacryptus.jopenai.util.JsonUtil.toJson
+import com.simiacryptus.util.JsonUtil.fromJson
+import com.simiacryptus.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.core.platform.*
 import com.simiacryptus.skyenet.core.platform.file.DataStorage
 import com.simiacryptus.skyenet.core.util.getModel

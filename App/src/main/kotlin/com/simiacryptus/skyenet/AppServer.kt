@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet
 
-import com.simiacryptus.jopenai.util.JsonUtil
+import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.skyenet.apps.coding.AwsCodingApp
 import com.simiacryptus.skyenet.apps.coding.BashCodingApp
 import com.simiacryptus.skyenet.apps.coding.JDBCCodingApp
