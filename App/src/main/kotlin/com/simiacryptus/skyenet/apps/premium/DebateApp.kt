@@ -15,8 +15,8 @@ import com.simiacryptus.skyenet.core.platform.StorageInterface
 import com.simiacryptus.skyenet.core.platform.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.util.MarkdownUtil
-import com.simiacryptus.skyenet.webui.util.TensorflowProjector
+import com.simiacryptus.skyenet.util.MarkdownUtil
+import com.simiacryptus.skyenet.util.TensorflowProjector
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import java.util.*

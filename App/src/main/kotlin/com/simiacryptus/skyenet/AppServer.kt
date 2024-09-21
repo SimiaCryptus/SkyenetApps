@@ -9,10 +9,7 @@ import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.apps.general.VocabularyApp
 import com.simiacryptus.skyenet.apps.general.WebDevApp
-import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureApp
-import com.simiacryptus.skyenet.apps.generated.CreativeWritingAssistantApp
-import com.simiacryptus.skyenet.apps.generated.LibraryGeneratorApp
-import com.simiacryptus.skyenet.apps.generated.TestGeneratorApp
+import com.simiacryptus.skyenet.apps.generated.*
 import com.simiacryptus.skyenet.apps.hybrid.IncrementalCodeGenApp
 import com.simiacryptus.skyenet.apps.premium.DebateApp
 import com.simiacryptus.skyenet.apps.premium.meta.MetaAgentApp
@@ -28,7 +25,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 import com.simiacryptus.skyenet.webui.servlet.WelcomeServlet
-import com.simiacryptus.skyenet.webui.util.Selenium2S3
+import com.simiacryptus.skyenet.util.Selenium2S3
 import org.intellij.lang.annotations.Language
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
@@ -69,6 +66,8 @@ open class AppServer(
             ChildWebApp("/powershell", PowershellCodingApp(), "powershell.png"),
             ChildWebApp("/webdev", WebDevApp(), "webdev.png"),
             ChildWebApp("/jdbc", JDBCCodingApp(), "JDBCCoding.png"),
+            ChildWebApp("/science", ScientificAnalysisApplicationApp(), "coding.png"),
+            ChildWebApp("/recombant_chain_of_thought", RecombantChainOfThoughtApp(), "coding.png"),
         )
     }
 

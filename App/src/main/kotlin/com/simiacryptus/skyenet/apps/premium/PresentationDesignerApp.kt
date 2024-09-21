@@ -19,7 +19,7 @@ import com.simiacryptus.skyenet.core.util.StringSplitter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
-import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 

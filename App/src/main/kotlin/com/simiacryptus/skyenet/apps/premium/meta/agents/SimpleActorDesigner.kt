@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.premium.meta.agents
 
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.skyenet.apps.premium.meta.agents.FlowStepDesigner.Companion.fixups
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.interpreter.Interpreter
 import kotlin.reflect.KClass
@@ -30,7 +31,7 @@ class SimpleActorDesigner(
         class SimpleActor(
             prompt: String,
             name: String? = null,
-            model: ChatModels = OpenAIModels.GPT35Turbo,
+            model: ChatModels = OpenAIModels.GPT4oMini,
             temperature: Double = 0.3,
         )
         ```
@@ -51,4 +52,9 @@ class SimpleActorDesigner(
         Respond to the request with an instantiation function of the requested actor, similar to the provided example.
         DO NOT subclass the SimpleActor class. Use the constructor directly within the function.
     """.trimIndent()
-)
+) {
+    init {
+        evalFormat = false
+        codeInterceptor = { fixups(it) }
+    }
+}

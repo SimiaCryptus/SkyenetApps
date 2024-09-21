@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.premium.meta.agents
 
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.OpenAIModels
+import com.simiacryptus.skyenet.apps.premium.meta.agents.FlowStepDesigner.Companion.fixups
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.interpreter.Interpreter
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
@@ -32,7 +33,7 @@ class ParsedActorDesigner(
     |    val exampleInstance: T? = resultClass.getConstructor().newInstance(),
     |    prompt: String,
     |    val name: String? = null,
-    |    model: ChatModels = OpenAIModels.GPT35Turbo,
+    |    model: ChatModels = OpenAIModels.GPT4oMini,
     |    temperature: Double = 0.3,
     |)
     |```
@@ -73,5 +74,6 @@ class ParsedActorDesigner(
 ) {
     init {
         evalFormat = false
+        codeInterceptor = { fixups(it) }
     }
 }

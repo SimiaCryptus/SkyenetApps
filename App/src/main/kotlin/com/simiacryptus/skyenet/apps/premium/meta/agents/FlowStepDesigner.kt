@@ -90,9 +90,13 @@ class FlowStepDesigner(
 ) {
     init {
         evalFormat = false
+        codeInterceptor = { fixups(it) }
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(FlowStepDesigner::class.java)
+        fun fixups(it: String) = it
+            .replace("ChatModels.GPT_3_5_TURBO", "OpenAIModels.GPT35Turbo")
+            .replace("OpenAIModels.DallE3", "ImageModels.DallE3")
     }
 }

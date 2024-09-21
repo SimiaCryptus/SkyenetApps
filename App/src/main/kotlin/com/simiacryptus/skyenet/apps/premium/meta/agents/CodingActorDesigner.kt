@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.premium.meta.agents
 
 import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.skyenet.apps.premium.meta.agents.FlowStepDesigner.Companion.fixups
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.interpreter.Interpreter
 import kotlin.reflect.KClass
@@ -70,5 +71,8 @@ class CodingActorDesigner(
     model = model,
     temperature = temperature,
 ) {
-    init { evalFormat = false }
+    init {
+        evalFormat = false
+        codeInterceptor = { fixups(it) }
+    }
 }

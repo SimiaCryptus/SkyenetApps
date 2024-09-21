@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps
 
-import com.simiacryptus.skyenet.webui.util.Selenium2S3
+import com.simiacryptus.skyenet.util.Selenium2S3
 import org.openqa.selenium.By
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.JavascriptExecutor

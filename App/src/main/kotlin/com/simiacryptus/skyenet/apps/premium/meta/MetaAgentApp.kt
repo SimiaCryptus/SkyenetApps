@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.premium.meta
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.describe.Description
@@ -31,12 +32,14 @@ import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
-import com.simiacryptus.skyenet.webui.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.util.*
+import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 
 open class MetaAgentApp(
@@ -172,6 +175,7 @@ open class MetaAgentAgent(
         |import com.simiacryptus.skyenet.core.platform.file.DataStorage
         |import com.simiacryptus.skyenet.core.platform.Session
         |import com.simiacryptus.skyenet.core.platform.StorageInterface
+        |import com.simiacryptus.skyenet.core.actors.PoolSystem
         |import com.simiacryptus.skyenet.core.platform.User
         |import com.simiacryptus.skyenet.webui.application.ApplicationServer
         |import com.simiacryptus.skyenet.webui.session.*
@@ -205,13 +209,7 @@ open class MetaAgentAgent(
 
             val classBaseName = (design.obj.name?.pascalCase() ?: "MyAgent").replace("[^A-Za-z0-9]".toRegex(), "")
 
-            val actorInits = design.obj.actors?.joinToString("\n") { actor ->
-                """
-                |private val ${actor.name.camelCase()} by lazy { 
-                |    ${actImpls[actor.name] ?: "/* Not Found */"} 
-                |}
-                """.trimMargin()
-            } ?: ""
+            val actorInits = design.obj.actors?.joinToString("\n") { actImpls[it.name] ?: "" } ?: ""
 
             @Language("kotlin") var appCode = """
                 |$standardImports
@@ -227,7 +225,7 @@ open class MetaAgentAgent(
                 |) {
                 |
                 |    data class Settings(
-                |        val model: ChatModels = OpenAIModels.GPT35Turbo,
+                |        val model: ChatModels = OpenAIModels.GPT4oMini,
                 |        val temperature: Double = 0.1,
                 |    )
                 |    override val settingsClass: Class<*> get() = Settings::class.java
@@ -248,7 +246,7 @@ open class MetaAgentAgent(
                 |                dataStorage = dataStorage,
                 |                api = api,
                 |                ui = ui,
-                |                model = settings?.model ?: OpenAIModels.GPT35Turbo,
+                |                model = settings?.model ?: OpenAIModels.GPT4oMini,
                 |                temperature = settings?.temperature ?: 0.3,
                 |            ).${design.obj.name?.camelCase()}(userMessage)
                 |        } catch (e: Throwable) {
@@ -272,7 +270,7 @@ open class MetaAgentAgent(
         |    dataStorage: StorageInterface,
         |    val ui: ApplicationInterface,
         |    val api: API,
-        |    model: ChatModels = OpenAIModels.GPT35Turbo,
+        |    model: ChatModels = OpenAIModels.GPT4oMini,
         |    temperature: Double = 0.3,
         |) : PoolSystem(dataStorage, user, session) {
         |
@@ -462,6 +460,13 @@ open class MetaAgentAgent(
         task: SessionTask, actorDesign: ActorDesign,
         userMessage: String, design: ParsedResponse<AgentDesign>
     ): Pair<String, String> {
+        val api = (api as ChatClient).getChildClient().apply {
+            val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
+            createFile.second?.apply {
+                logStreams += this.outputStream().buffered()
+                task.verbose("API log: <a href=\"file:///$this\">$this</a>")
+            }
+        }
         //language=HTML
         task.header("Actor: ${actorDesign.name}")
         val type = actorDesign.type
@@ -551,6 +556,13 @@ open class MetaAgentAgent(
         design.obj.logicFlow?.items?.forEach { logicFlowItem ->
             val message = ui.newTask()
             try {
+                val api = (api as ChatClient).getChildClient().apply {
+                    val createFile = message.createFile(".logs/api-${UUID.randomUUID()}.log")
+                    createFile.second?.apply {
+                        logStreams += this.outputStream().buffered()
+                        message.verbose("API log: <a href=\"file:///$this\">$this</a>")
+                    }
+                }
                 message.header("Logic Flow: ${logicFlowItem.name}")
                 var code: String? = null
                 val onComplete = java.util.concurrent.Semaphore(0)
