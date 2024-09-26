@@ -35,7 +35,7 @@ java {
 }
 
 val jetty_version = "11.0.24"
-val skyenet_version = "1.2.4"
+val skyenet_version = "1.2.6"
 val scala_version = "2.13.8"
 val spark_version = "3.5.0"
 val jackson_version = "2.17.2"

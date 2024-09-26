@@ -1,10 +1,7 @@
 package com.simiacryptus.skyenet
 
+import com.simiacryptus.skyenet.apps.coding.*
 import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.skyenet.apps.coding.AwsCodingApp
-import com.simiacryptus.skyenet.apps.coding.BashCodingApp
-import com.simiacryptus.skyenet.apps.coding.JDBCCodingApp
-import com.simiacryptus.skyenet.apps.coding.PowershellCodingApp
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.apps.general.VocabularyApp
@@ -12,7 +9,7 @@ import com.simiacryptus.skyenet.apps.general.WebDevApp
 import com.simiacryptus.skyenet.apps.generated.*
 import com.simiacryptus.skyenet.apps.hybrid.IncrementalCodeGenApp
 import com.simiacryptus.skyenet.apps.premium.DebateApp
-import com.simiacryptus.skyenet.apps.premium.meta.MetaAgentApp
+import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authorizationManager
@@ -57,7 +54,6 @@ open class AppServer(
             ChildWebApp("/creative_writing", CreativeWritingAssistantApp("/creative_writing"), "CreativeWriting.png"),
             ChildWebApp("/debate", DebateApp(domainName = domainName), "Debate.png"),
             ChildWebApp("/presentation", PresentationDesignerApp(), "PresentationDesigner.png"),
-            ChildWebApp("/library_generator", LibraryGeneratorApp(domainName = domainName), null),
             ChildWebApp("/vocabulary", VocabularyApp(), "Vocabulary.png"),
             ChildWebApp("/testgenerator", TestGeneratorApp(), null),
             ChildWebApp("/lesson_planner", AutomatedLessonPlannerArchitectureApp(domainName = domainName), null),
@@ -68,6 +64,7 @@ open class AppServer(
             ChildWebApp("/jdbc", JDBCCodingApp(), "JDBCCoding.png"),
             ChildWebApp("/science", ScientificAnalysisApplicationApp(), "coding.png"),
             ChildWebApp("/recombant_chain_of_thought", RecombantChainOfThoughtApp(), "coding.png"),
+            ChildWebApp("/library_generator", LibraryGeneratorApp(), "coding.png"),
         )
     }
 
