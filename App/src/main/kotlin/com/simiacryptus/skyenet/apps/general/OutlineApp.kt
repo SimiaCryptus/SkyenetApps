@@ -91,15 +91,6 @@ open class OutlineApp(
         ).buildMap()
     }
 
-    override val appInfo by lazy {
-        mapOf(
-            "applicationName" to applicationName,
-            "singleInput" to singleInput,
-            "stickyInput" to stickyInput,
-            "loadImages" to true,
-        )
-    }
-
 }
 
 class OutlineAgent(
