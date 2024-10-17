@@ -8,6 +8,7 @@ plugins {
     id("signing")
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("org.jetbrains.kotlin.jvm") version "2.0.20"
+    war
 }
 
 fun properties(key: String) = project.findProperty(key).toString()
@@ -128,50 +129,33 @@ tasks {
 }
 
 
-val simiacryptusJar by tasks.register("simiacryptusJar", ShadowJar::class) {
-    archiveClassifier.set("optimized")
-    isZip64 = true
-    mergeServiceFiles()
-    from(project.tasks.jar)
-    configurations = listOf(project.configurations.getByName("runtimeClasspath"))
 
+
+tasks.war {
+    archiveClassifier.set("")
+    from(sourceSets.main.get().output)
+    from(project.configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    isZip64 = true
     manifest {
         attributes(
             "Main-Class" to "com.simiacryptus.skyenet.AppServer"
         )
     }
-    exclude("**/META-INF/*.SF")
-    exclude("**/META-INF/*.DSA")
-    exclude("**/META-INF/*.RSA")
-    exclude("**/META-INF/*.MF")
-    exclude("META-INF/versions/9/module-info.class")
-
-    dependencies {
-        this.exclude { dependency: ResolvedDependency ->
-            !dependency.moduleGroup.contains("simiacryptus")
-        }
-    }
 }
-val otherDependenciesJar by tasks.register("otherDependenciesJar", ShadowJar::class) {
-    archiveClassifier.set("deps")
-    isZip64 = true
+tasks.withType<ShadowJar> {
+    archiveClassifier.set("all")
     mergeServiceFiles()
-    from(project.tasks.jar)
-    configurations = listOf(project.configurations.getByName("runtimeClasspath"))
-    exclude("**/META-INF/*.SF")
-    exclude("**/META-INF/*.DSA")
-    exclude("**/META-INF/*.RSA")
-    exclude("**/META-INF/*.MF")
-    exclude("META-INF/versions/9/module-info.class")
-    dependencies {
-        this.exclude { dependency: ResolvedDependency ->
-            dependency.moduleGroup.contains("simiacryptus")
-        }
+    isZip64 = true
+    manifest {
+        attributes(
+            "Main-Class" to "com.simiacryptus.skyenet.AppServer"
+        )
     }
 }
 
 
 tasks.named("build") {
-    dependsOn(simiacryptusJar)
-    dependsOn(otherDependenciesJar)
+    dependsOn(tasks.war)
+    dependsOn(tasks.shadowJar)
 }
