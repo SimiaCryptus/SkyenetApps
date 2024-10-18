@@ -2,7 +2,7 @@ package com.simiacryptus.skyenet.apps.generated
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.jopenai.models.OpenAITextModel
+import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.apps.generated.TestGeneratorActors.*
@@ -26,7 +26,7 @@ open class TestGeneratorApp(
 ) {
 
     data class Settings(
-        val model: OpenAITextModel = OpenAIModels.GPT4oMini,
+        val model: TextModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
     )
 
@@ -70,7 +70,7 @@ open class TestGeneratorAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = OpenAIModels.GPT4oMini,
+    model: TextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
 ) : ActorSystem<ActorType>(
     TestGeneratorActors(
@@ -131,7 +131,7 @@ open class TestGeneratorAgent(
 
 
 class TestGeneratorActors(
-    val model: OpenAITextModel = OpenAIModels.GPT4o,
+    val model: TextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 

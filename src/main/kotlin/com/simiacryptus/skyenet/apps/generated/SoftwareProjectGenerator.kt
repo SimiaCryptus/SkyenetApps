@@ -1,6 +1,6 @@
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.jopenai.models.OpenAITextModel
+import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
@@ -22,7 +22,7 @@ open class SoftwareProjectGeneratorApp(
 ) {
 
     data class Settings(
-        val model: OpenAITextModel = OpenAIModels.GPT4oMini,
+        val model: TextModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
         val budget: Double = 2.0,
     )
@@ -68,7 +68,7 @@ open class SoftwareProjectGeneratorAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = OpenAIModels.GPT4oMini,
+    model: TextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
 ) : ActorSystem<SoftwareProjectGeneratorActors.ActorType>(
     SoftwareProjectGeneratorActors(
@@ -135,7 +135,7 @@ open class SoftwareProjectGeneratorAgent(
 
 
 class SoftwareProjectGeneratorActors(
-    val model: OpenAITextModel = OpenAIModels.GPT4o,
+    val model: TextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 

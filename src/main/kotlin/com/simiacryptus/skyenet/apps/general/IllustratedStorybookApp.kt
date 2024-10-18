@@ -6,7 +6,7 @@ import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.jopenai.models.OpenAITextModel
+import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
@@ -48,7 +48,7 @@ open class IllustratedStorybookApp(
         ) + "</div>"
 
     data class Settings(
-        val model: OpenAITextModel? = OpenAIModels.GPT4o,
+        val model: TextModel? = OpenAIModels.GPT4o,
         val temperature: Double? = 0.5,
         val imageModel: ImageModels? = ImageModels.DallE3,
         val voice: String? = "alloy",
@@ -99,7 +99,7 @@ open class IllustratedStorybookAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = OpenAIModels.GPT4o,
+    model: TextModel = OpenAIModels.GPT4o,
     temperature: Double = 0.3,
     imageModel: ImageModels = ImageModels.DallE2,
     val voice: String = "alloy",
@@ -510,7 +510,7 @@ open class IllustratedStorybookAgent(
 }
 
 class IllustratedStorybookActors(
-    val model: OpenAITextModel = OpenAIModels.GPT4o,
+    val model: TextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
     val imageModel: ImageModels = ImageModels.DallE2,
     voice: String = "alloy",

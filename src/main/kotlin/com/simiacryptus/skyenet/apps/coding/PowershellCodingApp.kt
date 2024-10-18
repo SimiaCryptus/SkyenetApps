@@ -1,7 +1,7 @@
 package com.simiacryptus.skyenet.apps.coding
 
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
@@ -18,7 +18,7 @@ class PowershellCodingApp : ApplicationServer(
     data class Settings(
         val env: Map<String, String> = mapOf(),
         val workingDir: String = ".",
-        val model: ChatModels = OpenAIModels.GPT4oMini,
+        val model: ChatModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
         val language: String = "powershell",
         val command: List<String> = listOf("powershell"),

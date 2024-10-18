@@ -2,7 +2,7 @@ package com.simiacryptus.skyenet.apps.generated
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.CodingActor
@@ -22,7 +22,7 @@ open class RecombantChainOfThoughtAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModels = OpenAIModels.GPT35Turbo,
+    model: ChatModel = OpenAIModels.GPT35Turbo,
     temperature: Double = 0.3,
 ) : PoolSystem(dataStorage, user, session) {
 

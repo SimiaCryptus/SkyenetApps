@@ -3,7 +3,7 @@ package com.simiacryptus.skyenet.apps.hybrid
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil.toJson
@@ -31,8 +31,8 @@ class IncrementalCodeGenApp(
     path = path,
 ) {
     data class Settings(
-        val model: ChatModels = OpenAIModels.GPT4o,
-        val parsingModel: ChatModels = OpenAIModels.GPT4oMini,
+        val model: ChatModel = OpenAIModels.GPT4o,
+        val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.2,
         val budget: Double = 2.0,
     )
@@ -77,8 +77,8 @@ class IncrementalCodeGenAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModels = OpenAIModels.GPT4o,
-    parsingModel: ChatModels = OpenAIModels.GPT4oMini,
+    model: ChatModel = OpenAIModels.GPT4o,
+    parsingModel: ChatModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
 ) : PoolSystem(dataStorage, user, session) {
     private val documentationGeneratorActor by lazy {

@@ -1,7 +1,7 @@
 package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.util.JsonUtil
@@ -27,7 +27,7 @@ open class DebateApp(
     path = "/debate",
 ) {
     data class Settings(
-        val model: ChatModels = OpenAIModels.GPT4oMini,
+        val model: ChatModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.2,
         val budget: Double = 2.0,
     )
@@ -87,7 +87,7 @@ class DebateAgent(
     userId: User?,
     session: Session,
     val ui: ApplicationInterface,
-    val model: ChatModels = OpenAIModels.GPT4o,
+    val model: ChatModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
     private val debateActors: DebateActors = DebateActors(model, temperature)
 ) : ActorSystem<DebateActors.ActorType>(
@@ -184,7 +184,7 @@ class DebateAgent(
 
 }
 
-class DebateActors(val model: ChatModels, val temperature: Double) {
+class DebateActors(val model: ChatModel, val temperature: Double) {
 
     data class DebateSetup(
         val debaters: Debaters? = null,

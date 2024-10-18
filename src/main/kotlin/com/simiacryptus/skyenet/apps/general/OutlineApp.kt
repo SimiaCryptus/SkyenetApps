@@ -3,7 +3,7 @@ package com.simiacryptus.skyenet.apps.general
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.jopenai.describe.JsonDescriber
-import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.skyenet.TabbedDisplay
@@ -49,11 +49,11 @@ open class OutlineApp(
         ) + "</div>")
 
     data class Settings(
-        val models: List<ChatModels> = listOf(
+        val models: List<ChatModel> = listOf(
             OpenAIModels.GPT4o,
             OpenAIModels.GPT4oMini
         ),
-        val parsingModel: ChatModels = OpenAIModels.GPT4oMini,
+        val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.3,
         val minTokensForExpansion: Int = 16,
         val showProjector: Boolean = true,
@@ -99,9 +99,9 @@ class OutlineAgent(
     session: Session,
     user: User?,
     temperature: Double,
-    val models: List<ChatModels>,
-    val firstLevelModel: ChatModels,
-    val parsingModel: ChatModels,
+    val models: List<ChatModel>,
+    val firstLevelModel: ChatModel,
+    val parsingModel: ChatModel,
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
@@ -212,7 +212,7 @@ class OutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlineManager.OutlinedText,
-        models: List<ChatModels>,
+        models: List<ChatModel>,
         task: SessionTask
     ) {
         val tabbedDisplay = TabbedDisplay(task)
@@ -257,7 +257,7 @@ class OutlineAgent(
         sectionName: String,
         outlineManager: OutlineManager,
         message: SessionTask,
-        model: ChatModels,
+        model: ChatModel,
     ): OutlineManager.OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
             log.debug("Skipping: ${parent.text}")
@@ -290,13 +290,13 @@ interface OutlineActors {
 
         val log = LoggerFactory.getLogger(OutlineActors::class.java)
 
-        fun actorMap(temperature: Double, firstLevelModel: ChatModels, parsingModel: ChatModels) = mapOf(
+        fun actorMap(temperature: Double, firstLevelModel: ChatModel, parsingModel: ChatModel) = mapOf(
             ActorType.INITIAL to initialAuthor(temperature, firstLevelModel, parsingModel),
             ActorType.EXPAND to expansionAuthor(temperature, parsingModel),
             ActorType.FINAL to finalWriter(temperature, firstLevelModel),
         )
 
-        private fun initialAuthor(temperature: Double, model: ChatModels, parsingModel: ChatModels) = ParsedActor(
+        private fun initialAuthor(temperature: Double, model: ChatModel, parsingModel: ChatModel) = ParsedActor(
             NodeList::class.java,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
             model = model,
@@ -325,7 +325,7 @@ interface OutlineActors {
 
         private fun expansionAuthor(
             temperature: Double,
-            parsingModel: ChatModels
+            parsingModel: ChatModel
         ): ParsedActor<NodeList> =
             ParsedActor(
                 resultClass = NodeList::class.java,
@@ -337,7 +337,7 @@ interface OutlineActors {
                 exampleInstance = exampleNodeList(),
             )
 
-        private fun finalWriter(temperature: Double, model: ChatModels) = SimpleActor(
+        private fun finalWriter(temperature: Double, model: ChatModel) = SimpleActor(
             prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
             model = model,
             temperature = temperature,

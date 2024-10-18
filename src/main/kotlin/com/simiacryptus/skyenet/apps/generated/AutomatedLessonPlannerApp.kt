@@ -4,7 +4,7 @@ package com.simiacryptus.skyenet.apps.generated
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.jopenai.models.OpenAITextModel
+import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureActors.Activity
 import com.simiacryptus.skyenet.core.actors.ActorSystem
@@ -28,7 +28,7 @@ open class AutomatedLessonPlannerArchitectureApp(
 ) {
 
     data class Settings(
-        val model: OpenAITextModel = OpenAIModels.GPT4oMini,
+        val model: TextModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
         val budget: Double = 2.0,
     )
@@ -74,7 +74,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: OpenAITextModel = OpenAIModels.GPT4oMini,
+    model: TextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
 ) : ActorSystem<AutomatedLessonPlannerArchitectureActors.ActorType>(
     AutomatedLessonPlannerArchitectureActors(
@@ -395,7 +395,7 @@ open class AutomatedLessonPlannerArchitectureAgent(
 
 
 class AutomatedLessonPlannerArchitectureActors(
-    val model: OpenAITextModel = OpenAIModels.GPT4o,
+    val model: TextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
 ) {
 

@@ -43,7 +43,7 @@ val jupiter_version = "5.10.1"
 dependencies {
     implementation("org.postgresql:postgresql:42.7.1")
 
-    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.9")
+    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.10")
 
     implementation("org.apache.commons:commons-text:1.11.0")
 

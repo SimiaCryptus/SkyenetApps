@@ -4,7 +4,7 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
@@ -37,9 +37,9 @@ open class VocabularyApp(
 ) {
 
     data class Settings(
-        val model: ChatModels = OpenAIModels.GPT4o,
+        val model: ChatModel = OpenAIModels.GPT4o,
         val temperature: Double = 0.1,
-        val parsingModel: ChatModels = OpenAIModels.GPT4o,
+        val parsingModel: ChatModel = OpenAIModels.GPT4o,
         val imageModel: ImageModels = ImageModels.DallE3,
     )
 
@@ -87,8 +87,8 @@ open class VocabularyAgent(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModels = OpenAIModels.GPT4oMini,
-    val parsingModel: ChatModels = OpenAIModels.GPT4oMini,
+    model: ChatModel = OpenAIModels.GPT4oMini,
+    val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
     val imageModel: ImageModels = ImageModels.DallE3,
     temperature: Double = 0.3,
     val path: String,
@@ -217,8 +217,8 @@ open class VocabularyAgent(
 }
 
 class VocabularyActors(
-    val model: ChatModels = OpenAIModels.GPT4o,
-    val parsingModel: ChatModels = OpenAIModels.GPT4oMini,
+    val model: ChatModel = OpenAIModels.GPT4o,
+    val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
     val imageModel: ImageModels = ImageModels.DallE3,
     val temperature: Double = 0.3,
 ) {

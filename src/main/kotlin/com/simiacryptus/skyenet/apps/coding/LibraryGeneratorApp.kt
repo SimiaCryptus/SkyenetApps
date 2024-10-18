@@ -2,7 +2,7 @@ package com.simiacryptus.skyenet.apps.coding
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModels
+import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
@@ -37,7 +37,7 @@ class LibraryGeneratorApp(
         }</div>"
 
     data class Settings(
-        val model: ChatModels = OpenAIModels.GPT4o,
+        val model: ChatModel = OpenAIModels.GPT4o,
         val temperature: Double = 0.2,
     )
 
@@ -86,7 +86,7 @@ class LibraryGenerator(
     dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    val model: ChatModels,
+    val model: ChatModel,
     val temperature: Double,
 ) {
     private val dataStructureDesigner = ParsedActor<List<String>>(

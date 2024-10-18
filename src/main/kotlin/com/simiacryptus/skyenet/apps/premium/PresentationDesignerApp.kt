@@ -5,7 +5,7 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.jopenai.models.OpenAITextModel
+import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.TabbedDisplay
@@ -42,7 +42,7 @@ open class PresentationDesignerApp(
         ) + "</div>"
 
     data class Settings(
-        val model: OpenAITextModel = OpenAIModels.GPT4oMini,
+        val model: TextModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
         val voice: String? = "alloy",
         val voiceSpeed: Double? = 1.0,
@@ -96,7 +96,7 @@ open class PresentationDesignerAgent(
     val ui: ApplicationInterface,
     val chat: API,
     val openAI: OpenAIClient,
-    model: OpenAITextModel = OpenAIModels.GPT4oMini,
+    model: TextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
     val voice: String = "alloy",
     val voiceSpeed: Double = 1.0,
@@ -440,7 +440,7 @@ open class PresentationDesignerAgent(
 
 
 class PresentationDesignerActors(
-    val model: OpenAITextModel = OpenAIModels.GPT4o,
+    val model: TextModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
     voice: String = "alloy",
     voiceSpeed: Double = 1.0,
