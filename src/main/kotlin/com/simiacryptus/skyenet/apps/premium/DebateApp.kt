@@ -9,17 +9,15 @@ import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.core.platform.ClientManager
 import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.StorageInterface
-import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.model.StorageInterface
+import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.util.TensorflowProjector
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
-import java.util.*
 
 open class DebateApp(
     applicationName: String = "Automated Debate Concept Map v1.3",

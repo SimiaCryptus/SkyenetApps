@@ -14,8 +14,8 @@ import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.seleniumFactory
-import com.simiacryptus.skyenet.core.platform.ApplicationServicesConfig
-import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig
+import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
@@ -158,62 +158,4 @@ open class AppServer(
             else -> this
         }
     }
-
-    override val welcomeServlet: WelcomeServlet
-        get() = object : WelcomeServlet(this@AppServer) {
-
-            val videoHtml = """<div style="width: 30%; float: right; margin: 1em;">
-                <video controls width='100%'>
-                    <source src="https://share.simiacrypt.us/Apps_Demo_03.mp4" type="video/mp4" />
-                </video>
-            </div>"""
-
-            @Language("Markdown")
-            override val welcomeMarkdown = """
-            # Welcome to `apps.simiacrypt.us`!
-            $videoHtml
-            
-            Welcome to the SimiaCryptus App Server! Here you will find a variety of AI applications using LLMs (i.e., ChatGPT)
-            
-            Users are welcome to browse this server anonymously. No cookies or ads here! 
-            As you enjoy our site, be sure to check out our Privacy Policy and Terms of Service in the "about" menu.
-            
-            If you wish to try out an app, log in and enter your api key under user preferences to get started (details below).
-            Premium apps and features available to Patreon supporters.
-            
-            ## Applications
-        """.trimIndent()
-
-            @Language("Markdown")
-            override val postAppMarkdown = """
-            
-            To use this site to create your own content:
-            1. Log in. (Upper right corner) We use Patreon for authentication, which in turn can relay Google and Apple accounts.
-            2. Access your user settings via the "User"->`Settings` menu. (Upper right corner)
-            3. Get an [OpenAI API key](https://platform.openai.com/account/api-keys) and enter it for the `"apiKey"` value. Submit.
-            4. Select "New Private Session" for your chosen app to get started. Enjoy!
-            
-            ## Features
-            * **Private Sessions** — By default, all user sessions are private. The public sessions you are seeing are set up by admins.
-            * **Usage Reporting** — The ChatGPT API is paid by usage, and some of these jobs can be large. Keep track of how much you are using per session and globally.
-            * **Session Configuration** — Many apps have individual settings, which can be configured in the settings menu. This should be done before the initial message is sent.
-            * **Session Management** — Various methods allow you to manage sessions, such as cancelling accidents to control costs! (e.g. cancel, delete, files, debug, etc.)
-            * **Session Sharing** (Supporter feature) — Your session is copied to the archive server, and you can share the link with anyone.
-            * **Premium and Beta Apps** — Supporters can use premium apps and have sneak previews of upcoming apps.
-            
-            |                        | **Public**&nbsp;&nbsp;    | &nbsp;&nbsp;**Signed In**&nbsp;&nbsp;                         | &nbsp;&nbsp;**Supporter**                         |
-            |------------------------|---------------|---------------------------------------|---------------------------------------|
-            | **Public Sessions**    | &nbsp;&nbsp;✅ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ |
-            | **Private Sessions**   | &nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ |
-            | **Sharing / Archival** | &nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ |
-            | **Premium Apps**       | &nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ |
-            | **Beta Apps**          | &nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;❌ | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✅ |
-            
-            
-        """.trimIndent()
-
-        }
-//    override val toolServlet: ToolServlet? get() = null
-
-
 }

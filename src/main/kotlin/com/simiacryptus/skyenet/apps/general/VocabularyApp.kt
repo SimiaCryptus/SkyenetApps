@@ -17,9 +17,8 @@ import com.simiacryptus.skyenet.apps.general.VocabularyActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.StorageInterface
-import com.simiacryptus.skyenet.core.platform.StorageInterface.Companion.long64
-import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.model.StorageInterface
+import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
@@ -187,7 +186,7 @@ open class VocabularyAgent(
                         buildString {
                             append("<html><body><ul>")
                             append(definitions.joinToString("\n") { term ->
-                                val imgname = "${long64()}.png"
+                                val imgname = "${Session.long64()}.png"
                                 val saveFile = task.saveFile(imgname, term.illustration.toPng())
                                 imageTask.add("<img src='$path/$saveFile' alt='${term.term}' />")
                                 """<li>

@@ -2,8 +2,8 @@ package com.simiacryptus.skyenet.webui.servlet
 
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
-import com.simiacryptus.skyenet.core.platform.AuthenticationInterface
-import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.model.AuthenticationInterface
+import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.servlet.OAuthGoogle.Companion.urlDecode
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.http.Cookie

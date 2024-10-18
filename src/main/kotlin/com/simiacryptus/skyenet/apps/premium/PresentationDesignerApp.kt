@@ -13,8 +13,8 @@ import com.simiacryptus.skyenet.apps.premium.PresentationDesignerActors.*
 import com.simiacryptus.skyenet.core.actors.*
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.StorageInterface
-import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.model.StorageInterface
+import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.core.util.StringSplitter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer

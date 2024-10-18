@@ -6,9 +6,11 @@ import com.simiacryptus.jopenai.models.OpenAIModel
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.core.platform.*
-import com.simiacryptus.skyenet.core.platform.file.DataStorage
+import com.simiacryptus.skyenet.core.platform.model.AuthenticationInterface
+import com.simiacryptus.skyenet.core.platform.model.UsageInterface
+import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.core.platform.model.UserSettingsInterface
 import com.simiacryptus.skyenet.core.util.getModel
-import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
 import java.text.SimpleDateFormat

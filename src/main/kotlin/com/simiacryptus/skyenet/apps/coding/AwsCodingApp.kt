@@ -4,7 +4,7 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ChatModels
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer

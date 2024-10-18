@@ -2,9 +2,9 @@ package com.simiacryptus.skyenet.apps
 
 import com.simiacryptus.skyenet.AppServer
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
-import com.simiacryptus.skyenet.core.platform.AuthenticationInterface
-import com.simiacryptus.skyenet.core.platform.AuthorizationInterface
-import com.simiacryptus.skyenet.core.platform.User
+import com.simiacryptus.skyenet.core.platform.model.AuthenticationInterface
+import com.simiacryptus.skyenet.core.platform.model.AuthorizationInterface
+import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import org.eclipse.jetty.webapp.WebAppContext
