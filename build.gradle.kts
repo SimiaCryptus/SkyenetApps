@@ -43,7 +43,7 @@ val jupiter_version = "5.10.1"
 dependencies {
     implementation("org.postgresql:postgresql:42.7.1")
 
-    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.10")
+    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.12")
 
     implementation("org.apache.commons:commons-text:1.11.0")
 
@@ -56,13 +56,12 @@ dependencies {
     implementation("org.openapitools:openapi-generator:7.3.0")
     implementation("org.openapitools:openapi-generator-cli:7.3.0")
 
-    //org.postgresql.Driver
     implementation("org.postgresql:postgresql:42.7.1")
 
     implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.16.1")
     implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.27.23")
-    implementation("org.jsoup:jsoup:1.17.2")
+    implementation("org.jsoup:jsoup:1.18.1")
 
     implementation("com.google.api-client:google-api-client:1.35.2")
     implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")

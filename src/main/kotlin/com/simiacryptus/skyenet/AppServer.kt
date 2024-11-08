@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet
 
-import com.simiacryptus.skyenet.apps.coding.*
+import com.simiacryptus.skyenet.apps.code.*
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
@@ -21,9 +21,7 @@ import com.simiacryptus.skyenet.platform.DatabaseServices
 import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
-import com.simiacryptus.skyenet.webui.servlet.WelcomeServlet
 import com.simiacryptus.skyenet.util.Selenium2S3
-import org.intellij.lang.annotations.Language
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient

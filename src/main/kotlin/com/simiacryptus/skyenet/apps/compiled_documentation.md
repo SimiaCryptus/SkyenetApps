@@ -258,7 +258,7 @@ The `GmailCodingApp` offers a unique integration of Gmail services with AI-power
 
 ## Developer Documentation for JDBCCodingApp
 
-The `JDBCCodingApp` class is a part of the `com.simiacryptus.skyenet.apps.coding` package, designed to integrate JDBC (Java Database Connectivity) operations within a coding assistant application. This application leverages the OpenAI API for natural language processing and a Kotlin interpreter for executing code snippets. It is built on top of a web application framework that provides session management, user authentication, and a web UI interface.
+The `JDBCCodingApp` class is a part of the `com.simiacryptus.skyenet.apps.code` package, designed to integrate JDBC (Java Database Connectivity) operations within a coding assistant application. This application leverages the OpenAI API for natural language processing and a Kotlin interpreter for executing code snippets. It is built on top of a web application framework that provides session management, user authentication, and a web UI interface.
 
 
 ### Overview
