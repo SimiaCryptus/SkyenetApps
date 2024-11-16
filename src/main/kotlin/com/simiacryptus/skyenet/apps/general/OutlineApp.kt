@@ -1,24 +1,25 @@
 package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.jopenai.describe.JsonDescriber
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.OutlineManager.NodeList
 import com.simiacryptus.skyenet.core.actors.ActorSystem
+import com.simiacryptus.skyenet.core.actors.LargeOutputActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.skyenet.util.TensorflowProjector
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
-import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.skyenet.util.TensorflowProjector
+import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
@@ -121,7 +122,7 @@ class OutlineAgent(
 
     @Suppress("UNCHECKED_CAST")
     private val initial get() = getActor(OutlineActors.ActorType.INITIAL) as ParsedActor<NodeList>
-    private val summary get() = getActor(OutlineActors.ActorType.FINAL) as SimpleActor
+    private val summary get() = getActor(OutlineActors.ActorType.FINAL) as LargeOutputActor
 
     @Suppress("UNCHECKED_CAST")
     private val expand get() = getActor(OutlineActors.ActorType.EXPAND) as ParsedActor<NodeList>
@@ -293,7 +294,7 @@ interface OutlineActors {
         fun actorMap(temperature: Double, firstLevelModel: ChatModel, parsingModel: ChatModel) = mapOf(
             ActorType.INITIAL to initialAuthor(temperature, firstLevelModel, parsingModel),
             ActorType.EXPAND to expansionAuthor(temperature, parsingModel),
-            ActorType.FINAL to finalWriter(temperature, firstLevelModel),
+            ActorType.FINAL to finalWriter(temperature, firstLevelModel, maxIterations = 10),
         )
 
         private fun initialAuthor(temperature: Double, model: ChatModel, parsingModel: ChatModel) = ParsedActor(
@@ -337,10 +338,10 @@ interface OutlineActors {
                 exampleInstance = exampleNodeList(),
             )
 
-        private fun finalWriter(temperature: Double, model: ChatModel) = SimpleActor(
-            prompt = """You are a helpful writing assistant. Transform the outline into a well written essay. Do not summarize. Use markdown for formatting.""",
+        private fun finalWriter(temperature: Double, model: ChatModel, maxIterations: Int = 5) = LargeOutputActor(
             model = model,
             temperature = temperature,
+            maxIterations = maxIterations,
         )
 
     }
