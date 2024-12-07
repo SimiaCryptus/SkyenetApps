@@ -1,27 +1,29 @@
 package com.simiacryptus.skyenet
-
 import com.simiacryptus.skyenet.apps.code.*
-import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.apps.general.VocabularyApp
 import com.simiacryptus.skyenet.apps.general.WebDevApp
 import com.simiacryptus.skyenet.apps.generated.*
 import com.simiacryptus.skyenet.apps.hybrid.IncrementalCodeGenApp
-import com.simiacryptus.skyenet.apps.premium.DebateApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
+import com.simiacryptus.skyenet.apps.premium.DebateApp
 import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authorizationManager
-import com.simiacryptus.skyenet.core.platform.ApplicationServices.seleniumFactory
+import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig
 import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.platform.DatabaseServices
+import com.simiacryptus.skyenet.util.Selenium2S3
 import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
-import com.simiacryptus.skyenet.util.Selenium2S3
+import com.simiacryptus.util.JsonUtil
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeOptions
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
@@ -36,6 +38,7 @@ open class AppServer(
 ) {
 
     companion object {
+        private val logger: Logger = LoggerFactory.getLogger(AppServer::class.java)
         @JvmStatic
         fun main(args: Array<String>) {
             AppServer(localName = "localhost", "apps.simiacrypt.us", 8081)._main(args)
@@ -80,50 +83,12 @@ open class AppServer(
 
     override fun setupPlatform() {
         ApplicationServicesConfig.dataStorageRoot = File(".skyenet").absoluteFile
-        super.setupPlatform()
         authorizationManager = object : AuthorizationManager() {
             override fun matches(user: User?, line: String): Boolean {
                 if (line == "patreon") {
                     return OAuthPatreon.users[user?.email]?.data?.relationships?.pledges?.data?.isNotEmpty() ?: false
                 }
                 return super.matches(user, line)
-            }
-        }
-        seleniumFactory = { pool, cookies ->
-            object : Selenium2S3(
-                pool,
-                cookies,
-            ) {
-                override fun saveHTML(html: String, saveRoot: String, filename: String) {
-                    var newHTML = html
-                    newHTML = newHTML.replace(
-                        "</body>", """
-                        <style>
-                        #footer {
-                            position: fixed;
-                            bottom: 0;
-                            right: 20px;
-                            width: 100%;
-                            text-align: right;
-                            z-index: 1000;
-                        }
-                        #footer a {
-                            color: #4f80a4;
-                            text-decoration: none;
-                            font-weight: bold;
-                        }
-                        #footer a:hover {
-                            text-decoration: underline;
-                        }
-                        </style>
-                        <footer id="footer">
-                            <a href="https://apps.simiacrypt.us/" target="_blank">Powered by Apps.Simiacrypt.us</a>
-                        </footer>
-                        </body>
-                      """.trimIndent()
-                    )
-                    super.saveHTML(newHTML, saveRoot, filename)
-                }
             }
         }
         val jdbc = System.getProperties()["db.url"]

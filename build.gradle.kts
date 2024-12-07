@@ -7,9 +7,27 @@ plugins {
     `maven-publish`
     id("signing")
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("org.jetbrains.kotlin.jvm") version "2.0.20"
+    kotlin("jvm")
     war
 }
+allprojects {
+    if (!project.plugins.hasPlugin("org.jetbrains.kotlin.jvm")) {
+        apply(plugin = "org.jetbrains.kotlin.jvm")
+    }
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
+    }
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        kotlinOptions {
+            javaParameters = true
+            jvmTarget = "17"
+        }
+    }
+}
+
+
 
 fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
@@ -24,26 +42,21 @@ repositories {
     }
 }
 
-kotlin {
-    compilerOptions {
-        javaParameters = true
-    }
-    jvmToolchain(17)
-}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 }
 
 val jetty_version = "11.0.24"
-val skyenet_version = "1.2.18"
+val skyenet_version = "1.2.22"
 val scala_version = "2.13.8"
 val jackson_version = "2.17.2"
 val jupiter_version = "5.10.1"
 dependencies {
     implementation("org.postgresql:postgresql:42.7.1")
 
-    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.12")
+    implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.13")
 
     implementation("org.apache.commons:commons-text:1.11.0")
 
@@ -101,16 +114,6 @@ dependencies {
 }
 
 tasks {
-    compileKotlin {
-        compilerOptions {
-            javaParameters = true
-        }
-    }
-    compileTestKotlin {
-        compilerOptions {
-            javaParameters = true
-        }
-    }
     test {
         useJUnitPlatform()
         systemProperty("surefire.useManifestOnlyJar", "false")

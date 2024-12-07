@@ -1,4 +1,5 @@
 package com.simiacryptus.skyenet.apps.generated
+import org.slf4j.Logger
 
 
 import com.simiacryptus.jopenai.API
