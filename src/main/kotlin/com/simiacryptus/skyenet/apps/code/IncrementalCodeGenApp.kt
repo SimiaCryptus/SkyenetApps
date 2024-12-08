@@ -144,7 +144,7 @@ class IncrementalCodeGenAgent(
         val highLevelPlan = Discussable(
             task = ui.newTask(),
             userMessage = { userMessage },
-            heading = userMessage,
+            heading = renderMarkdown(userMessage),
             initialResponse = { it: String -> taskBreakdownActor.answer(toInput(it), api = api) },
             outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
                 //        renderMarkdown("${design.text}\n\n```json\n${toJson(design.obj)/*.indent("  ")*/}\n```")
