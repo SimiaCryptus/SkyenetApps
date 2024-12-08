@@ -442,7 +442,7 @@ open class IllustratedStorybookAgent(
             ).answer(conversationThread, api = api)
 
             // Log the AgentSystemArchitectureActors.image description
-            task.add(renderMarkdown(illustrationResponse.text, ui = ui), className = "illustration-caption")
+            task.add(renderMarkdown(illustrationResponse.text, ui = ui), additionalClasses = "illustration-caption")
             val imageHtml = task.image(illustrationResponse.image).toString()
             task.complete()
 

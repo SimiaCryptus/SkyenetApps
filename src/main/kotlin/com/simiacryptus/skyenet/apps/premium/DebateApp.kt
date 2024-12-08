@@ -132,7 +132,7 @@ class DebateAgent(
                 val questionTask = ui.newTask(false).apply { questionTabs[question.text!!] = placeholder }
                 questionTask.header(
                     MarkdownUtil.renderMarkdown(question.text ?: "", ui = ui).trim(),
-                    classname = "response-message response-message-question"
+                    additionalClasses = "response-message response-message-question"
                 )
                 try {
                     val responseTabs = TabbedDisplay(questionTask)
