@@ -533,7 +533,9 @@ class PresentationDesignerActors(
         imageModel = ImageModels.DallE3,
         textModel = OpenAIModels.GPT4oMini,
         temperature = 0.3
-    )
+    ).apply {
+        openAI = OpenAIClient()
+    }
 
     private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = OpenAIModels.GPT4oMini)
 

@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.describe.Description
@@ -98,6 +99,7 @@ open class VocabularyAgent(
         parsingModel = parsingModel,
         imageModel = imageModel,
         temperature = temperature,
+        api2 = ApplicationServices.clientManager.getOpenAIClient(session, user),
     ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
 ) {
 
@@ -221,6 +223,7 @@ class VocabularyActors(
     val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
     val imageModel: ImageModels = ImageModels.DallE3,
     val temperature: Double = 0.3,
+    api2: OpenAIClient,
 ) {
 
 
@@ -284,7 +287,9 @@ class VocabularyActors(
         width = 1024,
         height = 1024,
         textModel = model
-    )
+    ).apply {
+        setImageAPI(api2)
+    }
 
     enum class ActorType {
         USER_INTERFACE_ACTOR,

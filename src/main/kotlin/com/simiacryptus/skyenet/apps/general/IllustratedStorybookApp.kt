@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.describe.Description
@@ -111,6 +112,7 @@ open class IllustratedStorybookAgent(
         imageModel = imageModel,
         voice = voice,
         voiceSpeed = voiceSpeed,
+        api2 = ApplicationServices.clientManager.getOpenAIClient(session,user),
     ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
 ) {
     private val tabbedDisplay = TabbedDisplay(ui.newTask())
@@ -515,6 +517,7 @@ class IllustratedStorybookActors(
     val imageModel: ImageModels = ImageModels.DallE2,
     voice: String = "alloy",
     voiceSpeed: Double = 1.0,
+    api2: OpenAIClient,
 ) {
 
     data class StoryData(
@@ -567,7 +570,9 @@ class IllustratedStorybookActors(
         width = 1024, // Width of the generated image
         height = 1024, // Height of the generated image
         textModel = OpenAIModels.GPT4oMini
-    )
+    ).apply {
+        setImageAPI(api2)
+    }
 
     private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = OpenAIModels.GPT4oMini)
 
