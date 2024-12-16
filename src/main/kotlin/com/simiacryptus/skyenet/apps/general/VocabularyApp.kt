@@ -191,13 +191,14 @@ open class VocabularyAgent(
                                 val imgname = "${Session.long64()}.png"
                                 val saveFile = task.saveFile(imgname, term.illustration.toPng())
                                 imageTask.add("<img src='$path/$saveFile' alt='${term.term}' />")
-                                """<li>
-                  |<h2>${term.term}</h2>
-                  |<p>${term.definition}</p>
-                  |<img src="$imgname" alt='${term.term}' />
-                  |</li>
-                  |""".trimMargin()
-                            } ?: "")
+                                """
+                                  <li>
+                                  <h2>${term.term}</h2>
+                                  <p>${term.definition}</p>
+                                  <img src="$imgname" alt='${term.term}' />
+                                  </li>
+                                  """.trimIndent()
+                            })
                             append("</ul></body></html>")
                         }.toByteArray()
                     )

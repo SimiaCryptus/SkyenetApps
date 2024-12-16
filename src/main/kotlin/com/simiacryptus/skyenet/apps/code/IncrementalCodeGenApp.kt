@@ -211,10 +211,7 @@ class IncrementalCodeGenAgent(
                 }
             }
             genState.completedTasks.joinToString("\n") { taskId ->
-                """
-            |// ${genState.subTasks[taskId]?.description ?: "Unknown"}
-            |${genState.generatedCodes[taskId]?.code ?: ""}
-            """.trimMargin()
+                "// ${genState.subTasks[taskId]?.description ?: "Unknown"}\n${genState.generatedCodes[taskId]?.code ?: ""}"
             }.let { summary ->
                 ui.newTask().complete(
                     renderMarkdown(

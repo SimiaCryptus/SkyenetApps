@@ -30,7 +30,7 @@ open class RecombantChainOfThoughtAgent(
     val queryRefiner = SimpleActor(
         prompt = """
 You are a Query Refiner. Your task is to take an initial user query and refine it for clarity and precision. Identify any ambiguities or unclear parts and generate clarification questions to improve the query. Once the user provides responses, refine the query accordingly.
-        """.trimMargin().trim(),
+        """.trimIndent(),
         name = "QueryRefiner",
         model = OpenAIModels.GPT35Turbo,
         temperature = 0.3
@@ -52,7 +52,7 @@ You are a Query Refiner. Your task is to take an initial user query and refine i
         model = OpenAIModels.GPT35Turbo,
         prompt = """
 You are a Query Decomposer. Your task is to analyze a refined query and break it down into smaller, manageable components. Identify logical parts and decompose the query accordingly.
-            """.trimMargin().trim()
+            """.trimIndent()
     )
 
 
@@ -81,14 +81,14 @@ You are a Query Decomposer. Your task is to analyze a refined query and break it
         model = OpenAIModels.GPT35Turbo,
         prompt = """
 You are an Insight Recombiner. Your task is to integrate insights from different query components while maintaining contextual coherence. Generate a comprehensive response by combining these insights.
-            """.trimMargin().trim(),
+            """.trimIndent(),
     )
 
 
     val responseGenerator = SimpleActor(
         prompt = """
 You are a Response Generator. Your task is to take combined insights and formulate a coherent and comprehensive response. Use Natural Language Generation (NLG) techniques to generate the response and format it for presentation.
-        """.trimMargin().trim(),
+        """.trimIndent(),
         name = "ResponseGenerator",
         model = OpenAIModels.GPT35Turbo,
         temperature = 0.3
@@ -121,7 +121,7 @@ Defined functions:
 Expected code structure:
 * The main function should be `analyze(text: String): AnalysisResult`.
 * Use the defined functions to preprocess the text, perform sentiment analysis, and extract key topics.
-        """.trimMargin().trim(),
+        """.trimIndent(),
         model = OpenAIModels.GPT4o,
         temperature = 0.1
     )

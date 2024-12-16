@@ -2,27 +2,28 @@ package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookActors.ActorType.*
 import com.simiacryptus.skyenet.core.actors.*
-import com.simiacryptus.skyenet.core.platform.*
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
-import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -236,117 +237,117 @@ open class IllustratedStorybookAgent(
             //language=HTML
             htmlContent.append(
                 """
-        |<html>
-        |<head><title>${storyText.title}</title></head>
-        |<body>
-        |<style>
-        |    body {
-        |        font-family: 'Arial', sans-serif;
-        |    }
-        |
-        |    @media print {
-        |        .story-page {
-        |            page-break-after: always;
-        |            width: 100vw;
-        |            height: 80vh;
-        |        }
-        |        .story-title {
-        |            page-break-after: always;
-        |            width: 100vw;
-        |            height: 90vh;
-        |            vertical-align: center;
-        |        }
-        |        audio {
-        |            display: none;
-        |        }
-        |        button {
-        |            display: none;
-        |        }
-        |    }
-        |
-        |    .story-title {
-        |        text-align: center;
-        |        font-size: 2.5em;
-        |        margin-top: 20px;
-        |        height: 20vh;
-        |    }
-        |
-        |    .story-paragraph {
-        |        text-align: justify;
-        |        font-size: 1.75em;
-        |        margin: 15px;
-        |        line-height: 1.5;
-        |        font-family: cursive;
-        |    }
-        |
-        |    .story-illustration {
-        |        text-align: center;
-        |        margin: 20px;
-        |    }
-        |
-        |    .story-illustration img {
-        |        max-width: 75%;
-        |        height: auto;
-        |    }
-        |    
-        |    body {
-        |        font-family: 'Arial', sans-serif;
-        |    }
-        |
-        |</style>
-        |<script>
-        |document.getElementById('playAll').addEventListener('click', function() {
-        |  const slides = document.querySelectorAll('.story-page');
-        |  let currentSlide = 0;
-        |  function playNext() {
-        |    if (currentSlide >= slides.length) return;
-        |    const slide = slides[currentSlide];
-        |    const audio = slide.querySelector('audio');
-        |    const image = slide.querySelector('.story-illustration');
-        |    if (audio) {
-        |      image.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        |      audio.play();
-        |      audio.onended = function() {
-        |        currentSlide++;
-        |        playNext();
-        |      };
-        |    } else {
-        |      currentSlide++;
-        |      playNext();
-        |    }
-        |  }
-        |  playNext();
-        |});
-        |</script>
-        |<div class='story-title'>
-        |  ${storyText.title}
-        |  <button id='playAll'>Play All</button>
-        |</div>
-        |<script>
-        |document.getElementById('playAll').addEventListener('click', function() {
-        |  const slides = document.querySelectorAll('.story-page');
-        |  let currentSlide = 0;
-        |  function playNext() {
-        |    if (currentSlide >= slides.length) return;
-        |    const slide = slides[currentSlide];
-        |    const audio = slide.querySelector('audio');
-        |    const image = slide.querySelector('.story-illustration');
-        |    if (audio) {
-        |      image.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        |      audio.play();
-        |      audio.onended = function() {
-        |        currentSlide++;
-        |        playNext();
-        |      };
-        |    } else {
-        |      currentSlide++;
-        |      playNext();
-        |    }
-        |  }
-        |  playNext();
-        |});
-        |</script>
-        """.trimMargin()
+                <html>
+                <head><title>${storyText.title}</title></head>
+                <body>
+                <style>
+                    body {
+                        font-family: 'Arial', sans-serif;
+                    }
+                
+                    @media print {
+                        .story-page {
+                            page-break-after: always;
+                            width: 100vw;
+                            height: 80vh;
+                        }
+                        .story-title {
+                            page-break-after: always;
+                            width: 100vw;
+                            height: 90vh;
+                            vertical-align: center;
+                        }
+                        audio {
+                            display: none;
+                        }
+                        button {
+                            display: none;
+                        }
+                    }
+                
+                    .story-title {
+                        text-align: center;
+                        font-size: 2.5em;
+                        margin-top: 20px;
+                        height: 20vh;
+                    }
+                
+                    .story-paragraph {
+                        text-align: justify;
+                        font-size: 1.75em;
+                        margin: 15px;
+                        line-height: 1.5;
+                        font-family: cursive;
+                    }
+                
+                    .story-illustration {
+                        text-align: center;
+                        margin: 20px;
+                    }
+                
+                    .story-illustration img {
+                        max-width: 75%;
+                        height: auto;
+                    }
+                    
+                    body {
+                        font-family: 'Arial', sans-serif;
+                    }
+                
+                </style>
+                <script>
+                document.getElementById('playAll').addEventListener('click', function() {
+                  const slides = document.querySelectorAll('.story-page');
+                  let currentSlide = 0;
+                  function playNext() {
+                    if (currentSlide >= slides.length) return;
+                    const slide = slides[currentSlide];
+                    const audio = slide.querySelector('audio');
+                    const image = slide.querySelector('.story-illustration');
+                    if (audio) {
+                      image.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      audio.play();
+                      audio.onended = function() {
+                        currentSlide++;
+                        playNext();
+                      };
+                    } else {
+                      currentSlide++;
+                      playNext();
+                    }
+                  }
+                  playNext();
+                });
+                </script>
+                <div class='story-title'>
+                  ${storyText.title}
+                  <button id='playAll'>Play All</button>
+                </div>
+                <script>
+                document.getElementById('playAll').addEventListener('click', function() {
+                  const slides = document.querySelectorAll('.story-page');
+                  let currentSlide = 0;
+                  function playNext() {
+                    if (currentSlide >= slides.length) return;
+                    const slide = slides[currentSlide];
+                    const audio = slide.querySelector('audio');
+                    const image = slide.querySelector('.story-illustration');
+                    if (audio) {
+                      image.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      audio.play();
+                      audio.onended = function() {
+                        currentSlide++;
+                        playNext();
+                      };
+                    } else {
+                      currentSlide++;
+                      playNext();
+                    }
+                  }
+                  playNext();
+                });
+                </script>
+                """.trimIndent()
             )
 
             val indexedNarrations = narrations.withIndex().associate { (idx, narration) -> idx to narration }
@@ -357,19 +358,13 @@ open class IllustratedStorybookAgent(
                 val narration = (if (index >= indexedNarrations.size) null else indexedNarrations[index]) ?: ""
                 val illustration = (if (index >= illustrations.size) null else illustrations[index]?.first) ?: ""
                 //language=HTML
-                htmlContent.append(
-                    """
-            |<div class='story-page'>
-            |    <div class='story-illustration'>${illustration.replace(prefix, "")}</div>
-            |    <audio preload="none" controls><source src='${
-                        narration.replace(
-                            prefix,
-                            ""
-                        )
-                    }' type='audio/mpeg'></audio>
-            |    <div class='story-paragraph'>$paragraph</div>
-            |</div>
-            |""".trimMargin()
+                htmlContent.append("""
+                  <div class='story-page'>
+                      <div class='story-illustration'>""".trimIndent() + illustration.replace(prefix, "") + """</div>
+                      <audio preload="none" controls><source src='""".trimIndent() + narration.replace(prefix, "") + """' type='audio/mpeg'></audio>
+                      <div class='story-paragraph'>""".trimIndent() + paragraph + """</div>
+                  </div>
+                  """.trimIndent()
                 )
             }
 
@@ -544,10 +539,10 @@ class IllustratedStorybookActors(
         model = OpenAIModels.GPT4oMini,
         parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
-            |You are helping gather requirements for a storybook.
-            |Respond to the user by suggesting a genre, target age group, specific elements to include in the story,
-            |writing style, character details, purpose/point of the writing, and the illustration style.
-         """.trimMargin()
+            You are helping gather requirements for a storybook.
+            Respond to the user by suggesting a genre, target age group, specific elements to include in the story,
+            writing style, character details, purpose/point of the writing, and the illustration style.
+         """.trimIndent()
     )
 
     private val storyGeneratorActor = ParsedActor(
@@ -555,10 +550,10 @@ class IllustratedStorybookActors(
         model = OpenAIModels.GPT4o,
         parsingModel = OpenAIModels.GPT4oMini,
         prompt = """
-            |You are an AI creating a story for a digital storybook. Generate a story that includes a title, storyline, dialogue, and descriptions.
-            |The story should be engaging and suitable for the specified target age group and genre.
-            |The story should also reflect the specified writing style, include the provided character details, and align with the purpose/point of the writing.
-        """.trimMargin()
+            You are an AI creating a story for a digital storybook. Generate a story that includes a title, storyline, dialogue, and descriptions.
+            The story should be engaging and suitable for the specified target age group and genre.
+            The story should also reflect the specified writing style, include the provided character details, and align with the purpose/point of the writing.
+        """.trimIndent()
     )
 
 

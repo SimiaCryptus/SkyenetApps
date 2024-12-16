@@ -82,7 +82,7 @@ open class ScientificAnalysisApplicationAgent(
             model = OpenAIModels.GPT35Turbo,
             prompt = """
     You are a scientific reviewer. Evaluate the given hypotheses based on feasibility, novelty, and impact. Provide a comparative analysis for each hypothesis, identifying potential biases and limitations.
-    """.trimMargin().trim(),
+    """.trimIndent(),
         )
         criticalExaminer
     }

@@ -243,13 +243,14 @@ class DebateActors(val model: ChatModel, val temperature: Double) {
 
     fun getActorConfig(actor: Debater) = ParsedActor(
         resultClass = Outline::class.java,
-        prompt = """You are a debater: ${actor.name}.
-            |
-            |You will provide a well-reasoned and supported argument for your position.
-            |You will comment on and respond to the arguments of the other debaters.
-            |
-            |Details about you: ${actor.description}
-        """.trimMargin(),
+        prompt = """
+            You are a debater: ${actor.name}.
+            
+            You will provide a well-reasoned and supported argument for your position.
+            You will comment on and respond to the arguments of the other debaters.
+            
+            Details about you: ${actor.description}
+        """.trimIndent(),
         model = model,
         parsingModel = OpenAIModels.GPT4oMini,
         temperature = temperature,

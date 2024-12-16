@@ -68,8 +68,8 @@ open class CreativeWritingAssistantAgent(
 
         val toneAdjuster = SimpleActor(
             prompt = """
-    You are a tone and style adjuster. Adjust the given text to match the specified tone and style. Ensure the adjusted text maintains coherence and readability.
-        """.trimMargin().trim(),
+                You are a tone and style adjuster. Adjust the given text to match the specified tone and style. Ensure the adjusted text maintains coherence and readability.
+            """.trimIndent(),
             name = "Tone Adjuster",
             model = OpenAIModels.GPT35Turbo,
             temperature = 0.3
