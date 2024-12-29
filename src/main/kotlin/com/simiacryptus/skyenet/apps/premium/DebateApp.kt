@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.premium
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory
 open class DebateApp(
     applicationName: String = "Automated Debate Concept Map v1.3",
     val domainName: String,
+    val api2: OpenAIClient
 ) : ApplicationServer(
     applicationName = applicationName,
     path = "/debate",
@@ -63,6 +65,7 @@ open class DebateApp(
             val settings = getSettings<Settings>(session, user)
             DebateAgent(
                 api = api,
+                api2 = api2,
                 dataStorage = dataStorage,
                 userId = user,
                 session = session,
@@ -83,6 +86,7 @@ open class DebateApp(
 
 class DebateAgent(
     val api: API,
+    val api2: OpenAIClient,
     dataStorage: StorageInterface,
     userId: User?,
     session: Session,
@@ -172,7 +176,7 @@ class DebateAgent(
 
         ui.newTask(false).apply { tabs["Projector"] = placeholder }.complete(
             TensorflowProjector(
-                api = api,
+                api = api2,
                 dataStorage = dataStorage,
                 sessionID = session,
                 session = ui,

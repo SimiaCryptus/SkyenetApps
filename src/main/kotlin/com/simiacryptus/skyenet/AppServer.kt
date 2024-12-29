@@ -1,4 +1,5 @@
 package com.simiacryptus.skyenet
+import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.skyenet.apps.code.*
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
@@ -15,13 +16,10 @@ import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.platform.DatabaseServices
-import com.simiacryptus.skyenet.util.Selenium2S3
 import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 import com.simiacryptus.util.JsonUtil
-import org.openqa.selenium.chrome.ChromeDriver
-import org.openqa.selenium.chrome.ChromeOptions
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
@@ -44,16 +42,17 @@ open class AppServer(
             AppServer(localName = "localhost", "apps.simiacrypt.us", 8081)._main(args)
         }
     }
+    open val api2 = OpenAIClient()
 
     //    private val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
     override val childWebApps by lazy {
         listOf(
             ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName), "IllustratedStorybook.png"),
             ChildWebApp("/incremental_codegen", IncrementalCodeGenApp(domainName = domainName), null),
-            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName), "outline.png"),
+            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName, api2 = api2), "outline.png"),
             ChildWebApp("/meta_agent", MetaAgentApp(), "MetaAgent.png"),
             ChildWebApp("/creative_writing", CreativeWritingAssistantApp("/creative_writing"), "CreativeWriting.png"),
-            ChildWebApp("/debate", DebateApp(domainName = domainName), "Debate.png"),
+            ChildWebApp("/debate", DebateApp(domainName = domainName, api2 = api2), "Debate.png"),
             ChildWebApp("/presentation", PresentationDesignerApp(), "PresentationDesigner.png"),
             ChildWebApp("/vocabulary", VocabularyApp(), "Vocabulary.png"),
             ChildWebApp("/testgenerator", TestGeneratorApp(), null),
@@ -61,7 +60,7 @@ open class AppServer(
             ChildWebApp("/aws", AwsCodingApp(), "awscoding.png"),
             ChildWebApp("/bash", BashCodingApp(), "bashcoding.png"),
             ChildWebApp("/powershell", PowershellCodingApp(), "powershell.png"),
-            ChildWebApp("/webdev", WebDevApp(), "webdev.png"),
+            ChildWebApp("/webdev", WebDevApp(api2 = api2), "webdev.png"),
             ChildWebApp("/jdbc", JDBCCodingApp(), "JDBCCoding.png"),
             ChildWebApp("/science", ScientificAnalysisApplicationApp(), "coding.png"),
             ChildWebApp("/recombant_chain_of_thought", RecombantChainOfThoughtApp(), "coding.png"),
