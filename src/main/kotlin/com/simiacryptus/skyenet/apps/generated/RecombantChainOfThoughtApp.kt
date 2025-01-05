@@ -34,13 +34,8 @@ open class RecombantChainOfThoughtApp(
         try {
             val settings = getSettings<Settings>(session, user)
             RecombantChainOfThoughtAgent(
-                user = user,
-                session = session,
-                dataStorage = dataStorage,
-                api = api,
                 ui = ui,
-                model = settings?.model ?: OpenAIModels.GPT35Turbo,
-                temperature = settings?.temperature ?: 0.3,
+              api = api,
             ).aiAgentSystemUsingGPTActors(userMessage)
         } catch (e: Throwable) {
             log.warn("Error", e)

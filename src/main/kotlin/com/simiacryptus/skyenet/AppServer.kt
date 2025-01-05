@@ -20,7 +20,6 @@ import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
@@ -36,7 +35,7 @@ open class AppServer(
 ) {
 
     companion object {
-        private val logger: Logger = LoggerFactory.getLogger(AppServer::class.java)
+      private val log = LoggerFactory.getLogger(AppServer::class.java)
         @JvmStatic
         fun main(args: Array<String>) {
             AppServer(localName = "localhost", "apps.simiacrypt.us", 8081)._main(args)
@@ -52,7 +51,7 @@ open class AppServer(
             ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName, api2 = api2), "outline.png"),
             ChildWebApp("/meta_agent", MetaAgentApp(), "MetaAgent.png"),
             ChildWebApp("/creative_writing", CreativeWritingAssistantApp("/creative_writing"), "CreativeWriting.png"),
-            ChildWebApp("/debate", DebateApp(domainName = domainName, api2 = api2), "Debate.png"),
+            ChildWebApp("/debate", DebateApp(api2 = api2), "Debate.png"),
             ChildWebApp("/presentation", PresentationDesignerApp(), "PresentationDesigner.png"),
             ChildWebApp("/vocabulary", VocabularyApp(), "Vocabulary.png"),
             ChildWebApp("/testgenerator", TestGeneratorApp(), null),

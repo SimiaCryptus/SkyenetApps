@@ -36,11 +36,8 @@ open class ScientificAnalysisApplicationApp(
         try {
             val settings = getSettings<Settings>(session, user)
             ScientificAnalysisApplicationAgent(
-                user = user,
-                session = session,
-                dataStorage = dataStorage,
-                api = api,
                 ui = ui,
+              api = api,
             ).scientificAnalysisApplication(userMessage)
         } catch (e: Throwable) {
             log.warn("Error", e)

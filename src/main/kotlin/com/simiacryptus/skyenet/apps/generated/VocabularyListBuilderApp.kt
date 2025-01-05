@@ -2,16 +2,15 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import org.slf4j.LoggerFactory
 
 
@@ -63,20 +62,20 @@ open class VocabularyListBuilderApp(
 
 
 open class VocabularyListBuilderAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
+  val user: User?,
+  val session: Session,
+  val dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: TextModel = OpenAIModels.GPT4oMini,
-    temperature: Double = 0.3,
-) : ActorSystem<VocabularyListBuilderActors.ActorType>(VocabularyListBuilderActors(
+  val model: TextModel = OpenAIModels.GPT4oMini,
+  val temperature: Double = 0.3,
+) {
+  val actors = VocabularyListBuilderActors(
     model = model,
     temperature = temperature,
-).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
-) {
+  ).actorMap.map { it.key.name to it.value }.toMap()
 
-    private val parseInputActor by lazy { getActor(VocabularyListBuilderActors.ActorType.PARSE_INPUT) as ParsedActor<TermInput> }
+  private val parseInputActor by lazy { actors.get(VocabularyListBuilderActors.ActorType.PARSE_INPUT.name)!! as ParsedActor<TermInput> }
 
     data class TermInput(
         val term: String,

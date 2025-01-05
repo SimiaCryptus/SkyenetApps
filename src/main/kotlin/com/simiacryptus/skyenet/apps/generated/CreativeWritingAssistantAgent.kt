@@ -5,11 +5,7 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.ParsedActor
-import com.simiacryptus.skyenet.core.actors.PoolSystem
 import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.StorageInterface
-import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import java.io.File
@@ -18,12 +14,9 @@ import java.util.concurrent.Executors
 
 
 open class CreativeWritingAssistantAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-) : PoolSystem(dataStorage, user, session) {
+) {
 
     private val contentGenerator by lazy {
 

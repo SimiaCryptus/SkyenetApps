@@ -5,20 +5,13 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.ParsedActor
-import com.simiacryptus.skyenet.core.actors.PoolSystem
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.StorageInterface
-import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 
 
 open class ScientificAnalysisApplicationAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-) : PoolSystem(dataStorage, user, session) {
+) {
 
     data class TopicKeywords(
         @Description("List of extracted keywords from the topic")

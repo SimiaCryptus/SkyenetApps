@@ -4,17 +4,16 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.apps.generated.TestGeneratorActors.*
-import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.util.MarkdownUtil
+import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
 
 open class TestGeneratorApp(
@@ -65,25 +64,24 @@ open class TestGeneratorApp(
 }
 
 open class TestGeneratorAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
+  val user: User?,
+  val session: Session,
+  val dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: TextModel = OpenAIModels.GPT4oMini,
-    temperature: Double = 0.3,
-) : ActorSystem<ActorType>(
-    TestGeneratorActors(
+  val model: TextModel = OpenAIModels.GPT4oMini,
+  val temperature: Double = 0.3,
+) {
+  val actors = TestGeneratorActors(
         model = model,
         temperature = temperature,
-    ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
-) {
+  ).actorMap.map { it.key.name to it.value }.toMap()
 
     @Suppress("UNCHECKED_CAST")
-    private val inputHandler by lazy { getActor(ActorType.INPUT_HANDLER) as ParsedActor<TopicIdentificationResult> }
-    private val topicIdentificationActor by lazy { getActor(ActorType.TOPIC_IDENTIFICATION_ACTOR) as ParsedActor<TopicIdentificationResult> }
-    private val questionGenerationActor by lazy { getActor(ActorType.QUESTION_GENERATION_ACTOR) as ParsedActor<QuestionSet> }
-    private val answerGenerationActor by lazy { getActor(ActorType.ANSWER_GENERATION_ACTOR) as ParsedActor<AnswerSet> }
+    private val inputHandler by lazy { actors.get(ActorType.INPUT_HANDLER.name)!! as ParsedActor<TopicIdentificationResult> }
+  private val topicIdentificationActor by lazy { actors.get(ActorType.TOPIC_IDENTIFICATION_ACTOR.name)!! as ParsedActor<TopicIdentificationResult> }
+  private val questionGenerationActor by lazy { actors.get(ActorType.QUESTION_GENERATION_ACTOR.name)!! as ParsedActor<QuestionSet> }
+  private val answerGenerationActor by lazy { actors.get(ActorType.ANSWER_GENERATION_ACTOR.name)!! as ParsedActor<AnswerSet> }
 
     fun testGenerator(prompt: String) {
         val task = ui.newTask()

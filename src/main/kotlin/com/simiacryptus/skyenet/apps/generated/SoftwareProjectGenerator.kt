@@ -1,7 +1,6 @@
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.models.TextModel
-import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
@@ -63,23 +62,22 @@ open class SoftwareProjectGeneratorApp(
 
 
 open class SoftwareProjectGeneratorAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
+  val user: User?,
+  val session: Session,
+  val dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: TextModel = OpenAIModels.GPT4oMini,
-    temperature: Double = 0.3,
-) : ActorSystem<SoftwareProjectGeneratorActors.ActorType>(
-    SoftwareProjectGeneratorActors(
+  val model: TextModel = OpenAIModels.GPT4oMini,
+  val temperature: Double = 0.3,
+) {
+  val actors = SoftwareProjectGeneratorActors(
         model = model,
         temperature = temperature,
-    ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
-) {
+  ).actorMap.map { it.key.name to it.value }.toMap()
 
     @Suppress("UNCHECKED_CAST")
-    private val simpleActor by lazy { getActor(SoftwareProjectGeneratorActors.ActorType.SIMPLE_ACTOR) as SimpleActor }
-    private val parsedActor by lazy { getActor(SoftwareProjectGeneratorActors.ActorType.PARSED_ACTOR) as ParsedActor<String> }
+    private val simpleActor by lazy { actors.get(SoftwareProjectGeneratorActors.ActorType.SIMPLE_ACTOR.name)!! as SimpleActor }
+  private val parsedActor by lazy { actors.get(SoftwareProjectGeneratorActors.ActorType.PARSED_ACTOR.name)!! as ParsedActor<String> }
 
     fun softwareProjectGenerator(userPrompt: String) {
         val task = ui.newTask()

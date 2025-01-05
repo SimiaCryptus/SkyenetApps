@@ -24,7 +24,7 @@ class AwsCodingApp : ApplicationServer(
         val settings = getSettings<Settings>(session, user)
         val region = settings?.region
         val profile = settings?.profile
-        object : CodingAgent<KotlinInterpreter>(
+        CodingAgent(
             api = api,
             dataStorage = dataStorage,
             session = session,
@@ -35,12 +35,7 @@ class AwsCodingApp : ApplicationServer(
             temperature = (settings?.temperature ?: 0.1),
             model = (settings?.model!!),
             mainTask = ui.newTask(),
-        ) {
-            fun getInterpreterString(): String {
-                return AwsCodingApp::class.java.name + ":${settings?.region},${settings?.profile}"
-            }
-
-        }.start(
+        ).start(
             userMessage = userMessage,
         )
     }

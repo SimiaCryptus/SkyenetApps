@@ -2,29 +2,32 @@ package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.JsonUtil.toJson
-import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
+import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.VocabularyActors.ActorType.*
-import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.skyenet.core.actors.BaseActor
+import com.simiacryptus.skyenet.core.actors.ImageActor
+import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.session.SessionTask.Companion.toPng
-import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 
@@ -83,30 +86,29 @@ open class VocabularyApp(
 
 
 open class VocabularyAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
+  val user: User?,
+  val session: Session,
+  val dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModel = OpenAIModels.GPT4oMini,
+  val model: ChatModel = OpenAIModels.GPT4oMini,
     val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
     val imageModel: ImageModels = ImageModels.DallE3,
-    temperature: Double = 0.3,
+  val temperature: Double = 0.3,
     val path: String,
-) : ActorSystem<VocabularyActors.ActorType>(
-    VocabularyActors(
+) {
+  val actors = VocabularyActors(
         model = model,
         parsingModel = parsingModel,
         imageModel = imageModel,
         temperature = temperature,
         api2 = ApplicationServices.clientManager.getOpenAIClient(session, user),
-    ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
-) {
+  ).actorMap.map { it.key.name to it.value }.toMap()
 
     @Suppress("UNCHECKED_CAST")
-    private val inputProcessorActor by lazy { getActor(INPUT_PROCESSOR_ACTOR) as ParsedActor<VocabularyActors.UserInput> }
-    private val aidefinitionGeneratorActor by lazy { getActor(AIDEFINITION_GENERATOR_ACTOR) as ParsedActor<VocabularyActors.TermDefinition> }
-    private val illustrationGeneratorActor by lazy { getActor(ILLUSTRATION_GENERATOR_ACTOR) as ImageActor }
+    private val inputProcessorActor by lazy { actors.get(INPUT_PROCESSOR_ACTOR.name)!! as ParsedActor<VocabularyActors.UserInput> }
+  private val aidefinitionGeneratorActor by lazy { actors.get(AIDEFINITION_GENERATOR_ACTOR.name)!! as ParsedActor<VocabularyActors.TermDefinition> }
+  private val illustrationGeneratorActor by lazy { actors.get(ILLUSTRATION_GENERATOR_ACTOR.name)!! as ImageActor }
 
     val tabs = TabbedDisplay(ui.newTask())
 
@@ -151,32 +153,32 @@ open class VocabularyAgent(
             // Process each term to generate its definition and illustration
             val wordTabs = TabbedDisplay(task)
             (terms?: emptyList()).map { term ->
-                val task = ui.newTask(false).apply { wordTabs[term] = placeholder }
-                pool.submit {
-                    try {
-                        val response = aidefinitionGeneratorActor.answer(
-                            listOf(
-                                "Generate a definition for the term '$term' tailored for a '${parsedInput.targetAudience}' audience in a '${parsedInput.style}' style."
-                            ), api = api
-                        )
-                        val definition = VocabularyActors.TermDefinition(term, response.text).definition ?: "{}"
-                        task.header(term)
-                        task.add(renderMarkdown(definition, ui = ui))
+              val task = ui.newTask(false).apply { wordTabs[term] = placeholder }
+              ApplicationServices.clientManager.getPool(session, user).submit {
+                try {
+                  val response = aidefinitionGeneratorActor.answer(
+                    listOf(
+                      "Generate a definition for the term '$term' tailored for a '${parsedInput.targetAudience}' audience in a '${parsedInput.style}' style."
+                    ), api = api
+                  )
+                  val definition = VocabularyActors.TermDefinition(term, response.text).definition ?: "{}"
+                  task.header(term)
+                  task.add(renderMarkdown(definition, ui = ui))
 
-                        val illustration = illustrationGeneratorActor.setImageAPI(
-                            ApplicationServices.clientManager.getOpenAIClient(session,user)
-                        ).answer(
-                            listOf(
-                                "Generate an illustration that visually represents the term '$term' to ${parsedInput.targetAudience} in a '${parsedInput.style}' style."
-                            ), api = api
-                        ).image
-                        task.image(illustration)
+                  val illustration = illustrationGeneratorActor.setImageAPI(
+                    ApplicationServices.clientManager.getOpenAIClient(session, user)
+                  ).answer(
+                    listOf(
+                      "Generate an illustration that visually represents the term '$term' to ${parsedInput.targetAudience} in a '${parsedInput.style}' style."
+                    ), api = api
+                  ).image
+                  task.image(illustration)
 
-                        definitions.add(CompiledTerm(term, definition, illustration))
-                    } catch (e: Throwable) {
-                        task.error(ui, e)
-                    }
+                  definitions.add(CompiledTerm(term, definition, illustration))
+                } catch (e: Throwable) {
+                  task.error(ui, e)
                 }
+              }
             }.toTypedArray().forEach { it.get() }
 
             val task: SessionTask = ui.newTask(false).apply { tabs["Output"] = placeholder }

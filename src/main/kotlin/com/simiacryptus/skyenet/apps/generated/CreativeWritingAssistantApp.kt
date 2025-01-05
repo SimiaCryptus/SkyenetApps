@@ -36,9 +36,6 @@ open class CreativeWritingAssistantApp(
         try {
             val settings = getSettings<Settings>(session, user)
             CreativeWritingAssistantAgent(
-                user = user,
-                session = session,
-                dataStorage = dataStorage,
                 ui = ui,
                 api = api,
             ).creativeWritingAssistant(

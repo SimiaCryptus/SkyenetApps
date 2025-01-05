@@ -5,25 +5,23 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.skyenet.TabbedDisplay
-import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.util.TensorflowProjector
+import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 
 open class DebateApp(
-    applicationName: String = "Automated Debate Concept Map v1.3",
-    val domainName: String,
-    val api2: OpenAIClient
+  applicationName: String = "Automated Debate Concept Map v1.3",
+  val api2: OpenAIClient
 ) : ApplicationServer(
     applicationName = applicationName,
     path = "/debate",
@@ -67,7 +65,7 @@ open class DebateApp(
                 api = api,
                 api2 = api2,
                 dataStorage = dataStorage,
-                userId = user,
+              user = user,
                 session = session,
                 ui = ui,
                 model = settings?.model ?: OpenAIModels.GPT4oMini,
@@ -87,23 +85,19 @@ open class DebateApp(
 class DebateAgent(
     val api: API,
     val api2: OpenAIClient,
-    dataStorage: StorageInterface,
-    userId: User?,
-    session: Session,
+    val dataStorage: StorageInterface,
+    val user: User?,
+    val session: Session,
     val ui: ApplicationInterface,
     val model: ChatModel = OpenAIModels.GPT4o,
     val temperature: Double = 0.3,
     private val debateActors: DebateActors = DebateActors(model, temperature)
-) : ActorSystem<DebateActors.ActorType>(
-    debateActors.actorMap.map { it.key.name to it.value }.toMap(),
-    dataStorage,
-    userId,
-    session
 ) {
+  val actors = debateActors.actorMap.map { it.key.name to it.value }.toMap()
     private val outlines = mutableMapOf<String, DebateActors.Outline>()
 
-    @Suppress("UNCHECKED_CAST")
-    private val moderator get() = getActor(DebateActors.ActorType.MODERATOR) as ParsedActor<DebateActors.DebateSetup>
+  @Suppress("UNCHECKED_CAST")
+  private val moderator get() = actors.get(DebateActors.ActorType.MODERATOR.name)!! as ParsedActor<DebateActors.DebateSetup>
 
     val tabs = TabbedDisplay(ui.newTask())
 

@@ -96,35 +96,34 @@ open class IllustratedStorybookApp(
 }
 
 open class IllustratedStorybookAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
+  val user: User?,
+  val session: Session,
+  val dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: TextModel = OpenAIModels.GPT4o,
-    temperature: Double = 0.3,
-    imageModel: ImageModels = ImageModels.DallE2,
+  val model: TextModel = OpenAIModels.GPT4o,
+  val temperature: Double = 0.3,
+  val imageModel: ImageModels = ImageModels.DallE2,
     val voice: String = "alloy",
     val voiceSpeed: Double = 1.0,
-) : ActorSystem<IllustratedStorybookActors.ActorType>(
-    IllustratedStorybookActors(
+) {
+  val actors = IllustratedStorybookActors(
         model = model,
         temperature = temperature,
         imageModel = imageModel,
         voice = voice,
         voiceSpeed = voiceSpeed,
         api2 = ApplicationServices.clientManager.getOpenAIClient(session,user),
-    ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
-) {
+  ).actorMap.map { it.key.name to it.value }.toMap()
     private val tabbedDisplay = TabbedDisplay(ui.newTask())
 
     @Suppress("UNCHECKED_CAST")
-    private val storyGeneratorActor by lazy { getActor(STORY_GENERATOR_ACTOR) as ParsedActor<IllustratedStorybookActors.StoryData> }
-    private val illustrationGeneratorActor by lazy { getActor(ILLUSTRATION_GENERATOR_ACTOR) as ImageActor }
+    private val storyGeneratorActor by lazy { actors.get(STORY_GENERATOR_ACTOR.name)!! as ParsedActor<IllustratedStorybookActors.StoryData> }
+  private val illustrationGeneratorActor by lazy { actors.get(ILLUSTRATION_GENERATOR_ACTOR.name)!! as ImageActor }
 
     @Suppress("UNCHECKED_CAST")
-    private val requirementsActor by lazy { getActor(REQUIREMENTS_ACTOR) as ParsedActor<UserPreferencesContent> }
-    private val narratorActor by lazy { getActor(NARRATOR) as TextToSpeechActor }
+    private val requirementsActor by lazy { actors.get(REQUIREMENTS_ACTOR.name)!! as ParsedActor<UserPreferencesContent> }
+  private val narratorActor by lazy { actors.get(NARRATOR.name)!! as TextToSpeechActor }
 
     private fun agentSystemArchitecture(userPreferencesContent: UserPreferencesContent) {
         val task = ui.newTask(root = false).apply { tabbedDisplay["Generation"] = placeholder }
@@ -140,30 +139,30 @@ open class IllustratedStorybookAgent(
             task.add("Generating illustrations for the story...")
             val illustrationTabs = TabbedDisplay(task)
             val illustrations = (storyData.paragraphs?.withIndex()?.map { (index, paragraph) ->
-                val task = ui.newTask(root = false)
-                illustrationTabs[index.toString()] = task.placeholder
-                pool.submit<Pair<String, BufferedImage>?> {
-                    illustrationGeneratorActor(
-                        paragraph,
-                        userPreferencesContent,
-                        task
-                    )
-                }
+              val task = ui.newTask(root = false)
+              illustrationTabs[index.toString()] = task.placeholder
+              ApplicationServices.clientManager.getPool(session, user).submit<Pair<String, BufferedImage>?> {
+                illustrationGeneratorActor(
+                  paragraph,
+                  userPreferencesContent,
+                  task
+                )
+              }
             }?.toTypedArray() ?: emptyArray()).map { it.get() }
             task.add("Illustrations generated successfully.")
 
             task.add("Generating narration for the story...")
             val narrations = (storyData.paragraphs?.withIndex()?.map { (idx, paragraph) ->
-                if (paragraph.isBlank()) return@map null
-                pool.submit<String> {
-                    narratorActor.setOpenAI(
-                        ApplicationServices.clientManager.getOpenAIClient(session,user)
-                    ).answer(listOf(paragraph), api).mp3data?.let {
-                        val fileLocation = task.saveFile("narration$idx.mp3", it)
-                        task.add("""<audio preload="none" controls><source src='$fileLocation' type='audio/mpeg'></audio>""")
-                        fileLocation
-                    }
+              if (paragraph.isBlank()) return@map null
+              ApplicationServices.clientManager.getPool(session, user).submit<String> {
+                narratorActor.setOpenAI(
+                  ApplicationServices.clientManager.getOpenAIClient(session, user)
+                ).answer(listOf(paragraph), api).mp3data?.let {
+                  val fileLocation = task.saveFile("narration$idx.mp3", it)
+                  task.add("""<audio preload="none" controls><source src='$fileLocation' type='audio/mpeg'></audio>""")
+                  fileLocation
                 }
+              }
             }?.toTypedArray() ?: emptyArray()).map { it?.get() }
             task.complete("Narration generated successfully.")
 

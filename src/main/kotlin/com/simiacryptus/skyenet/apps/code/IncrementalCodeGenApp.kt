@@ -6,18 +6,20 @@ import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.JsonUtil.toJson
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.Discussable
-import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.skyenet.core.actors.CodingActor
+import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.ParsedResponse
+import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
 import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Future
 import java.util.concurrent.ThreadPoolExecutor
@@ -54,9 +56,8 @@ class IncrementalCodeGenApp(
             IncrementalCodeGenAgent(
                 user = user,
                 session = session,
-                dataStorage = dataStorage,
-                api = api,
                 ui = ui,
+              api = api,
                 model = settings?.model ?: OpenAIModels.GPT4o,
                 parsingModel = settings?.parsingModel ?: OpenAIModels.GPT4oMini,
                 temperature = settings?.temperature ?: 0.3,
@@ -72,15 +73,14 @@ class IncrementalCodeGenApp(
 }
 
 class IncrementalCodeGenAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
+  val user: User?,
+  val session: Session,
     val ui: ApplicationInterface,
     val api: API,
     model: ChatModel = OpenAIModels.GPT4o,
     parsingModel: ChatModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
-) : PoolSystem(dataStorage, user, session) {
+) {
     private val documentationGeneratorActor by lazy {
         SimpleActor(
             prompt = """

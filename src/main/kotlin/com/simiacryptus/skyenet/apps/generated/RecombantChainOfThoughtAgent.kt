@@ -2,29 +2,17 @@ package com.simiacryptus.skyenet.apps.generated
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
-import com.simiacryptus.skyenet.core.actors.PoolSystem
 import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.StorageInterface
-import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 
 
 open class RecombantChainOfThoughtAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-    model: ChatModel = OpenAIModels.GPT35Turbo,
-    temperature: Double = 0.3,
-) : PoolSystem(dataStorage, user, session) {
+) {
 
 
     val queryRefiner = SimpleActor(
@@ -92,38 +80,6 @@ You are a Response Generator. Your task is to take combined insights and formula
         name = "ResponseGenerator",
         model = OpenAIModels.GPT35Turbo,
         temperature = 0.3
-    )
-
-
-    val textAnalyzer = CodingActor(
-        interpreterClass = KotlinInterpreter::class,
-        symbols = mapOf(
-            "preprocess" to { text: String ->
-                // Implementation of text preprocessing
-                text.lowercase().replace(Regex("[^a-zA-Z0-9\\s]"), "")
-            },
-            "performSentimentAnalysis" to { text: String ->
-                // Implementation of sentiment analysis (dummy implementation)
-                if (text.contains("good")) 1.0 else if (text.contains("bad")) -1.0 else 0.0
-            },
-            "extractKeyTopics" to { text: String ->
-                // Implementation of key topic extraction (dummy implementation)
-                text.split(" ").distinct().filter { it.length > 3 }
-            }
-        ),
-        details = """
-You are a Text Analyzer. Your task is to analyze input text for sentiment and key topics.
-Defined functions:
-* preprocess(text: String): String - Preprocesses the input text by normalizing and removing noise.
-* performSentimentAnalysis(text: String): Double - Analyzes the sentiment of the text and returns a score between -1 and 1.
-* extractKeyTopics(text: String): List<String> - Extracts key topics from the text.
-
-Expected code structure:
-* The main function should be `analyze(text: String): AnalysisResult`.
-* Use the defined functions to preprocess the text, perform sentiment analysis, and extract key topics.
-        """.trimIndent(),
-        model = OpenAIModels.GPT4o,
-        temperature = 0.1
     )
 
 

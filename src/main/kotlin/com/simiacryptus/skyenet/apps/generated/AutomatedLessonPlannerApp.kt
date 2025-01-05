@@ -1,5 +1,4 @@
 package com.simiacryptus.skyenet.apps.generated
-import org.slf4j.Logger
 
 
 import com.simiacryptus.jopenai.API
@@ -8,7 +7,6 @@ import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.apps.generated.AutomatedLessonPlannerArchitectureActors.Activity
-import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.BaseActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
@@ -70,35 +68,34 @@ open class AutomatedLessonPlannerArchitectureApp(
 
 
 open class AutomatedLessonPlannerArchitectureAgent(
-    user: User?,
-    session: Session,
-    dataStorage: StorageInterface,
+  val user: User?,
+  val session: Session,
+  val dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
     model: TextModel = OpenAIModels.GPT4oMini,
     temperature: Double = 0.3,
-) : ActorSystem<AutomatedLessonPlannerArchitectureActors.ActorType>(
-    AutomatedLessonPlannerArchitectureActors(
+) {
+  val actors = AutomatedLessonPlannerArchitectureActors(
         model = model,
         temperature = temperature,
-    ).actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session
-) {
+  ).actorMap.map { it.key.name to it.value }.toMap()
 
     @Suppress("UNCHECKED_CAST")
-    private val curriculumMapperActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.CURRICULUM_MAPPER_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.CurriculumMapping> }
+    private val curriculumMapperActor by lazy { actors.get(AutomatedLessonPlannerArchitectureActors.ActorType.CURRICULUM_MAPPER_ACTOR.name)!! as ParsedActor<AutomatedLessonPlannerArchitectureActors.CurriculumMapping> }
 
     @Suppress("UNCHECKED_CAST")
-    private val resourceAllocatorActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.RESOURCE_ALLOCATOR_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.ResourceAllocation> }
+    private val resourceAllocatorActor by lazy { actors.get(AutomatedLessonPlannerArchitectureActors.ActorType.RESOURCE_ALLOCATOR_ACTOR.name)!! as ParsedActor<AutomatedLessonPlannerArchitectureActors.ResourceAllocation> }
 
     @Suppress("UNCHECKED_CAST")
-    private val timeManagerActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.TIME_MANAGER_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.LessonTimeline> }
+    private val timeManagerActor by lazy { actors.get(AutomatedLessonPlannerArchitectureActors.ActorType.TIME_MANAGER_ACTOR.name)!! as ParsedActor<AutomatedLessonPlannerArchitectureActors.LessonTimeline> }
 
     @Suppress("UNCHECKED_CAST")
-    private val assessmentPlannerActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.ASSESSMENT_PLANNER_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.AssessmentPlan> }
-    private val customizationActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.CUSTOMIZATION_ACTOR) as SimpleActor }
+    private val assessmentPlannerActor by lazy { actors.get(AutomatedLessonPlannerArchitectureActors.ActorType.ASSESSMENT_PLANNER_ACTOR.name)!! as ParsedActor<AutomatedLessonPlannerArchitectureActors.AssessmentPlan> }
+  private val customizationActor by lazy { actors.get(AutomatedLessonPlannerArchitectureActors.ActorType.CUSTOMIZATION_ACTOR.name)!! as SimpleActor }
 
     @Suppress("UNCHECKED_CAST")
-    private val feedbackAnalyzerActor by lazy { getActor(AutomatedLessonPlannerArchitectureActors.ActorType.FEEDBACK_ANALYZER_ACTOR) as ParsedActor<AutomatedLessonPlannerArchitectureActors.FeedbackAnalysis> }
+    private val feedbackAnalyzerActor by lazy { actors.get(AutomatedLessonPlannerArchitectureActors.ActorType.FEEDBACK_ANALYZER_ACTOR.name)!! as ParsedActor<AutomatedLessonPlannerArchitectureActors.FeedbackAnalysis> }
 
     fun automatedLessonPlannerArchitecture(requirements: String) {
         // Create a new task in the UI to show progress
