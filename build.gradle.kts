@@ -50,11 +50,12 @@ java {
 
 val jetty_version = "11.0.24"
 val skyenet_version = "1.2.22"
-val scala_version = "2.13.8"
+val scala_version = "2.13.9"
 val jackson_version = "2.17.2"
 val jupiter_version = "5.10.1"
+val logback_version = "1.5.13"
 dependencies {
-    implementation("org.postgresql:postgresql:42.7.1")
+    implementation("org.postgresql:postgresql:42.7.2")
 
     implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.13")
 
@@ -69,7 +70,7 @@ dependencies {
     implementation("org.openapitools:openapi-generator:7.3.0")
     implementation("org.openapitools:openapi-generator-cli:7.3.0")
 
-    implementation("org.postgresql:postgresql:42.7.1")
+    implementation("org.postgresql:postgresql:42.7.2")
 
     implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.16.1")
@@ -105,8 +106,8 @@ dependencies {
     implementation(group = "software.amazon.awssdk", name = "sso", version = "2.21.29")
 
     implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.16")
-    implementation(group = "ch.qos.logback", name = "logback-classic", version = "1.4.11")
-    implementation(group = "ch.qos.logback", name = "logback-core", version = "1.4.11")
+    implementation(group = "ch.qos.logback", name = "logback-classic", version = logback_version)
+    implementation(group = "ch.qos.logback", name = "logback-core", version = logback_version)
 
     testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = jupiter_version)
     testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-params", version = jupiter_version)
