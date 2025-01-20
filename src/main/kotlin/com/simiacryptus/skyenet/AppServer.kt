@@ -1,5 +1,9 @@
 package com.simiacryptus.skyenet
 import com.simiacryptus.jopenai.OpenAIClient
+import java.awt.SystemTray
+import java.awt.TrayIcon
+import javax.swing.SwingUtilities
+import org.slf4j.LoggerFactory
 import com.simiacryptus.skyenet.apps.code.*
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
@@ -20,7 +24,6 @@ import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import com.simiacryptus.skyenet.webui.servlet.OAuthPatreon
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
@@ -33,13 +36,109 @@ open class AppServer(
 ) : ApplicationDirectory(
     localName = localName, publicName = publicName, port = port
 ) {
+    private var systemTrayManager: SystemTrayManager? = null
 
     companion object {
-      private val log = LoggerFactory.getLogger(AppServer::class.java)
+      private val log = LoggerFactory.getLogger(AppServer::class.java.name)
         @JvmStatic
         fun main(args: Array<String>) {
-            AppServer(localName = "localhost", "apps.simiacrypt.us", 8081)._main(args)
+            try {
+                if (args.isEmpty()) {
+                    log.info("No arguments provided - defaulting to server mode with default options")
+                    handleServer(arrayOf())
+                    return
+                }
+                when (args[0].lowercase()) {
+                    "server" -> handleServer(args.sliceArray(1 until args.size))
+                    "help", "-h", "--help" -> printUsage()
+                    else -> {
+                        log.error("Unknown command: ${args[0]}")
+                        printUsage()
+                        System.exit(1)
+                    }
+                }
+            } catch (e: Exception) {
+                log.error("Fatal error: ${e.message}", e)
+                // Add shutdown hook
+                Runtime.getRuntime().addShutdownHook(Thread {
+                    log.info("Shutting down server...")
+                    server?.stopServer()
+                })
+                System.exit(1)
+            }
         }
+        private var server: AppServer? = null
+        private fun handleServer(args: Array<String>) {
+            log.info("Parsing server options...")
+            val options = parseServerOptions(args)
+            log.info("Configuring server with options: port=${options.port}, host=${options.host}, publicName=${options.publicName}")
+            server = AppServer(
+                localName = options.host,
+                publicName = options.publicName, 
+                port = options.port
+            )
+            server?.initSystemTray()
+            server?._main(args)
+        }
+        private fun printUsage() {
+            println("""
+                SkyenetApps Server
+                Usage:
+                  skyenet <command> [options]
+                Commands:
+                  server     Start the server
+                  help      Show this help message
+                For server options:
+                  skyenet server --help
+            """.trimIndent())
+        }
+    private data class ServerOptions(
+        val port: Int = 8081,
+        val host: String = "localhost", 
+        val publicName: String = "apps.simiacrypt.us"
+    )
+    private fun parseServerOptions(args: Array<String>): ServerOptions {
+        var port = 8081
+        var host = "localhost"
+        var publicName = "apps.simiacrypt.us"
+        var i = 0
+        while (i < args.size) {
+            when (args[i]) {
+                "--port" -> {
+                    if (i + 1 < args.size) {
+                        log.debug("Setting port to: ${args[i + 1]}")
+                        port = args[++i].toIntOrNull() ?: run {
+                            log.error("Invalid port number: ${args[i]}")
+                            System.exit(1)
+                        }
+                    }
+                }
+                "--host" -> if (i + 1 < args.size) host = args[++i]
+                "--public-name" -> if (i + 1 < args.size) publicName = args[++i]
+                else -> {
+                    log.error("Unknown server option: ${args[i]}")
+                    throw IllegalArgumentException("Unknown server option: ${args[i]}")
+                }}
+            i++
+        }
+        log.debug("Server options parsed successfully")
+        return ServerOptions(port, host, publicName)
+    }
+    }
+    private fun initSystemTray() {
+        if (!SystemTray.isSupported()) {
+            log.warn("System tray is not supported")
+            return
+        }
+        systemTrayManager = SystemTrayManager(port, localName) {
+            log.info("Exit requested from system tray")
+            stopServer()
+            System.exit(0)
+        }
+        systemTrayManager?.initialize()
+    }
+    fun stopServer() {
+        systemTrayManager?.remove()
     }
     open val api2 = OpenAIClient()
 
