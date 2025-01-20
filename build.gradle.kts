@@ -7,7 +7,7 @@ plugins {
     `maven-publish`
     id("signing")
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    kotlin("jvm") apply false
+    kotlin("jvm") version "2.0.20"
     war
     id("org.beryx.runtime") version "1.13.0"
     application
@@ -109,7 +109,33 @@ tasks.register("packageMsi") {
                 "--win-dir-chooser",
                 "--win-menu",
                 "--win-shortcut",
-                "--win-per-user-install"
+                "--win-per-user-install",
+                "--win-console"
+            )
+            isIgnoreExitValue = true
+            standardOutput = System.out
+            errorOutput = System.err
+        }
+    }
+    onlyIf { System.getProperty("os.name").lowercase().contains("windows") }
+}
+tasks.register("packageExe") {
+    dependsOn("createAppImage")
+    doFirst {
+        exec {
+            workingDir = layout.buildDirectory.dir("jpackage").get().asFile
+            commandLine(
+                "jpackage",
+                "--type", "exe",
+                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
+                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
+                "--name", "SkyenetApps",
+                "--vendor", "SimiaCryptus",
+                "--app-version", "${project.version}",
+                "--win-dir-chooser",
+                "--win-menu",
+                "--win-shortcut",
+                "--win-console"
             )
             isIgnoreExitValue = true
             standardOutput = System.out
@@ -124,7 +150,7 @@ tasks.register("package") {
     when {
         os.contains("linux") -> dependsOn("packageDeb")
         os.contains("mac") -> dependsOn("packageDmg")
-        os.contains("windows") -> dependsOn("packageMsi")
+        os.contains("windows") -> dependsOn("packageMsi", "packageExe")
     }
     description = "Creates platform-specific packages"
     group = "distribution"
