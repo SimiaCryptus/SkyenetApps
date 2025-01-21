@@ -16,7 +16,6 @@ import com.simiacryptus.skyenet.core.platform.model.AuthorizationInterface
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
-import com.simiacryptus.util.JsonUtil
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
@@ -40,16 +39,14 @@ open class AppServer(
             try {
                 if (args.isEmpty()) {
                     log.info("No arguments provided - defaulting to server mode with default options")
-                    handleServer(arrayOf())
+                    handleServer()
                     return
                 }
                 when (args[0].lowercase()) {
-                    "server" -> handleServer(args.sliceArray(1 until args.size))
+                    "server" -> handleServer(*args.sliceArray(1 until args.size))
                     "help", "-h", "--help" -> printUsage()
                     else -> {
-                        log.error("Unknown command: ${args[0]}")
-                        printUsage()
-                        System.exit(1)
+                        handleServer()
                     }
                 }
             } catch (e: Exception) {
@@ -63,9 +60,9 @@ open class AppServer(
             }
         }
         private var server: AppServer? = null
-        private fun handleServer(args: Array<String>) {
+        private fun handleServer(vararg args: String) {
             log.info("Parsing server options...")
-            val options = parseServerOptions(args)
+            val options = parseServerOptions(*args)
             log.info("Configuring server with options: port=${options.port}, host=${options.host}, publicName=${options.publicName}")
             server = AppServer(
                 localName = options.host,
@@ -73,7 +70,7 @@ open class AppServer(
                 port = options.port
             )
             server?.initSystemTray()
-            server?._main(args)
+            server?._main(*args)
         }
         private fun printUsage() {
             println("""
@@ -92,7 +89,8 @@ open class AppServer(
         val host: String = "localhost", 
         val publicName: String = "apps.simiacrypt.us"
     )
-    private fun parseServerOptions(args: Array<String>): ServerOptions {
+
+        private fun parseServerOptions(vararg args: String): ServerOptions {
         var port = 8081
         var host = "localhost"
         var publicName = "apps.simiacrypt.us"
@@ -164,7 +162,6 @@ open class AppServer(
         }
     }
 
-    //    private val sparkConf = SparkConf().setMaster("local[*]").setAppName("Spark Coding Assistant")
     override val childWebApps by lazy {
         listOf(
             ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName), "IllustratedStorybook.png"),
@@ -193,15 +190,4 @@ open class AppServer(
                     .build()
             ).secretString()
 
-    private fun getPassword() = (System.getProperties()["db.password"] as String).run {
-        when {
-            startsWith("arn:aws:secretsmanager:us-east-1:") -> {
-                val plaintextSecret: String = fetchPlaintextSecret(this, Region.US_EAST_1)
-                val secretJson = JsonUtil.fromJson<Map<String, String>>(plaintextSecret, Map::class.java)
-                secretJson["password"] as String
-            }
-            // Literal password
-            else -> this
-        }
-    }
 }
