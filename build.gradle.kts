@@ -109,7 +109,33 @@ tasks.register("packageMsi") {
                 "--win-dir-chooser",
                 "--win-menu",
                 "--win-shortcut",
-                "--win-per-user-install"
+                "--win-per-user-install",
+                "--win-console"
+            )
+            isIgnoreExitValue = true
+            standardOutput = System.out
+            errorOutput = System.err
+        }
+    }
+    onlyIf { System.getProperty("os.name").lowercase().contains("windows") }
+}
+tasks.register("packageExe") {
+    dependsOn("createAppImage")
+    doFirst {
+        exec {
+            workingDir = layout.buildDirectory.dir("jpackage").get().asFile
+            commandLine(
+                "jpackage",
+                "--type", "exe",
+                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
+                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
+                "--name", "SkyenetApps",
+                "--vendor", "SimiaCryptus",
+                "--app-version", "${project.version}",
+                "--win-dir-chooser",
+                "--win-menu",
+                "--win-shortcut",
+                "--win-console"
             )
             isIgnoreExitValue = true
             standardOutput = System.out
@@ -124,7 +150,7 @@ tasks.register("package") {
     when {
         os.contains("linux") -> dependsOn("packageDeb")
         os.contains("mac") -> dependsOn("packageDmg")
-        os.contains("windows") -> dependsOn("packageMsi")
+        os.contains("windows") -> dependsOn("packageMsi", "packageExe")
     }
     description = "Creates platform-specific packages"
     group = "distribution"
@@ -174,6 +200,8 @@ val jackson_version = "2.17.2"
 val jupiter_version = "5.10.1"
 val logback_version = "1.5.13"
 dependencies {
+    implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
+    implementation("org.apache.xmlgraphics:batik-codec:1.14")
     // Add java.desktop module for system tray support
     implementation("org.openjfx:javafx-swing:17")
     implementation("org.openjfx:javafx-graphics:17")

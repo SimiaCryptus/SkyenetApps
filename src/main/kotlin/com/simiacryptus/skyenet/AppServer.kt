@@ -124,11 +124,15 @@ open class AppServer(
             log.warn("System tray is not supported")
             return
         }
-        systemTrayManager = SystemTrayManager(port, localName) {
+        systemTrayManager = SystemTrayManager(
+            port = port,
+            host = localName,
+            apps = childWebApps,
+            onExit = {
             log.info("Exit requested from system tray")
             stopServer()
             System.exit(0)
-        }
+            })
         systemTrayManager?.initialize()
     }
     fun stopServer() {

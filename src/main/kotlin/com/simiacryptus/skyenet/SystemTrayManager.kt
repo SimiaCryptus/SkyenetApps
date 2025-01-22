@@ -1,25 +1,57 @@
 package com.simiacryptus.skyenet
 
+import com.simiacryptus.skyenet.core.platform.Session
+import org.apache.batik.transcoder.TranscoderInput
+import org.apache.batik.transcoder.TranscoderOutput
+import org.apache.batik.transcoder.image.ImageTranscoder
 import org.slf4j.LoggerFactory
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.image.BufferedImage
-import java.awt.image.DirectColorModel
 import java.net.URI
-import javax.swing.ImageIcon
 import javax.swing.SwingUtilities
+import com.simiacryptus.skyenet.webui.application.ApplicationDirectory.ChildWebApp
+import javax.swing.JOptionPane
 
 class SystemTrayManager(
     private val port: Int,
     private val host: String,
-    private val onExit: () -> Unit
+    private val onExit: () -> Unit,
+    private val apps: List<ChildWebApp> = emptyList()
 ) {
     private val log = LoggerFactory.getLogger(SystemTrayManager::class.java)
     private var trayIcon: TrayIcon? = null
     private var lastErrorTime: Long = 0
     private val ERROR_COOLDOWN = 5000 // 5 second cooldown between error messages
     private var lastErrorMessage: String? = null
+    private fun loadSvgImage(): Image? {
+        return try {
+            val svgStream = javaClass.getResourceAsStream("/toolbarIcon.svg")
+            if (svgStream == null) {
+                log.warn("Could not find toolbarIcon.svg")
+                null
+            } else {
+                val transcoder = object : ImageTranscoder() {
+                    var image: BufferedImage? = null
+                    override fun createImage(w: Int, h: Int): BufferedImage {
+                        return BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
+                    }
+                    override fun writeImage(img: BufferedImage, output: TranscoderOutput?) {
+                        this.image = img
+                    }
+                }
+                transcoder.addTranscodingHint(ImageTranscoder.KEY_WIDTH, 32f)
+                transcoder.addTranscodingHint(ImageTranscoder.KEY_HEIGHT, 32f)
+                transcoder.transcode(TranscoderInput(svgStream), TranscoderOutput())
+                transcoder.image
+            }
+        } catch (e: Exception) {
+            log.error("Failed to load SVG image: ${e.message}", e)
+            null
+        }
+    }
+
 
     fun initialize() {
         if (!SystemTray.isSupported()) {
@@ -30,25 +62,28 @@ class SystemTrayManager(
         SwingUtilities.invokeLater {
             try {
                 val tray = SystemTray.getSystemTray()
-                val image = ImageIcon(javaClass.getResource("/icon.png")).image
-                    ?: createDefaultImage()
-
+                val image = loadSvgImage()
                 val popup = PopupMenu()
-                
-                val openItem = MenuItem("Open in Browser")
-                openItem.addActionListener {
-                    openInBrowser()
+                // Add Applications submenu
+                if (apps.isNotEmpty()) {
+                    popup.addSeparator()
+                    apps.forEach { app ->
+                        val item = MenuItem(app.server.applicationName)
+                        item.addActionListener {
+                            openInBrowser("${app.path}/#" + Session.newUserID())
+                        }
+                        popup.add(item)
+                    }
                 }
-                popup.add(openItem)
-
+                
                 popup.addSeparator()
-
                 val exitItem = MenuItem("Exit")
                 exitItem.addActionListener {
-                    onExit()
+                    confirm("Exit?") {
+                        onExit()
+                    }
                 }
                 popup.add(exitItem)
-
                 trayIcon = TrayIcon(image, "SkyenetApps", popup).apply {
                     isImageAutoSize = true
                     addMouseListener(object : MouseAdapter() {
@@ -69,35 +104,23 @@ class SystemTrayManager(
         }
     }
 
-    private fun createDefaultImage(): Image {
-        val size = 16
-        val image = createRGBImage(size, size, true)
-        return image
+    private fun confirm(message: String, onConfirm: () -> Unit) {
+        val result = JOptionPane.showConfirmDialog(
+            null,
+            message,
+            "SkyenetApps",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE
+        )
+        if (result == JOptionPane.YES_OPTION) {
+            onConfirm()
+        }
     }
 
-    private fun createRGBImage(
-        width: Int,
-        height: Int, 
-        hasAlpha: Boolean
-    ): Image {
-        val pixels = IntArray(width * height)
-        val model = if (hasAlpha) {
-            DirectColorModel(32, 0x00FF0000, 0x0000FF00, 0x000000FF, -0x1000000)
-        } else {
-            DirectColorModel(24, 0x00FF0000, 0x0000FF00, 0x000000FF, 0)
-        }
-        val raster = model.createCompatibleWritableRaster(width, height)
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                raster.setPixel(x, y, model.getDataElements(pixels[y * width + x], null) as IntArray)
-            }
-        }
-        return BufferedImage(model, raster, model.isAlphaPremultiplied, null)
-    }
 
-    private fun openInBrowser() {
+    private fun openInBrowser(path: String = "") {
         try {
-            val url = "http://${if (host == "0.0.0.0") "localhost" else host}:$port"
+            val url = "http://${if (host == "0.0.0.0") "localhost" else host}:$port$path"
             Desktop.getDesktop().browse(URI(url))
             log.info("Opened browser to $url")
         } catch (e: Exception) {
