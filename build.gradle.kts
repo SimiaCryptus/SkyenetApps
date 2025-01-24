@@ -12,12 +12,11 @@ plugins {
     id("org.beryx.runtime") version "1.13.0"
     application
 }
-// Configure the application plugin with main class
+
 application {
     mainClass.set("com.simiacryptus.skyenet.AppServer")
 }
 
-// Add runtime plugin configuration
 runtime {
     options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
     modules.set(
@@ -32,129 +31,7 @@ runtime {
         )
     )
 }
-// Create base app image using jpackage
-tasks.register<Exec>("createAppImage") {
-    dependsOn("runtime")
-    doFirst {
-        // Delete existing app image directory if it exists
-        val appImageDir = layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile
-        if (appImageDir.exists()) {
-            logger.info("Deleting existing app image directory: ${appImageDir.absolutePath}")
-            appImageDir.deleteRecursively()
-        }
-        // Ensure output directory exists
-        layout.buildDirectory.dir("jpackage").get().asFile.mkdirs()
-    }
-    val baseArgs = mutableListOf(
-        "jpackage",
-        "--input", layout.buildDirectory.dir("libs").get().asFile.absolutePath,
-        "--main-jar", "${project.name}-${project.version}-all.jar",
-        "--main-class", "com.simiacryptus.skyenet.AppServer",
-        "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
-        "--name", "SkyenetApps",
-        "--app-version", "${project.version}",
-        "--vendor", "SimiaCryptus",
-        "--copyright", "Copyright © 2024 SimiaCryptus",
-        "--description", "Skyenet Applications Suite",
-        "--type", "app-image"
-    )
-    commandLine(baseArgs)
-}
-// Add platform-specific packaging tasks
-tasks.register("packageDeb") {
-    dependsOn("createAppImage")
-    doFirst {
-        exec {
-            commandLine(
-                "jpackage",
-                "--type", "deb",
-                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
-                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
-                "--name", "SkyenetApps",
-                "--linux-shortcut",
-                "--linux-menu-group", "Development"
-            )
-        }
-    }
-    onlyIf { System.getProperty("os.name").lowercase().contains("linux") }
-}
-tasks.register("packageDmg") {
-    dependsOn("createAppImage")
-    doFirst {
-        exec {
-            commandLine(
-                "jpackage",
-                "--type", "dmg",
-                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
-                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
-                "--name", "SkyenetApps"
-            )
-        }
-    }
-    onlyIf { System.getProperty("os.name").lowercase().contains("mac") }
-}
-tasks.register("packageMsi") {
-    dependsOn("createAppImage")
-    doFirst {
-        exec {
-            workingDir = layout.buildDirectory.dir("jpackage").get().asFile
-            commandLine(
-                "jpackage",
-                "--type", "msi",
-                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
-                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
-                "--name", "SkyenetApps",
-                "--vendor", "SimiaCryptus",
-                "--app-version", "${project.version}",
-                "--win-dir-chooser",
-                "--win-menu",
-                "--win-shortcut",
-                "--win-per-user-install",
-                "--win-console"
-            )
-            isIgnoreExitValue = true
-            standardOutput = System.out
-            errorOutput = System.err
-        }
-    }
-    onlyIf { System.getProperty("os.name").lowercase().contains("windows") }
-}
-tasks.register("packageExe") {
-    dependsOn("createAppImage")
-    doFirst {
-        exec {
-            workingDir = layout.buildDirectory.dir("jpackage").get().asFile
-            commandLine(
-                "jpackage",
-                "--type", "exe",
-                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
-                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
-                "--name", "SkyenetApps",
-                "--vendor", "SimiaCryptus",
-                "--app-version", "${project.version}",
-                "--win-dir-chooser",
-                "--win-menu",
-                "--win-shortcut",
-                "--win-console"
-            )
-            isIgnoreExitValue = true
-            standardOutput = System.out
-            errorOutput = System.err
-        }
-    }
-    onlyIf { System.getProperty("os.name").lowercase().contains("windows") }
-}
-// Add a general package task that depends on platform-specific tasks
-tasks.register("package") {
-    val os = System.getProperty("os.name").lowercase()
-    when {
-        os.contains("linux") -> dependsOn("packageDeb")
-        os.contains("mac") -> dependsOn("packageDmg")
-        os.contains("windows") -> dependsOn("packageMsi", "packageExe")
-    }
-    description = "Creates platform-specific packages"
-    group = "distribution"
-}
+
 allprojects {
     if (project != rootProject) {
         apply(plugin = "org.jetbrains.kotlin.jvm")
@@ -172,8 +49,6 @@ allprojects {
     }
 }
 
-
-
 fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
 version = properties("libraryVersion")
@@ -186,7 +61,6 @@ repositories {
         }
     }
 }
-
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -202,7 +76,7 @@ val logback_version = "1.5.13"
 dependencies {
     implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
     implementation("org.apache.xmlgraphics:batik-codec:1.14")
-    // Add java.desktop module for system tray support
+
     implementation("org.openjfx:javafx-swing:17")
     implementation("org.openjfx:javafx-graphics:17")
     implementation("org.openjfx:javafx-base:17")
@@ -283,9 +157,6 @@ tasks {
     }
 }
 
-
-
-
 tasks.war {
     archiveClassifier.set("")
     from(sourceSets.main.get().output)
@@ -309,6 +180,119 @@ tasks.withType<ShadowJar> {
     }
 }
 
+tasks.register<Exec>("createAppImage") {
+    dependsOn("runtime")
+    doFirst {
+        val appImageDir = layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile
+        if (appImageDir.exists()) {
+            logger.info("Deleting existing app image directory: ${appImageDir.absolutePath}")
+            appImageDir.deleteRecursively()
+        }
+        // Ensure output directory exists
+        layout.buildDirectory.dir("jpackage").get().asFile.mkdirs()
+    }
+    val baseArgs = mutableListOf(
+        "jpackage",
+        "--input", layout.buildDirectory.dir("libs").get().asFile.absolutePath,
+        "--main-jar", "${project.name}-${project.version}-all.jar",
+        "--main-class", "com.simiacryptus.skyenet.AppServer",
+        "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
+        "--name", "SkyenetApps",
+        "--app-version", "${project.version}",
+        "--vendor", "SimiaCryptus",
+        "--copyright", "Copyright © 2024 SimiaCryptus",
+        "--description", "Skyenet Applications Suite",
+        "--type", "app-image"
+    )
+    commandLine(baseArgs)
+}
+
+tasks.register("packageDeb") {
+    dependsOn("createAppImage")
+    doFirst {
+        exec {
+            commandLine(
+                "jpackage",
+                "--type", "deb",
+                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
+                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
+                "--name", "SkyenetApps",
+                "--linux-shortcut",
+                "--linux-menu-group", "Development"
+            )
+        }
+    }
+    onlyIf { System.getProperty("os.name").lowercase().contains("linux") }
+}
+tasks.register("packageDmg") {
+    dependsOn("createAppImage")
+    doFirst {
+        exec {
+            commandLine(
+                "jpackage",
+                "--type", "dmg",
+                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
+                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
+                "--name", "SkyenetApps"
+            )
+        }
+    }
+    onlyIf { System.getProperty("os.name").lowercase().contains("mac") }
+}
+tasks.register("packageMsi") {
+    dependsOn("createAppImage")
+    doFirst {
+        // Check if WiX Toolset is installed
+        val wixPath = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
+        if (!file(wixPath).exists()) {
+            throw GradleException("WiX Toolset not found at $wixPath. Please install WiX Toolset v3.14 or later.")
+        }
+        // Add WiX to system PATH if not already present
+        val path = System.getenv("PATH")
+        if (!path.contains(wixPath)) {
+            System.setProperty("java.library.path", "$path;$wixPath")
+        }
+
+        exec {
+            workingDir = layout.buildDirectory.dir("jpackage").get().asFile
+            commandLine(
+                "jpackage",
+                "--type", "msi",
+                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
+                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
+                "--name", "SkyenetApps",
+                "--vendor", "SimiaCryptus",
+                "--app-version", "${project.version}",
+                "--win-dir-chooser",
+                "--win-menu",
+                "--win-shortcut",
+                "--win-per-user-install",
+                "--resource-dir", layout.projectDirectory.dir("src/main/resources").asFile.absolutePath
+            )
+            isIgnoreExitValue = false
+            standardOutput = System.out
+            errorOutput = System.err
+        }
+    }
+    onlyIf { 
+        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+        if (!isWindows) {
+            logger.warn("Skipping MSI packaging - Windows OS required")
+        }
+        isWindows
+    }
+    outputs.dir(layout.buildDirectory.dir("jpackage"))
+}
+tasks.register("package") {
+    val os = System.getProperty("os.name").lowercase()
+    when {
+        os.contains("linux") -> dependsOn("packageDeb")
+        os.contains("mac") -> dependsOn("packageDmg")
+        os.contains("windows") -> dependsOn("packageMsi")
+    }
+    description = "Creates platform-specific packages"
+    group = "distribution"
+}
 
 tasks.named("build") {
     dependsOn(tasks.war)
