@@ -27,7 +27,7 @@ class SystemTrayManager(
     private var lastErrorMessage: String? = null
     private fun loadSvgImage(): Image? {
         return try {
-            val svgStream = javaClass.getResourceAsStream("/toolbarIcon.svg")
+            val svgStream = javaClass.getResourceAsStream("/icons/toolbarIcon.svg")
             if (svgStream == null) {
                 log.warn("Could not find toolbarIcon.svg")
                 null
