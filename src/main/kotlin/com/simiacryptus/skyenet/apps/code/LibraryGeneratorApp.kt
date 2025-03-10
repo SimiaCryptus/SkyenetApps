@@ -37,7 +37,7 @@ class LibraryGeneratorApp(
         }</div>"
 
     data class Settings(
-        val model: ChatModel = OpenAIModels.GPT4o,
+        val model: ChatModel,
         val temperature: Double = 0.2,
     )
 
@@ -63,7 +63,7 @@ class LibraryGeneratorApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: OpenAIModels.GPT4oMini,
+                model = settings?.model ?: throw IllegalArgumentException("Model is required"),
                 temperature = settings?.temperature ?: 0.2,
             )
             generator.generateLibrary(userMessage)

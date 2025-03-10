@@ -60,7 +60,7 @@ class JDBCCodingApp : ApplicationServer(
 
     data class Settings(
         val temperature: Double? = 0.1,
-        val model: ChatModel = OpenAIModels.GPT4o,
+        val model: ChatModel,
         val jdbcUrl: String = "jdbc:postgresql://localhost:5432/postgres",
         val jdbcUser: String = "postgres",
         val jdbcPassword: String = "password",

@@ -3,11 +3,8 @@ package com.simiacryptus.skyenet.apps.general
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ApiModel
+import com.simiacryptus.jopenai.models.*
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.skyenet.AgentPatterns
@@ -50,7 +47,7 @@ open class IllustratedStorybookApp(
         ) + "</div>"
 
     data class Settings(
-        val model: TextModel? = OpenAIModels.GPT4o,
+        val model: TextModel?,
         val temperature: Double? = 0.5,
         val imageModel: ImageModels? = ImageModels.DallE3,
         val voice: String? = "alloy",
@@ -78,7 +75,7 @@ open class IllustratedStorybookApp(
                 dataStorage = dataStorage,
                 ui = ui,
                 api = api,
-                model = settings?.model ?: OpenAIModels.GPT4oMini,
+                model = settings?.model ?: throw RuntimeException("Model is required"),
                 temperature = settings?.temperature ?: 0.3,
                 imageModel = settings?.imageModel ?: ImageModels.DallE2,
                 voice = settings?.voice ?: "alloy",
@@ -101,7 +98,7 @@ open class IllustratedStorybookAgent(
   val dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-  val model: TextModel = OpenAIModels.GPT4o,
+  val model: TextModel,
   val temperature: Double = 0.3,
   val imageModel: ImageModels = ImageModels.DallE2,
     val voice: String = "alloy",
@@ -128,7 +125,7 @@ open class IllustratedStorybookAgent(
     private fun agentSystemArchitecture(userPreferencesContent: UserPreferencesContent) {
         val task = ui.newTask(root = false).apply { tabbedDisplay["Generation"] = placeholder }
         try {
-            task.header("Starting Storybook Generation Process")
+            task.header("Starting Storybook Generation Process", 1)
 
             // Step 1: Generate the story text using the Story Generator Actor
             task.add("Generating the story based on user preferences...")
@@ -230,7 +227,7 @@ open class IllustratedStorybookAgent(
         task: SessionTask
     ): String {
         try {
-            task.header("Formatting Storybook")
+            task.header("Formatting Storybook", 1)
             val htmlContent = StringBuilder()
 
             //language=HTML
@@ -384,7 +381,7 @@ open class IllustratedStorybookAgent(
         task: SessionTask
     ): String {
         try {
-            task.header("Saving Storybook File")
+            task.header("Saving Storybook File", 1)
 
             // Generate a unique file name for the storybook
             val fileName = "storybook_${Session.long64()}.html"
@@ -473,7 +470,7 @@ open class IllustratedStorybookAgent(
         task: SessionTask,
     ): IllustratedStorybookActors.StoryData {
         try {
-            task.header("Generating Story")
+            task.header("Generating Story", 1)
 
             // Construct the conversation thread with user preferences
             val conversationThread = listOf(
@@ -506,7 +503,8 @@ open class IllustratedStorybookAgent(
 }
 
 class IllustratedStorybookActors(
-    val model: TextModel = OpenAIModels.GPT4o,
+    val model: TextModel,
+    val parsingModel: TextModel,
     val temperature: Double = 0.3,
     val imageModel: ImageModels = ImageModels.DallE2,
     voice: String = "alloy",
@@ -535,8 +533,8 @@ class IllustratedStorybookActors(
 
     private val requirementsActor = ParsedActor(
         resultClass = IllustratedStorybookAgent.UserPreferencesContent::class.java,
-        model = OpenAIModels.GPT4oMini,
-        parsingModel = OpenAIModels.GPT4oMini,
+        model = model,
+        parsingModel = parsingModel,
         prompt = """
             You are helping gather requirements for a storybook.
             Respond to the user by suggesting a genre, target age group, specific elements to include in the story,
@@ -546,8 +544,8 @@ class IllustratedStorybookActors(
 
     private val storyGeneratorActor = ParsedActor(
         resultClass = StoryData::class.java,
-        model = OpenAIModels.GPT4o,
-        parsingModel = OpenAIModels.GPT4oMini,
+        model = model,
+        parsingModel = parsingModel,
         prompt = """
             You are an AI creating a story for a digital storybook. Generate a story that includes a title, storyline, dialogue, and descriptions.
             The story should be engaging and suitable for the specified target age group and genre.
@@ -563,12 +561,12 @@ class IllustratedStorybookActors(
         temperature = 0.5, // Adjust temperature for creativity vs. coherence
         width = 1024, // Width of the generated image
         height = 1024, // Height of the generated image
-        textModel = OpenAIModels.GPT4oMini
+        textModel = model
     ).apply {
         setImageAPI(api2)
     }
 
-    private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = OpenAIModels.GPT4oMini)
+    private val narrator = TextToSpeechActor(voice = voice, speed = voiceSpeed, models = model as ChatModel)
 
     enum class ActorType {
         REQUIREMENTS_ACTOR,

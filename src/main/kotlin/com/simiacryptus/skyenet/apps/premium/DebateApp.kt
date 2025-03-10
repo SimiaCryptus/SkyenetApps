@@ -27,7 +27,7 @@ open class DebateApp(
     path = "/debate",
 ) {
     data class Settings(
-        val model: ChatModel = OpenAIModels.GPT4oMini,
+        val model: ChatModel,
         val temperature: Double = 0.2,
         val budget: Double = 2.0,
     )
@@ -68,7 +68,7 @@ open class DebateApp(
               user = user,
                 session = session,
                 ui = ui,
-                model = settings?.model ?: OpenAIModels.GPT4oMini,
+                model = settings?.model ?: throw RuntimeException("Model is required"),
                 temperature = settings?.temperature ?: 0.3,
             ).debate(userMessage)
         } catch (e: Throwable) {
@@ -89,7 +89,7 @@ class DebateAgent(
     val user: User?,
     val session: Session,
     val ui: ApplicationInterface,
-    val model: ChatModel = OpenAIModels.GPT4o,
+    val model: ChatModel,
     val temperature: Double = 0.3,
     private val debateActors: DebateActors = DebateActors(model, temperature)
 ) {
@@ -140,15 +140,30 @@ class DebateAgent(
                         val actor = debaters[index]
                         val responseTask =
                             ui.newTask(false).apply { responseTabs[actor.name!!] = placeholder }
-                        responseTask.header(MarkdownUtil.renderMarkdown(actor.name ?: "", ui = ui).trim())
+                        responseTask.header(MarkdownUtil.renderMarkdown(actor.name ?: "", ui = ui).trim(), 3)
                         val previousResponses = debaters.subList(0, index).mapNotNull { previousActor ->
                             """
                                 **${previousActor.name}**: ${
-                                    outlines[previousActor.name!! + ": " + question.text!!]?.arguments?.joinToString("\n") {
-                                        val t = it.text ?: ""
-                                        t
-                                    }?.trim()?.replace("\n", "\n  ")
+                                outlines[previousActor.name!! + ": " + question.text!!]?.arguments?.joinToString("\n") {
+                                    val t = it.text ?: ""
+                                    t
+                                }?.trim()?.let { trim ->
+                                    trim.lineSequence()
+                                        .map {
+                                            when {
+                                                it.isBlank() -> {
+                                                    when {
+                                                        it.length < "  ".length -> "  "
+                                                        else -> it
+                                                    }
+                                                }
+
+                                                else -> "  " + it
+                                            }
+                                        }
+                                        .joinToString("\n")
                                 }
+                            }
                                 """.trimIndent().trim()
                         }
                         val response = debateActors.getActorConfig(actor)
@@ -182,7 +197,11 @@ class DebateAgent(
 
 }
 
-class DebateActors(val model: ChatModel, val temperature: Double) {
+class DebateActors(
+  val model: ChatModel,
+  val parsingModel: ChatModel,
+  val temperature: Double
+) {
 
     data class DebateSetup(
         val debaters: Debaters? = null,
@@ -250,7 +269,7 @@ class DebateActors(val model: ChatModel, val temperature: Double) {
             Details about you: ${actor.description}
         """.trimIndent(),
         model = model,
-        parsingModel = OpenAIModels.GPT4oMini,
+        parsingModel = parsingModel,
         temperature = temperature,
     )
 
@@ -262,7 +281,7 @@ class DebateActors(val model: ChatModel, val temperature: Double) {
             Debaters should be chosen as recognized experts in the field with household name status.
             """.trimIndent(),
         model = model,
-        parsingModel = OpenAIModels.GPT4oMini,
+        parsingModel = parsingModel,
         temperature = temperature,
     )
 

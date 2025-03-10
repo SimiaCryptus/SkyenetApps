@@ -41,9 +41,9 @@ open class VocabularyApp(
 ) {
 
     data class Settings(
-        val model: ChatModel = OpenAIModels.GPT4o,
+        val model: ChatModel,
         val temperature: Double = 0.1,
-        val parsingModel: ChatModel = OpenAIModels.GPT4o,
+        val parsingModel: ChatModel,
         val imageModel: ImageModels = ImageModels.DallE3,
     )
 
@@ -67,9 +67,9 @@ open class VocabularyApp(
                 dataStorage = dataStorage,
                 api = api,
                 ui = ui,
-                model = settings?.model ?: OpenAIModels.GPT4oMini,
-                parsingModel = settings?.parsingModel ?: OpenAIModels.GPT4oMini,
-                imageModel = settings?.imageModel ?: ImageModels.DallE3,
+                model = settings?.model ?: throw RuntimeException("Model is required"),
+                parsingModel = settings?.parsingModel  ?: throw RuntimeException("Model is required"),
+                imageModel = settings?.imageModel  ?: throw RuntimeException("Model is required"),
                 temperature = settings?.temperature ?: 0.3,
                 path = path
             ).generate(userMessage)
@@ -91,9 +91,9 @@ open class VocabularyAgent(
   val dataStorage: StorageInterface,
     val ui: ApplicationInterface,
     val api: API,
-  val model: ChatModel = OpenAIModels.GPT4oMini,
-    val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
-    val imageModel: ImageModels = ImageModels.DallE3,
+  val model: ChatModel,
+    val parsingModel: ChatModel,
+    val imageModel: ImageModels,
   val temperature: Double = 0.3,
     val path: String,
 ) {
@@ -162,7 +162,7 @@ open class VocabularyAgent(
                     ), api = api
                   )
                   val definition = VocabularyActors.TermDefinition(term, response.text).definition ?: "{}"
-                  task.header(term)
+                  task.header(term, 3)
                   task.add(renderMarkdown(definition, ui = ui))
 
                   val illustration = illustrationGeneratorActor.setImageAPI(
@@ -222,9 +222,9 @@ open class VocabularyAgent(
 }
 
 class VocabularyActors(
-    val model: ChatModel = OpenAIModels.GPT4o,
-    val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
-    val imageModel: ImageModels = ImageModels.DallE3,
+  val model: ChatModel,
+  val parsingModel: ChatModel,
+  val imageModel: ImageModels,
     val temperature: Double = 0.3,
     api2: OpenAIClient,
 ) {
