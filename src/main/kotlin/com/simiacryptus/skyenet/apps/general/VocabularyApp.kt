@@ -41,9 +41,9 @@ open class VocabularyApp(
 ) {
 
     data class Settings(
-        val model: ChatModel,
+        val model: ChatModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.1,
-        val parsingModel: ChatModel,
+        val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
         val imageModel: ImageModels = ImageModels.DallE3,
     )
 

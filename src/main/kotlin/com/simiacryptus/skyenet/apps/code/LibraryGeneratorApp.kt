@@ -37,7 +37,7 @@ class LibraryGeneratorApp(
         }</div>"
 
     data class Settings(
-        val model: ChatModel,
+        val model: ChatModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.2,
     )
 
@@ -96,7 +96,8 @@ class LibraryGenerator(
         prompt = """
             You are a data structure designer. Your task is to define appropriate data structures based on the user's requirements.
             Provide a list of Kotlin data class definitions that will be suitable for the described library.
-        """.trimIndent()
+        """.trimIndent(),
+        parsingModel = model,
     )
     private val functionImplementer = CodingActor(
         interpreterClass = KotlinInterpreter::class,
@@ -105,7 +106,8 @@ class LibraryGenerator(
         details = """
             You are a function implementer. Your task is to implement the functions for the library based on the user's requirements and the defined data structures.
             Implement the functions using Kotlin.
-        """.trimIndent()
+        """.trimIndent(),
+        fallbackModel = model,
     )
     private val testGenerator = CodingActor(
         interpreterClass = KotlinInterpreter::class,
@@ -114,7 +116,8 @@ class LibraryGenerator(
         details = """
             You are a test generator. Your task is to generate unit tests for the implemented functions using JUnit 5.
             Create comprehensive tests that cover various scenarios and edge cases.
-        """.trimIndent()
+        """.trimIndent(),
+        fallbackModel = model,
     )
 
     fun generateLibrary(userMessage: String) {

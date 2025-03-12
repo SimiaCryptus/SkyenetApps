@@ -43,7 +43,7 @@ open class PresentationDesignerApp(
     ) + "</div>"
 
   data class Settings(
-    val model: TextModel,
+    val model: TextModel = OpenAIModels.GPT4oMini,
     val temperature: Double = 0.1,
     val voice: String? = "alloy",
     val voiceSpeed: Double? = 1.0,
@@ -76,6 +76,7 @@ open class PresentationDesignerApp(
         temperature = settings?.temperature ?: 0.3,
         voice = settings?.voice ?: "alloy",
         voiceSpeed = settings?.voiceSpeed ?: 1.0,
+        parsingModel = settings?.model ?: throw RuntimeException("Model is required"),
       ).main(userMessage)
     } catch (e: Throwable) {
       log.warn("Error", e)

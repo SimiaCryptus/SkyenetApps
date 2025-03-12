@@ -33,8 +33,8 @@ class IncrementalCodeGenApp(
   path = path,
 ) {
   data class Settings(
-    val model: ChatModel,
-    val parsingModel: ChatModel,
+    val model: ChatModel = OpenAIModels.GPT4oMini,
+    val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
     val temperature: Double = 0.2,
     val budget: Double = 2.0,
   )
@@ -136,6 +136,7 @@ class IncrementalCodeGenAgent(
       """.trimIndent(),
       model = model,
       temperature = temperature,
+      fallbackModel = model
     )
   }
   

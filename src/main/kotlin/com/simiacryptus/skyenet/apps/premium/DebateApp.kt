@@ -27,7 +27,7 @@ open class DebateApp(
     path = "/debate",
 ) {
     data class Settings(
-        val model: ChatModel,
+        val model: ChatModel = OpenAIModels.GPT4oMini,
         val temperature: Double = 0.2,
         val budget: Double = 2.0,
     )
@@ -91,7 +91,7 @@ class DebateAgent(
     val ui: ApplicationInterface,
     val model: ChatModel,
     val temperature: Double = 0.3,
-    private val debateActors: DebateActors = DebateActors(model, temperature)
+    private val debateActors: DebateActors = DebateActors(model, temperature = temperature)
 ) {
   val actors = debateActors.actorMap.map { it.key.name to it.value }.toMap()
     private val outlines = mutableMapOf<String, DebateActors.Outline>()
@@ -199,7 +199,7 @@ class DebateAgent(
 
 class DebateActors(
   val model: ChatModel,
-  val parsingModel: ChatModel,
+  val parsingModel: ChatModel = model,
   val temperature: Double
 ) {
 

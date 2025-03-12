@@ -47,7 +47,7 @@ open class IllustratedStorybookApp(
         ) + "</div>"
 
     data class Settings(
-        val model: TextModel?,
+        val model: TextModel? = OpenAIModels.GPT4oMini,
         val temperature: Double? = 0.5,
         val imageModel: ImageModels? = ImageModels.DallE3,
         val voice: String? = "alloy",
@@ -111,6 +111,7 @@ open class IllustratedStorybookAgent(
         voice = voice,
         voiceSpeed = voiceSpeed,
         api2 = ApplicationServices.clientManager.getOpenAIClient(session,user),
+      parsingModel = model,
   ).actorMap.map { it.key.name to it.value }.toMap()
     private val tabbedDisplay = TabbedDisplay(ui.newTask())
 

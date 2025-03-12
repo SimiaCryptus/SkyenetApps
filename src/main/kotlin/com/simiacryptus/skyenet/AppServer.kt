@@ -4,7 +4,6 @@ import com.simiacryptus.skyenet.apps.code.*
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
 import com.simiacryptus.skyenet.apps.general.OutlineApp
 import com.simiacryptus.skyenet.apps.general.VocabularyApp
-import com.simiacryptus.skyenet.apps.general.WebDevApp
 import com.simiacryptus.skyenet.apps.hybrid.IncrementalCodeGenApp
 import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
 import com.simiacryptus.skyenet.apps.premium.DebateApp
@@ -178,7 +177,6 @@ open class AppServer(
             ChildWebApp("/aws", AwsCodingApp(), "awscoding.png"),
             ChildWebApp("/bash", BashCodingApp(), "bashcoding.png"),
             ChildWebApp("/powershell", PowershellCodingApp(), "powershell.png"),
-            ChildWebApp("/webdev", WebDevApp(api2 = api2), "webdev.png"),
             ChildWebApp("/jdbc", JDBCCodingApp(), "JDBCCoding.png"),
             ChildWebApp("/library_generator", LibraryGeneratorApp(), "coding.png"),
         )
