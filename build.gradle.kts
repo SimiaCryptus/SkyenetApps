@@ -189,23 +189,20 @@ tasks.register<Exec>("createAppImage") {
             appImageDir.deleteRecursively()
         }
         appImageDir.mkdirs()
-        // Ensure output directory exists
-        layout.buildDirectory.dir("jpackage").get().asFile.mkdirs()
     }
-    val baseArgs = mutableListOf(
+    commandLine(listOf(
         "jpackage",
-        "--input", layout.buildDirectory.dir("libs").get().asFile.absolutePath,
+        "--input", layout.buildDirectory.dir("libs").get().asFile.path,
         "--main-jar", "${project.name}-${project.version}-all.jar",
         "--main-class", "com.simiacryptus.skyenet.AppServer",
-        "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
+        "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
         "--name", "SkyenetApps",
         "--app-version", "${project.version}",
         "--vendor", "SimiaCryptus",
         "--copyright", "Copyright © 2024 SimiaCryptus",
         "--description", "Skyenet Applications Suite",
         "--type", "app-image"
-    )
-    commandLine(baseArgs)
+    ))
 }
 
 tasks.register("packageDeb") {
