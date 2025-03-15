@@ -188,6 +188,7 @@ tasks.register<Exec>("createAppImage") {
             logger.info("Deleting existing app image directory: ${appImageDir.absolutePath}")
             appImageDir.deleteRecursively()
         }
+        appImageDir.mkdirs()
         // Ensure output directory exists
         layout.buildDirectory.dir("jpackage").get().asFile.mkdirs()
     }
