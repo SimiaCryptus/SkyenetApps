@@ -182,14 +182,6 @@ tasks.withType<ShadowJar> {
 
 tasks.register<Exec>("createAppImage") {
     dependsOn("runtime")
-    doFirst {
-        val appImageDir = layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile
-        if (appImageDir.exists()) {
-            logger.info("Deleting existing app image directory: ${appImageDir.absolutePath}")
-            appImageDir.deleteRecursively()
-        }
-        appImageDir.mkdirs()
-    }
     commandLine(listOf(
         "jpackage",
         "--input", layout.buildDirectory.dir("libs").get().asFile.path,
