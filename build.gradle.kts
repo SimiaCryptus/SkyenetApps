@@ -234,16 +234,8 @@ tasks.register("packageMsi") {
     doFirst {
         // Diagnostic logging: check whether the app image directory exists
         val appImageDir = layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile
-        println("Diagnostic: Checking if app image directory exists at: ${'$'}{appImageDir.absolutePath}")
-        if (!appImageDir.exists()){
-            println("Diagnostic Error: App image directory does not exist. Listing its parent directory contents:")
-            val parentDir = appImageDir.parentFile
-            parentDir.listFiles()?.forEach { file ->
-                println(" - ${file.name} [${if(file.isDirectory) "dir" else "file"}]")
-            }
-        } else {
-            println("Diagnostic: App image directory exists.")
-        }
+        appImageDir.mkdirs()
+        log(appImageDir)
         // Check if WiX Toolset is installed
         val wixPath = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
         if (!file(wixPath).exists()) {
@@ -300,4 +292,22 @@ tasks.named("build") {
     dependsOn(tasks.war)
     dependsOn(tasks.shadowJar)
     dependsOn(tasks.named("package"))
+}
+
+fun log(appImageDir: File) {
+    println("Diagnostic: Checking if app image directory exists at: ${appImageDir.absolutePath}")
+    if (!appImageDir.exists()) {
+        println("Diagnostic Error: App image directory does not exist. Listing its parent directory contents:")
+        val parentDir = (appImageDir.parentFile) ?: return
+        if (parentDir.exists())
+            parentDir.listFiles()?.forEach { file ->
+                println(" - ${file.name} [${if (file.isDirectory) "dir" else "file"}]")
+            }
+        else {
+            log(parentDir)
+            return
+        }
+    } else {
+        println("Diagnostic: App image directory exists.")
+    }
 }
