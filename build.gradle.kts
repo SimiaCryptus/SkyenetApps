@@ -182,6 +182,13 @@ tasks.withType<ShadowJar> {
 
 tasks.register<Exec>("createAppImage") {
     dependsOn("runtime")
+    doFirst {
+        layout.buildDirectory.dir("jpackage").get().asFile.apply {
+            if (exists()) {
+                deleteRecursively()
+            }
+        }
+    }
     commandLine(listOf(
         "jpackage",
         "--input", layout.buildDirectory.dir("libs").get().asFile.path,
@@ -221,7 +228,11 @@ tasks.register("packageDmg") {
             commandLine(
                 "jpackage",
                 "--type", "dmg",
-                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
+                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.apply {
+                    if (exists()) {
+                        deleteRecursively()
+                    }
+                }.absolutePath,
                 "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
                 "--name", "SkyenetApps"
             )
@@ -247,29 +258,29 @@ tasks.register("packageMsi") {
             System.setProperty("java.library.path", "$path;$wixPath")
         }
 
-        exec {
-            workingDir = layout.buildDirectory.dir("jpackage").get().asFile
-            isIgnoreExitValue = false
-            standardOutput = System.out
-            errorOutput = System.err
-
-            commandLine(
-                "jpackage",
-                "--type", "msi",
-                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.apply { mkdirs() }.absolutePath,
-                "--dest", layout.buildDirectory.dir("dist").get().asFile.apply { mkdirs() }.absolutePath,
-                "--name", "SkyenetApps",
-                "--vendor", "SimiaCryptus",
-                "--app-version", "${project.version}",
-                "--win-dir-chooser",
-                "--win-menu",
-                "--win-shortcut",
-                "--win-per-user-install",
-                "--resource-dir", layout.projectDirectory.dir("src/main/resources").asFile.absolutePath
-            )
-        }
     }
-    onlyIf { 
+    exec {
+        workingDir = layout.buildDirectory.dir("jpackage").get().asFile
+        isIgnoreExitValue = false
+        standardOutput = System.out
+        errorOutput = System.err
+
+        commandLine(
+            "jpackage",
+            "--verbose",
+            "--type", "msi",
+            "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.apply { mkdirs() }.absolutePath,
+            "--name", "SkyenetApps",
+            "--vendor", "SimiaCryptus",
+            "--app-version", "${project.version}",
+            "--win-dir-chooser",
+            "--win-menu",
+            "--win-shortcut",
+            "--win-per-user-install",
+            "--resource-dir", layout.projectDirectory.dir("src/main/resources").asFile.absolutePath
+        )
+    }
+    onlyIf {
         val isWindows = System.getProperty("os.name").lowercase().contains("windows")
         if (!isWindows) {
             logger.warn("Skipping MSI packaging - Windows OS required")
