@@ -249,11 +249,15 @@ tasks.register("packageMsi") {
 
         exec {
             workingDir = layout.buildDirectory.dir("jpackage").get().asFile
+            isIgnoreExitValue = false
+            standardOutput = System.out
+            errorOutput = System.err
+
             commandLine(
                 "jpackage",
                 "--type", "msi",
-                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.absolutePath,
-                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.absolutePath,
+                "--app-image", layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile.apply { mkdirs() }.absolutePath,
+                "--dest", layout.buildDirectory.dir("dist").get().asFile.apply { mkdirs() }.absolutePath,
                 "--name", "SkyenetApps",
                 "--vendor", "SimiaCryptus",
                 "--app-version", "${project.version}",
@@ -263,9 +267,6 @@ tasks.register("packageMsi") {
                 "--win-per-user-install",
                 "--resource-dir", layout.projectDirectory.dir("src/main/resources").asFile.absolutePath
             )
-            isIgnoreExitValue = false
-            standardOutput = System.out
-            errorOutput = System.err
         }
     }
     onlyIf { 
