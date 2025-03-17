@@ -247,16 +247,6 @@ tasks.register("packageMsi") {
         val appImageDir = layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile
         appImageDir.mkdirs()
         log(appImageDir)
-        // Check if WiX Toolset is installed
-        val wixPath = "C:\\Program Files (x86)\\WiX Toolset v3.14\\bin"
-        if (!file(wixPath).exists()) {
-            throw GradleException("WiX Toolset not found at $wixPath. Please install WiX Toolset v3.14 or later.")
-        }
-        // Add WiX to system PATH if not already present
-        val path = System.getenv("PATH")
-        if (!path.contains(wixPath)) {
-            System.setProperty("java.library.path", "$path;$wixPath")
-        }
 
     }
     exec {
