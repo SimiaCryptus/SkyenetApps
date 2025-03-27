@@ -22,7 +22,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Future
-import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.ExecutorService
 
 class IncrementalCodeGenApp(
   applicationName: String = "Incremental Code Generation v1.1",
@@ -166,7 +166,7 @@ class IncrementalCodeGenAgent(
         )
       },
     ).call()
-    val pool: ThreadPoolExecutor = clientManager.getPool(session, user)
+    val pool: ExecutorService = clientManager.getPool(session, user)
     val genState = GenState(
       subTasks = highLevelPlan.obj.tasksByID?.toMutableMap() ?: mutableMapOf(),
       generatedCodes = mutableMapOf(),
