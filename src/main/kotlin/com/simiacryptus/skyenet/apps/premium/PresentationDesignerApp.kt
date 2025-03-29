@@ -137,7 +137,7 @@ open class PresentationDesignerAgent(
         val slideTask = ui.newTask(false).apply { slideTabs[idx.toString()] = placeholder }
         slideTask.header("Generating slide $idx: ${slide.title}", 2)
         ApplicationServices.clientManager.getPool(session, user).submit<SlideContents> {
-          slideContents(userRequest, slide, slideTask, idx, ideaListResponse.text)
+          slideContents(userRequest, slide, slideTask, idx, ideaListResponse.text) ?: throw RuntimeException("Failed to generate slide")
         }
       }?.mapNotNull { it.get() } ?: emptyList()
 

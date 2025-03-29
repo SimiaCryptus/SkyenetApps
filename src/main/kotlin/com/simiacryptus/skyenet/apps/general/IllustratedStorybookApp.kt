@@ -159,7 +159,7 @@ open class IllustratedStorybookAgent(
                   val fileLocation = task.saveFile("narration$idx.mp3", it)
                   task.add("""<audio preload="none" controls><source src='$fileLocation' type='audio/mpeg'></audio>""")
                   fileLocation
-                }
+                } ?: ""
               }
             }?.toTypedArray() ?: emptyArray()).map { it?.get() }
             task.complete("Narration generated successfully.")
