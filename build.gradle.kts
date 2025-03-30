@@ -313,3 +313,17 @@ tasks.register<Exec>("createAppImage") {
       }
   }
 }
+// Add a task to update version from environment variable if present
+tasks.register("updateVersionFromEnv") {
+    doLast {
+        val envVersion = System.getenv("SKYENET_VERSION")
+        if (envVersion != null && envVersion.isNotEmpty()) {
+            println("Updating version from environment variable: $envVersion")
+            project.version = envVersion
+        }
+    }
+}
+// Make sure the version is updated before packaging
+tasks.named("jpackage") {
+    dependsOn("updateVersionFromEnv")
+}
