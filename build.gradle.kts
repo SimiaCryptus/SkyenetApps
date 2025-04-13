@@ -95,7 +95,7 @@ dependencies {
   implementation("com.zaxxer:HikariCP:5.1.0")
   implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.16.1")
   implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.27.23")
-  implementation("org.jsoup:jsoup:1.18.1")
+  implementation("org.jsoup:jsoup:1.19.1")
 
   implementation("com.google.api-client:google-api-client:1.35.2")
   implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
