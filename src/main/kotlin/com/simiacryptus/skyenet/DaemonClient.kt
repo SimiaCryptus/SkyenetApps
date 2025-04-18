@@ -131,7 +131,7 @@ object DaemonClient {
         log.debug("Server class: $className")
         
         // Create a temporary script file to launch the daemon
-        val isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
+        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
         val scriptExt = if (isWindows) "bat" else "sh"
         val scriptFile = File.createTempFile("skyenet_daemon_", ".$scriptExt")
         //scriptFile.deleteOnExit()

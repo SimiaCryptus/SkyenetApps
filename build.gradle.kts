@@ -54,9 +54,6 @@ runtime {
 }
 
 allprojects {
-  if (project != rootProject) {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
-  }
   java {
     toolchain {
       languageVersion.set(JavaLanguageVersion.of(17))
@@ -300,7 +297,7 @@ fun installContextMenuAction(os: String) {
           Type=Application
           Name=$appDisplayName
           Comment=Open folders with SkyenetApps
-          Icon=/opt/skyenetapps/lib/SkyenetApps.png
+      Icon=/opt/skyenetapps/lib/icon.png
           Exec=/opt/skyenetapps/bin/SkyenetApps "%f"
           MimeType=inode/directory;
           Categories=Development;Utility;TextEditor;
@@ -321,7 +318,7 @@ fun installContextMenuAction(os: String) {
           Type=Application
           Name=SkyenetApps
           Comment=AI-powered application suite
-          Icon=/opt/skyenetapps/lib/SkyenetApps.png
+          Icon=/opt/skyenetapps/lib/icon.png
           Exec=/opt/skyenetapps/bin/SkyenetApps %f
           Categories=Development;Utility;TextEditor;
           MimeType=inode/directory;text/plain;
@@ -459,7 +456,7 @@ tasks.register("prepareLinuxDesktopFile") {
       Type=Application
       Name=Open with SkyenetApps
       Comment=Open folders with SkyenetApps
-      Icon=/opt/skyenetapps/bin/SkyenetApps
+      Icon=/opt/skyenetapps/lib/icon.png
       Exec=/opt/skyenetapps/bin/SkyenetApps %f
       MimeType=inode/directory;text/plain;
       Categories=Development;Utility;TextEditor;
@@ -480,7 +477,7 @@ tasks.register("prepareLinuxDesktopFile") {
       Type=Application
       Name=SkyenetApps
       Comment=AI-powered application suite
-      Icon=/opt/skyenetapps/bin/SkyenetApps
+      Icon=/opt/skyenetapps/lib/icon.png
       Exec=/opt/skyenetapps/bin/SkyenetApps %f
       Categories=Development;Utility;TextEditor;
       MimeType=inode/directory;text/plain;

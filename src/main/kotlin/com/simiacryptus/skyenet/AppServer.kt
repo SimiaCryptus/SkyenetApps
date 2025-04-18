@@ -219,6 +219,7 @@ open class AppServer(
             override fun logout(accessToken: String, user: User) {}
         }
         ApplicationServices.authorizationManager = object : AuthorizationManager() {
+            @Suppress("UNUSED_PARAMETER")
             override fun isAuthorized(
                 applicationClass: Class<*>?,
                 user: User?,
