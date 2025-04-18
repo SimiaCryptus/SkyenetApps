@@ -16,6 +16,15 @@ plugins {
 application {
   mainClass.set("com.simiacryptus.skyenet.DaemonClient")
 }
+// Create a task to run the server directly (for development)
+tasks.register<JavaExec>("runServer") {
+  group = "application"
+  description = "Run the AppServer directly (not as daemon)"
+  classpath = sourceSets["main"].runtimeClasspath
+  mainClass.set("com.simiacryptus.skyenet.AppServer")
+  args = listOf("server")
+}
+
 
 // Set jpackage type to 'deb' on Linux to avoid 'rpm' errors
 runtime {
@@ -175,7 +184,7 @@ tasks.war {
   isZip64 = true
   manifest {
     attributes(
-      "Main-Class" to "com.simiacryptus.skyenet.AppServer"
+      "Main-Class" to "com.simiacryptus.skyenet.DaemonClient"
     )
   }
 }
@@ -343,7 +352,7 @@ tasks.register("packageDmg", JPackageTask::class) {
         "--type", "dmg",
         "--input", layout.buildDirectory.dir("libs").get().asFile.path,
         "--main-jar", "${project.name}-${project.version}-all.jar",
-        "--main-class", "com.simiacryptus.skyenet.AppServer",
+        "--main-class", "com.simiacryptus.skyenet.DaemonClient",
         "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
         "--name", "SkyenetApps",
         "--app-version", "${project.version}",
@@ -412,7 +421,7 @@ tasks.register("packageDeb", JPackageTask::class) {
         "--type", "deb",
         "--input", layout.buildDirectory.dir("libs").get().asFile.path,
         "--main-jar", shadowJarName,
-        "--main-class", "com.simiacryptus.skyenet.AppServer",
+        "--main-class", "com.simiacryptus.skyenet.DaemonClient",
         "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
         "--name", "SkyenetApps",
         "--app-version", "${project.version}",

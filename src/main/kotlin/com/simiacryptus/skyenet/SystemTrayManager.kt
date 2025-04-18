@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet
 
 import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.webui.application.ApplicationDirectory.ChildWebApp
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.ImageTranscoder
@@ -10,9 +11,8 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.image.BufferedImage
 import java.net.URI
-import javax.swing.SwingUtilities
-import com.simiacryptus.skyenet.webui.application.ApplicationDirectory.ChildWebApp
 import javax.swing.JOptionPane
+import javax.swing.SwingUtilities
 
 class SystemTrayManager(
     private val port: Int,

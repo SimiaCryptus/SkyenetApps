@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest
 import java.awt.SystemTray
 import java.io.BufferedWriter
+import java.io.IOException
 import java.net.ServerSocket
 
 
@@ -37,6 +38,8 @@ open class AppServer(
 
     companion object {
       private val log = LoggerFactory.getLogger(AppServer::class.java.name)
+        private const val MAX_PORT_ATTEMPTS = 10
+      
         @JvmStatic
         fun main(args: Array<String>) {
             try {
@@ -71,15 +74,55 @@ open class AppServer(
             log.info("Parsing server options...")
             val options = parseServerOptions(*args)
             log.info("Configuring server with options: port=${options.port}, host=${options.host}, publicName=${options.publicName}")
+            // Find an available port if the specified one is in use
+            var actualPort = options.port
+            try {
+                // Just test if the port is available - don't keep it open
+                ServerSocket(actualPort).use {
+                    log.debug("Port $actualPort is available")
+                }
+            } catch (e: IOException) {
+                log.info("Port ${options.port} is in use, finding alternative port")
+                println("Port ${options.port} is in use, finding alternative port")
+                actualPort = findAvailablePort(options.port + 1)
+                log.info("Using alternative port $actualPort")
+                println("Using alternative port $actualPort")
+            }
+            
             server = AppServer(
                 localName = options.host,
-                publicName = options.publicName, 
-                port = options.port
+                publicName = options.publicName,
+                port = actualPort
             )
             server?.initSystemTray()
-            server?.startSocketServer(options.port)
+            server?.startSocketServer(actualPort + 1) // Use a different port for socket server
+            // Add a shutdown hook to ensure clean shutdown
+            Runtime.getRuntime().addShutdownHook(Thread {
+                log.info("Shutdown hook triggered, stopping server...")
+                server?.stopServer()
+            })
             server?._main(*args)
         }
+        
+        private fun findAvailablePort(startPort: Int): Int {
+            var port = startPort
+            var attempts = 0
+            while (attempts < MAX_PORT_ATTEMPTS) {
+                try {
+                    ServerSocket(port).use {
+                        log.debug("Port $port is available")
+                        return port
+                    }
+                } catch (e: IOException) {
+                    log.debug("Port $port is not available, trying next port")
+                    port++
+                    attempts++
+                }
+            }
+            log.warn("Could not find available port after $MAX_PORT_ATTEMPTS attempts, using random port")
+            return ServerSocket(0).use { it.localPort }
+        }
+        
         private fun printUsage() {
             println("""
                 SkyenetApps Server
@@ -217,8 +260,28 @@ open class AppServer(
         }
         socketThread = Thread {
             try {
-                socketServer = ServerSocket(port)
-                log.info("Socket server started on port $port")
+                try {
+                    socketServer = ServerSocket(port)
+                    log.info("Socket server started on port $port")
+                } catch (e: IOException) {
+                    log.error("Failed to start socket server on port $port: ${e.message}")
+                    // Try to find another available port
+                    for (attemptPort in (port + 1)..(port + 10)) {
+                        try {
+                            socketServer = ServerSocket(attemptPort)
+                            log.info("Socket server started on alternative port $attemptPort")
+                            break
+                        } catch (e2: IOException) {
+                            log.debug("Failed to start socket server on alternative port $attemptPort: ${e2.message}")
+                        }
+                    }
+                    
+                    if (socketServer == null) {
+                        log.error("Could not find any available port for socket server")
+                        return@Thread
+                    }
+                }
+                
                 while (!socketServer!!.isClosed) {
                     val client = try {
                         socketServer!!.accept()

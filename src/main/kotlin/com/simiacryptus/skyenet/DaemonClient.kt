@@ -2,12 +2,12 @@ package com.simiacryptus.skyenet
 
 import org.slf4j.LoggerFactory
 import java.io.*
-import java.net.Socket
+import java.lang.management.ManagementFactory
 import java.net.ConnectException
 import java.net.ServerSocket
+import java.net.Socket
 import java.nio.file.Files
 import java.nio.file.Paths
-import kotlin.concurrent.thread
 
 /**
  * Entry point for the daemon client.
@@ -18,35 +18,85 @@ object DaemonClient {
     private const val DEFAULT_PORT = 7681
     private const val DEFAULT_HOST = "localhost"
     private const val PID_FILE = "skyenet_server.pid"
+    private const val MAX_PORT_ATTEMPTS = 10
+    private const val SOCKET_PORT_OFFSET = 1 // Socket port is main port + this offset
 
     @JvmStatic
     fun main(args: Array<String>) {
-        val port = DEFAULT_PORT
-        val host = DEFAULT_HOST
-        log.info("DaemonClient started with args: ${args.joinToString(" ")}")
-        if (!isServerRunning(host, port)) {
-            log.info("Server not running. Launching daemon...")
-            println("Server not running. Launching daemon...")
-            launchDaemon(port)
-            waitForServer(host, port)
+        log.info("DaemonClient starting. PID: ${ManagementFactory.getRuntimeMXBean().name}. Args: ${args.joinToString(" ")}")
+        
+        // Check if the first argument is "server"
+        if (args.isNotEmpty() && args[0].equals("server", ignoreCase = true)) {
+            log.info("First argument is 'server', delegating to AppServer.main")
+            AppServer.main(args) // Delegate to AppServer
         } else {
-            log.info("Server already running.")
-            println("Server already running.")
-        }
-        if (args.isNotEmpty()) {
-            log.info("Dispatching command: ${args.joinToString(" ")}")
-            dispatchCommand(host, port, args)
-        } else {
-            log.warn("No command specified. Use: daemonclient <command> [args]")
-            println("No command specified. Use: daemonclient <command> [args]")
+            // Original DaemonClient logic
+            var port = DEFAULT_PORT
+            val host = DEFAULT_HOST
+            log.debug("Default host: $host, Default port: $port")
+            if (!isServerRunning(host, port)) {
+                log.info("Server not running. Launching daemon...")
+                println("Server not running on $host:$port. Launching daemon...")
+                try {
+                    // Just test if the port is available - don't keep it open
+                    ServerSocket(port).use {
+                        log.debug("Port $port is available")
+                    }
+                } catch (e: IOException) {
+                    log.info("Port $port is in use, finding alternative port")
+                    println("Port $port is in use, finding alternative port...")
+                    port = findAvailablePort(port + 1)
+                    log.info("Found available alternative port: $port")
+                    println("Using alternative port: $port")
+                }
+                launchDaemon(port)
+                waitForServer(host, port)
+            } else {
+                log.info("Server already running on $host:$port.")
+                println("Server already running on $host:$port.")
+            }
+            if (args.isNotEmpty()) {
+                log.info("Dispatching command: ${args.joinToString(" ")}")
+                dispatchCommand(host, port + SOCKET_PORT_OFFSET, args)
+            } else {
+                log.warn("No command specified. Use: daemonclient <command> [args]")
+                println("No command specified. Use: daemonclient <command> [args]")
+            }
         }
     }
+    
+    
+    private fun findAvailablePort(startPort: Int): Int {
+        var port = startPort
+        log.debug("Searching for available port starting from $startPort")
+        var attempts = 0
+        while (attempts < MAX_PORT_ATTEMPTS) {
+            try {
+                ServerSocket(port).use {
+                    log.debug("Port $port is available")
+                    return port
+                }
+            } catch (e: IOException) {
+                log.debug("Port $port is not available, trying next port")
+                port++
+                attempts++
+            }
+        }
+        log.warn("Could not find available port after $MAX_PORT_ATTEMPTS attempts, using random port")
+        val randomPort = ServerSocket(0).use { it.localPort }
+        log.info("Using random port: $randomPort")
+        return randomPort
+    }
+
 
     private fun isServerRunning(host: String, port: Int): Boolean {
         return try {
             log.debug("Checking if server is running at $host:$port")
             Socket(host, port).use { true }
+            log.debug("Connection successful to $host:$port. Server is running.")
+            true
         } catch (e: ConnectException) {
+            // This is the expected case when the server is not running
             log.debug("Server is not running at $host:$port: ${e.message}")
             false
         } catch (e: Exception) {
@@ -59,41 +109,90 @@ object DaemonClient {
         val start = System.currentTimeMillis()
         log.info("Waiting for server to start at $host:$port (timeout=${timeoutMs}ms)")
         while (!isServerRunning(host, port)) {
+            log.debug("Server not yet available at $host:$port. Waiting...")
             if (System.currentTimeMillis() - start > timeoutMs) {
                 log.error("Timed out waiting for server to start at $host:$port")
                 throw RuntimeException("Timed out waiting for server to start")
             }
             Thread.sleep(200)
         }
+        // isServerRunning logs success internally now
         log.info("Server is now running at $host:$port")
         println("Server is now running.")
     }
 
     private fun launchDaemon(port: Int) {
+        // Get the current JVM executable path
         val javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
         val classpath = System.getProperty("java.class.path")
         val className = "com.simiacryptus.skyenet.AppServer"
-        val processBuilder = ProcessBuilder(
-            javaBin, "-cp", classpath, className, "server", "--port", port.toString()
-        )
+        log.debug("Java executable: $javaBin")
+        log.debug("Classpath: $classpath")
+        log.debug("Server class: $className")
+        
+        // Create a temporary script file to launch the daemon
+        val isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
+        val scriptExt = if (isWindows) "bat" else "sh"
+        val scriptFile = File.createTempFile("skyenet_daemon_", ".$scriptExt")
+        //scriptFile.deleteOnExit()
+        
+        if (isWindows) {
+            log.debug("Detected Windows OS.")
+            // Windows batch file
+            scriptFile.writeText(
+                """
+                @echo log.info("Daemon process launched. Waiting for it to start...")
+                start /b /min "" "$javaBin" -cp "$classpath" $className server --port $port
+                exit
+            """.trimIndent()
+            )
+        } else {
+            log.debug("Detected non-Windows OS (assuming Unix-like).")
+            // Unix shell script
+            scriptFile.writeText(
+                """
+                #!/bin/sh
+                nohup /opt/skyenetapps/bin/SkyenetApps server --port $port &
+                exit 0
+            """.trimIndent()
+            )
+            scriptFile.setExecutable(true)
+        }
+        
+        log.info("Created daemon launcher script: ${scriptFile.absolutePath}")
+        log.debug("Script content:\n${scriptFile.readText()}")
+        
+        // Build the process to run the script
+        val processBuilder = if (isWindows) {
+            log.debug("Using ProcessBuilder: cmd /c ${scriptFile.absolutePath}")
+            ProcessBuilder("cmd", "/c", scriptFile.absolutePath)
+        } else {
+            log.debug("Using ProcessBuilder: sh ${scriptFile.absolutePath}")
+            ProcessBuilder("sh", scriptFile.absolutePath)
+        }
+        // Ensure the process doesn't inherit IO streams from parent
         processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
-        log.info("Launching daemon process: $javaBin -cp $classpath $className server --port $port")
-        try {
-            val process = processBuilder.start()
-            log.info("Daemon process started with PID: ${process.pid()}")
-            // Optionally, write the PID to a file
-            writePidFile(process)
-            thread(isDaemon = true, name = "DaemonClient-ProcessWaiter") {
-                val exitCode = process.waitFor()
-                log.warn("Server process exited with code $exitCode.")
-                println("Server process exited.")
-                deletePidFile()
-            }
+        
+        val process = try {
+            log.info("Launching daemon process using script: ${processBuilder.command().joinToString(" ")}")
+            processBuilder.start()
         } catch (e: Exception) {
             log.error("Failed to launch daemon process: ${e.message}", e)
             throw e
         }
+        
+        // Check if the daemon is running by writing the PID file
+        try {
+            writePidFile(process)
+        } catch (e: Exception) {
+            log.error("Failed to write PID file: ${e.message}", e)
+            println("Failed to write PID file: ${e.message}")
+        }
+        
+        // Wait for 5 seconds while relaying output, then exit
+        Thread.sleep(5000)
+        log.info("Daemon launched successfully, waiting for server to be ready...")
     }
 
     private fun writePidFile(process: Process) {
@@ -106,33 +205,23 @@ object DaemonClient {
             println("Warning: Could not write PID file: ${e.message}")
         }
     }
-
-    private fun deletePidFile() {
-        try {
-            Files.deleteIfExists(Paths.get(PID_FILE))
-            log.info("Deleted PID file: $PID_FILE")
-        } catch (e: Exception) {
-            log.debug("Could not delete PID file: ${e.message}")
-            // ignore
-        }
-    }
-
+    
     private fun dispatchCommand(host: String, port: Int, args: Array<String>) {
-        // Send the command as a string to the server and print the response.
         try {
-            log.debug("Connecting to server at $host:$port to dispatch command: ${args.joinToString(" ")}")
+            log.debug("Attempting to connect to server at $host:$port to dispatch command: \"${args.joinToString(" ")}\"")
             Socket(host, port).use { socket ->
+                log.info("Connected to server at $host:$port")
                 val out = PrintWriter(socket.getOutputStream(), true)
                 val input = BufferedReader(InputStreamReader(socket.getInputStream()))
-                val command = args.joinToString(" ")
-                out.println(command)
-                log.info("Sent command: $command")
-                println("Sent command: $command")
+                out.println(args.joinToString(" "))
+                log.info("Sent command: ${args.joinToString(" ") { "`$it`" }}")
                 // Read response (if any)
+                log.debug("Waiting for server response...")
                 val response = input.readLine()
                 if (response != null) {
                     log.info("Received server response: $response")
                     println("Server response: $response")
+                    log.debug("Closing connection to $host:$port")
                 } else {
                     log.warn("No response received from server.")
                     println("No response received from server.")
