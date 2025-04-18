@@ -1,0 +1,392 @@
+2025-04-18 04:18:07.396 [main] INFO  com.simiacryptus.skyenet.AppServer - Parsing server options...
+2025-04-18 04:18:07.397 [main] DEBUG com.simiacryptus.skyenet.AppServer - Server options parsed successfully
+2025-04-18 04:18:07.402 [main] INFO  com.simiacryptus.skyenet.AppServer - Configuring server with options: port=8081, host=localhost, publicName=apps.simiacrypt.us
+2025-04-18 04:18:07.440 [main] INFO  c.s.jopenai.models.APIProvider - Registering API providers
+2025-04-18 04:18:07.562 [main] DEBUG c.s.jopenai.models.APIProvider - Retrieving all APIProvider values
+2025-04-18 04:18:07.563 [main] INFO  c.simiacryptus.jopenai.OpenAIClient - OpenAIClient initialized with log level: TRACE
+2025-04-18 04:18:07.748 [main] DEBUG c.s.jopenai.models.APIProvider - Retrieving all APIProvider values
+2025-04-18 04:18:07.748 [main] INFO  c.simiacryptus.jopenai.OpenAIClient - OpenAIClient initialized with log level: TRACE
+2025-04-18 04:18:07.762 [AWT-EventQueue-0] WARN  c.s.skyenet.SystemTrayManager - Could not find toolbarIcon.svg
+2025-04-18 04:18:07.768 [main] INFO  c.s.s.w.a.ApplicationDirectory - Starting application with args: 
+2025-04-18 04:18:07.769 [main] INFO  c.s.s.w.a.ApplicationDirectory - Initializing application, isServer: false
+2025-04-18 04:18:07.772 [AppServer-SocketThread] INFO  com.simiacryptus.skyenet.AppServer - Socket server started on port 8081
+2025-04-18 04:18:07.770 [AWT-EventQueue-0] ERROR c.s.skyenet.SystemTrayManager - Failed to initialize system tray: creating TrayIcon with null Image
+java.lang.IllegalArgumentException: creating TrayIcon with null Image
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at com.simiacryptus.skyenet.SystemTrayManager.initialize$lambda$4(SystemTrayManager.kt:87)
+	at java.desktop/java.awt.event.InvocationEvent.dispatch(Unknown Source)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(Unknown Source)
+	at java.desktop/java.awt.EventQueue$4.run(Unknown Source)
+	at java.desktop/java.awt.EventQueue$4.run(Unknown Source)
+	at java.base/java.security.AccessController.doPrivileged(Unknown Source)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(Unknown Source)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.run(Unknown Source)
+2025-04-18 04:18:07.863 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /logout
+2025-04-18 04:18:07.873 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /proxy
+2025-04-18 04:18:07.875 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /userInfo
+2025-04-18 04:18:07.877 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /userSettings
+2025-04-18 04:18:07.879 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /usage
+2025-04-18 04:18:07.881 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /apiKeys
+2025-04-18 04:18:07.882 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /
+2025-04-18 04:18:07.883 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /api
+2025-04-18 04:18:07.885 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /chess
+2025-04-18 04:18:07.887 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /illustrated_storybook
+2025-04-18 04:18:07.934 [main] DEBUG c.s.s.core.platform.file.DataStorage - Data directory: /home/andrew/.skyenet
+2025-04-18 04:18:07.941 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /illustrated_storybook with ChatServer
+2025-04-18 04:18:07.942 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /incremental_codegen
+2025-04-18 04:18:07.943 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /incremental_codegen with ChatServer
+2025-04-18 04:18:07.944 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /idea_mapper
+2025-04-18 04:18:07.945 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /idea_mapper with ChatServer
+2025-04-18 04:18:07.945 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /meta_agent
+2025-04-18 04:18:07.946 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /meta_agent with ChatServer
+2025-04-18 04:18:07.947 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /debate
+2025-04-18 04:18:07.948 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /debate with ChatServer
+2025-04-18 04:18:07.949 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /presentation
+2025-04-18 04:18:07.950 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /presentation with ChatServer
+2025-04-18 04:18:07.951 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /vocabulary
+2025-04-18 04:18:07.952 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /vocabulary with ChatServer
+2025-04-18 04:18:07.953 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /aws
+2025-04-18 04:18:07.955 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /aws with ChatServer
+2025-04-18 04:18:07.956 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /bash
+2025-04-18 04:18:07.957 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /bash with ChatServer
+2025-04-18 04:18:07.958 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /powershell
+2025-04-18 04:18:07.959 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /powershell with ChatServer
+2025-04-18 04:18:07.960 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /jdbc
+2025-04-18 04:18:07.960 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /jdbc with ChatServer
+2025-04-18 04:18:07.961 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /library_generator
+2025-04-18 04:18:07.962 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /library_generator with ChatServer
+2025-04-18 04:18:07.965 [main] INFO  c.s.s.w.a.ApplicationDirectory - Starting server on port: 8081
+2025-04-18 04:18:07.966 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /stats
+2025-04-18 04:18:07.995 [main] DEBUG c.s.s.w.a.ApplicationDirectory - HTTP connection factory created with custom configuration.
+2025-04-18 04:18:08.005 [main] ERROR c.s.s.w.a.ApplicationDirectory - Application encountered an error: Failed to bind to 0.0.0.0/0.0.0.0:8081
+java.io.IOException: Failed to bind to 0.0.0.0/0.0.0.0:8081
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:344)
+	at org.eclipse.jetty.server.ServerConnector.open(ServerConnector.java:304)
+	at org.eclipse.jetty.server.Server.lambda$doStart$0(Server.java:402)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(Unknown Source)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline.forEach(Unknown Source)
+	at org.eclipse.jetty.server.Server.doStart(Server.java:398)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:93)
+	at com.simiacryptus.skyenet.webui.application.ApplicationDirectory.start(ApplicationDirectory.kt:175)
+	at com.simiacryptus.skyenet.webui.application.ApplicationDirectory._main(ApplicationDirectory.kt:93)
+	at com.simiacryptus.skyenet.AppServer.access$_main(AppServer.kt:29)
+	at com.simiacryptus.skyenet.AppServer$Companion.handleServer(AppServer.kt:81)
+	at com.simiacryptus.skyenet.AppServer$Companion.main(AppServer.kt:56)
+	at com.simiacryptus.skyenet.AppServer.main(AppServer.kt)
+Caused by: java.net.BindException: Address already in use
+	at java.base/sun.nio.ch.Net.bind0(Native Method)
+	at java.base/sun.nio.ch.Net.bind(Unknown Source)
+	at java.base/sun.nio.ch.ServerSocketChannelImpl.netBind(Unknown Source)
+	at java.base/sun.nio.ch.ServerSocketChannelImpl.bind(Unknown Source)
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:339)
+	... 20 common frames omitted
+2025-04-18 04:18:14.169 [main] INFO  com.simiacryptus.skyenet.AppServer - Parsing server options...
+2025-04-18 04:18:14.170 [main] DEBUG com.simiacryptus.skyenet.AppServer - Server options parsed successfully
+2025-04-18 04:18:14.175 [main] INFO  com.simiacryptus.skyenet.AppServer - Configuring server with options: port=8081, host=localhost, publicName=apps.simiacrypt.us
+2025-04-18 04:18:14.219 [main] INFO  c.s.jopenai.models.APIProvider - Registering API providers
+2025-04-18 04:18:14.373 [main] DEBUG c.s.jopenai.models.APIProvider - Retrieving all APIProvider values
+2025-04-18 04:18:14.374 [main] INFO  c.simiacryptus.jopenai.OpenAIClient - OpenAIClient initialized with log level: TRACE
+2025-04-18 04:18:14.518 [main] DEBUG c.s.jopenai.models.APIProvider - Retrieving all APIProvider values
+2025-04-18 04:18:14.519 [main] INFO  c.simiacryptus.jopenai.OpenAIClient - OpenAIClient initialized with log level: TRACE
+2025-04-18 04:18:14.527 [AWT-EventQueue-0] WARN  c.s.skyenet.SystemTrayManager - Could not find toolbarIcon.svg
+2025-04-18 04:18:14.530 [main] INFO  c.s.s.w.a.ApplicationDirectory - Starting application with args: 
+2025-04-18 04:18:14.531 [main] INFO  c.s.s.w.a.ApplicationDirectory - Initializing application, isServer: false
+2025-04-18 04:18:14.537 [AppServer-SocketThread] INFO  com.simiacryptus.skyenet.AppServer - Socket server started on port 8081
+2025-04-18 04:18:14.536 [AWT-EventQueue-0] ERROR c.s.skyenet.SystemTrayManager - Failed to initialize system tray: creating TrayIcon with null Image
+java.lang.IllegalArgumentException: creating TrayIcon with null Image
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at com.simiacryptus.skyenet.SystemTrayManager.initialize$lambda$4(SystemTrayManager.kt:87)
+	at java.desktop/java.awt.event.InvocationEvent.dispatch(Unknown Source)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(Unknown Source)
+	at java.desktop/java.awt.EventQueue$4.run(Unknown Source)
+	at java.desktop/java.awt.EventQueue$4.run(Unknown Source)
+	at java.base/java.security.AccessController.doPrivileged(Unknown Source)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(Unknown Source)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.run(Unknown Source)
+2025-04-18 04:18:14.638 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /logout
+2025-04-18 04:18:14.641 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /proxy
+2025-04-18 04:18:14.642 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /userInfo
+2025-04-18 04:18:14.642 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /userSettings
+2025-04-18 04:18:14.643 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /usage
+2025-04-18 04:18:14.643 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /apiKeys
+2025-04-18 04:18:14.644 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /
+2025-04-18 04:18:14.644 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /api
+2025-04-18 04:18:14.645 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /chess
+2025-04-18 04:18:14.646 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /illustrated_storybook
+2025-04-18 04:18:14.687 [main] DEBUG c.s.s.core.platform.file.DataStorage - Data directory: /home/andrew/.skyenet
+2025-04-18 04:18:14.690 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /illustrated_storybook with ChatServer
+2025-04-18 04:18:14.691 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /incremental_codegen
+2025-04-18 04:18:14.691 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /incremental_codegen with ChatServer
+2025-04-18 04:18:14.692 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /idea_mapper
+2025-04-18 04:18:14.692 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /idea_mapper with ChatServer
+2025-04-18 04:18:14.692 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /meta_agent
+2025-04-18 04:18:14.693 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /meta_agent with ChatServer
+2025-04-18 04:18:14.693 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /debate
+2025-04-18 04:18:14.694 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /debate with ChatServer
+2025-04-18 04:18:14.694 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /presentation
+2025-04-18 04:18:14.694 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /presentation with ChatServer
+2025-04-18 04:18:14.695 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /vocabulary
+2025-04-18 04:18:14.695 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /vocabulary with ChatServer
+2025-04-18 04:18:14.695 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /aws
+2025-04-18 04:18:14.696 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /aws with ChatServer
+2025-04-18 04:18:14.696 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /bash
+2025-04-18 04:18:14.696 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /bash with ChatServer
+2025-04-18 04:18:14.697 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /powershell
+2025-04-18 04:18:14.697 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /powershell with ChatServer
+2025-04-18 04:18:14.698 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /jdbc
+2025-04-18 04:18:14.698 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /jdbc with ChatServer
+2025-04-18 04:18:14.698 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /library_generator
+2025-04-18 04:18:14.699 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /library_generator with ChatServer
+2025-04-18 04:18:14.700 [main] INFO  c.s.s.w.a.ApplicationDirectory - Starting server on port: 8081
+2025-04-18 04:18:14.701 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /stats
+2025-04-18 04:18:14.725 [main] DEBUG c.s.s.w.a.ApplicationDirectory - HTTP connection factory created with custom configuration.
+2025-04-18 04:18:14.736 [main] ERROR c.s.s.w.a.ApplicationDirectory - Application encountered an error: Failed to bind to 0.0.0.0/0.0.0.0:8081
+java.io.IOException: Failed to bind to 0.0.0.0/0.0.0.0:8081
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:344)
+	at org.eclipse.jetty.server.ServerConnector.open(ServerConnector.java:304)
+	at org.eclipse.jetty.server.Server.lambda$doStart$0(Server.java:402)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(Unknown Source)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline.forEach(Unknown Source)
+	at org.eclipse.jetty.server.Server.doStart(Server.java:398)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:93)
+	at com.simiacryptus.skyenet.webui.application.ApplicationDirectory.start(ApplicationDirectory.kt:175)
+	at com.simiacryptus.skyenet.webui.application.ApplicationDirectory._main(ApplicationDirectory.kt:93)
+	at com.simiacryptus.skyenet.AppServer.access$_main(AppServer.kt:29)
+	at com.simiacryptus.skyenet.AppServer$Companion.handleServer(AppServer.kt:81)
+	at com.simiacryptus.skyenet.AppServer$Companion.main(AppServer.kt:56)
+	at com.simiacryptus.skyenet.AppServer.main(AppServer.kt)
+Caused by: java.net.BindException: Address already in use
+	at java.base/sun.nio.ch.Net.bind0(Native Method)
+	at java.base/sun.nio.ch.Net.bind(Unknown Source)
+	at java.base/sun.nio.ch.ServerSocketChannelImpl.netBind(Unknown Source)
+	at java.base/sun.nio.ch.ServerSocketChannelImpl.bind(Unknown Source)
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:339)
+	... 20 common frames omitted
+2025-04-18 04:19:08.343 [main] INFO  com.simiacryptus.skyenet.AppServer - Parsing server options...
+2025-04-18 04:19:08.344 [main] DEBUG com.simiacryptus.skyenet.AppServer - Server options parsed successfully
+2025-04-18 04:19:08.348 [main] INFO  com.simiacryptus.skyenet.AppServer - Configuring server with options: port=8081, host=localhost, publicName=apps.simiacrypt.us
+2025-04-18 04:19:08.381 [main] INFO  c.s.jopenai.models.APIProvider - Registering API providers
+2025-04-18 04:19:08.501 [main] DEBUG c.s.jopenai.models.APIProvider - Retrieving all APIProvider values
+2025-04-18 04:19:08.503 [main] INFO  c.simiacryptus.jopenai.OpenAIClient - OpenAIClient initialized with log level: TRACE
+2025-04-18 04:19:08.663 [main] DEBUG c.s.jopenai.models.APIProvider - Retrieving all APIProvider values
+2025-04-18 04:19:08.663 [main] INFO  c.simiacryptus.jopenai.OpenAIClient - OpenAIClient initialized with log level: TRACE
+2025-04-18 04:19:08.672 [AWT-EventQueue-0] WARN  c.s.skyenet.SystemTrayManager - Could not find toolbarIcon.svg
+2025-04-18 04:19:08.676 [main] INFO  c.s.s.w.a.ApplicationDirectory - Starting application with args: 
+2025-04-18 04:19:08.677 [main] INFO  c.s.s.w.a.ApplicationDirectory - Initializing application, isServer: false
+2025-04-18 04:19:08.682 [AppServer-SocketThread] INFO  com.simiacryptus.skyenet.AppServer - Socket server started on port 8081
+2025-04-18 04:19:08.682 [AWT-EventQueue-0] ERROR c.s.skyenet.SystemTrayManager - Failed to initialize system tray: creating TrayIcon with null Image
+java.lang.IllegalArgumentException: creating TrayIcon with null Image
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at com.simiacryptus.skyenet.SystemTrayManager.initialize$lambda$4(SystemTrayManager.kt:87)
+	at java.desktop/java.awt.event.InvocationEvent.dispatch(Unknown Source)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(Unknown Source)
+	at java.desktop/java.awt.EventQueue$4.run(Unknown Source)
+	at java.desktop/java.awt.EventQueue$4.run(Unknown Source)
+	at java.base/java.security.AccessController.doPrivileged(Unknown Source)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(Unknown Source)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.run(Unknown Source)
+2025-04-18 04:19:08.766 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /logout
+2025-04-18 04:19:08.770 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /proxy
+2025-04-18 04:19:08.770 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /userInfo
+2025-04-18 04:19:08.771 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /userSettings
+2025-04-18 04:19:08.772 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /usage
+2025-04-18 04:19:08.772 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /apiKeys
+2025-04-18 04:19:08.773 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /
+2025-04-18 04:19:08.773 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /api
+2025-04-18 04:19:08.774 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /chess
+2025-04-18 04:19:08.775 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /illustrated_storybook
+2025-04-18 04:19:08.798 [main] DEBUG c.s.s.core.platform.file.DataStorage - Data directory: /home/andrew/.skyenet
+2025-04-18 04:19:08.802 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /illustrated_storybook with ChatServer
+2025-04-18 04:19:08.802 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /incremental_codegen
+2025-04-18 04:19:08.803 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /incremental_codegen with ChatServer
+2025-04-18 04:19:08.804 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /idea_mapper
+2025-04-18 04:19:08.804 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /idea_mapper with ChatServer
+2025-04-18 04:19:08.804 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /meta_agent
+2025-04-18 04:19:08.805 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /meta_agent with ChatServer
+2025-04-18 04:19:08.805 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /debate
+2025-04-18 04:19:08.806 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /debate with ChatServer
+2025-04-18 04:19:08.807 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /presentation
+2025-04-18 04:19:08.807 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /presentation with ChatServer
+2025-04-18 04:19:08.808 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /vocabulary
+2025-04-18 04:19:08.808 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /vocabulary with ChatServer
+2025-04-18 04:19:08.809 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /aws
+2025-04-18 04:19:08.809 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /aws with ChatServer
+2025-04-18 04:19:08.809 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /bash
+2025-04-18 04:19:08.810 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /bash with ChatServer
+2025-04-18 04:19:08.810 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /powershell
+2025-04-18 04:19:08.811 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /powershell with ChatServer
+2025-04-18 04:19:08.811 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /jdbc
+2025-04-18 04:19:08.812 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /jdbc with ChatServer
+2025-04-18 04:19:08.812 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /library_generator
+2025-04-18 04:19:08.812 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /library_generator with ChatServer
+2025-04-18 04:19:08.814 [main] INFO  c.s.s.w.a.ApplicationDirectory - Starting server on port: 8081
+2025-04-18 04:19:08.815 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /stats
+2025-04-18 04:19:08.839 [main] DEBUG c.s.s.w.a.ApplicationDirectory - HTTP connection factory created with custom configuration.
+2025-04-18 04:19:08.849 [main] ERROR c.s.s.w.a.ApplicationDirectory - Application encountered an error: Failed to bind to 0.0.0.0/0.0.0.0:8081
+java.io.IOException: Failed to bind to 0.0.0.0/0.0.0.0:8081
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:344)
+	at org.eclipse.jetty.server.ServerConnector.open(ServerConnector.java:304)
+	at org.eclipse.jetty.server.Server.lambda$doStart$0(Server.java:402)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(Unknown Source)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline.forEach(Unknown Source)
+	at org.eclipse.jetty.server.Server.doStart(Server.java:398)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:93)
+	at com.simiacryptus.skyenet.webui.application.ApplicationDirectory.start(ApplicationDirectory.kt:175)
+	at com.simiacryptus.skyenet.webui.application.ApplicationDirectory._main(ApplicationDirectory.kt:93)
+	at com.simiacryptus.skyenet.AppServer.access$_main(AppServer.kt:29)
+	at com.simiacryptus.skyenet.AppServer$Companion.handleServer(AppServer.kt:81)
+	at com.simiacryptus.skyenet.AppServer$Companion.main(AppServer.kt:56)
+	at com.simiacryptus.skyenet.AppServer.main(AppServer.kt)
+Caused by: java.net.BindException: Address already in use
+	at java.base/sun.nio.ch.Net.bind0(Native Method)
+	at java.base/sun.nio.ch.Net.bind(Unknown Source)
+	at java.base/sun.nio.ch.ServerSocketChannelImpl.netBind(Unknown Source)
+	at java.base/sun.nio.ch.ServerSocketChannelImpl.bind(Unknown Source)
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:339)
+	... 20 common frames omitted
+2025-04-18 04:25:49.671 [main] INFO  com.simiacryptus.skyenet.AppServer - Parsing server options...
+2025-04-18 04:25:49.672 [main] DEBUG com.simiacryptus.skyenet.AppServer - Server options parsed successfully
+2025-04-18 04:25:49.678 [main] INFO  com.simiacryptus.skyenet.AppServer - Configuring server with options: port=7681, host=localhost, publicName=apps.simiacrypt.us
+2025-04-18 04:25:49.710 [main] INFO  c.s.jopenai.models.APIProvider - Registering API providers
+2025-04-18 04:25:49.829 [main] DEBUG c.s.jopenai.models.APIProvider - Retrieving all APIProvider values
+2025-04-18 04:25:49.831 [main] INFO  c.simiacryptus.jopenai.OpenAIClient - OpenAIClient initialized with log level: TRACE
+2025-04-18 04:25:50.023 [main] DEBUG c.s.jopenai.models.APIProvider - Retrieving all APIProvider values
+2025-04-18 04:25:50.023 [main] INFO  c.simiacryptus.jopenai.OpenAIClient - OpenAIClient initialized with log level: TRACE
+2025-04-18 04:25:50.033 [AWT-EventQueue-0] WARN  c.s.skyenet.SystemTrayManager - Could not find toolbarIcon.svg
+2025-04-18 04:25:50.038 [main] INFO  c.s.s.w.a.ApplicationDirectory - Starting application with args: 
+2025-04-18 04:25:50.039 [main] INFO  c.s.s.w.a.ApplicationDirectory - Initializing application, isServer: false
+2025-04-18 04:25:50.041 [AWT-EventQueue-0] ERROR c.s.skyenet.SystemTrayManager - Failed to initialize system tray: creating TrayIcon with null Image
+java.lang.IllegalArgumentException: creating TrayIcon with null Image
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at java.desktop/java.awt.TrayIcon.<init>(Unknown Source)
+	at com.simiacryptus.skyenet.SystemTrayManager.initialize$lambda$4(SystemTrayManager.kt:87)
+	at java.desktop/java.awt.event.InvocationEvent.dispatch(Unknown Source)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(Unknown Source)
+	at java.desktop/java.awt.EventQueue$4.run(Unknown Source)
+	at java.desktop/java.awt.EventQueue$4.run(Unknown Source)
+	at java.base/java.security.AccessController.doPrivileged(Unknown Source)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(Unknown Source)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(Unknown Source)
+	at java.desktop/java.awt.EventDispatchThread.run(Unknown Source)
+2025-04-18 04:25:50.045 [AppServer-SocketThread] INFO  com.simiacryptus.skyenet.AppServer - Socket server started on port 7681
+2025-04-18 04:25:50.117 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /logout
+2025-04-18 04:25:50.121 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /proxy
+2025-04-18 04:25:50.122 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /userInfo
+2025-04-18 04:25:50.122 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /userSettings
+2025-04-18 04:25:50.123 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /usage
+2025-04-18 04:25:50.123 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /apiKeys
+2025-04-18 04:25:50.124 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /
+2025-04-18 04:25:50.124 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /api
+2025-04-18 04:25:50.125 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /chess
+2025-04-18 04:25:50.125 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /illustrated_storybook
+2025-04-18 04:25:50.148 [main] DEBUG c.s.s.core.platform.file.DataStorage - Data directory: /home/andrew/.skyenet
+2025-04-18 04:25:50.151 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /illustrated_storybook with ChatServer
+2025-04-18 04:25:50.152 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /incremental_codegen
+2025-04-18 04:25:50.152 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /incremental_codegen with ChatServer
+2025-04-18 04:25:50.153 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /idea_mapper
+2025-04-18 04:25:50.153 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /idea_mapper with ChatServer
+2025-04-18 04:25:50.154 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /meta_agent
+2025-04-18 04:25:50.154 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /meta_agent with ChatServer
+2025-04-18 04:25:50.154 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /debate
+2025-04-18 04:25:50.155 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /debate with ChatServer
+2025-04-18 04:25:50.155 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /presentation
+2025-04-18 04:25:50.156 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /presentation with ChatServer
+2025-04-18 04:25:50.157 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /vocabulary
+2025-04-18 04:25:50.159 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /vocabulary with ChatServer
+2025-04-18 04:25:50.160 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /aws
+2025-04-18 04:25:50.161 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /aws with ChatServer
+2025-04-18 04:25:50.162 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /bash
+2025-04-18 04:25:50.163 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /bash with ChatServer
+2025-04-18 04:25:50.164 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /powershell
+2025-04-18 04:25:50.165 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /powershell with ChatServer
+2025-04-18 04:25:50.166 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /jdbc
+2025-04-18 04:25:50.167 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /jdbc with ChatServer
+2025-04-18 04:25:50.168 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for path: /library_generator
+2025-04-18 04:25:50.169 [main] INFO  c.s.s.w.a.ApplicationDirectory - WebAppContext configured for path: /library_generator with ChatServer
+2025-04-18 04:25:50.171 [main] INFO  c.s.s.w.a.ApplicationDirectory - Starting server on port: 7681
+2025-04-18 04:25:50.173 [main] DEBUG c.s.s.w.a.ApplicationDirectory - New WebAppContext created for servlet at path: /stats
+2025-04-18 04:25:50.208 [main] DEBUG c.s.s.w.a.ApplicationDirectory - HTTP connection factory created with custom configuration.
+2025-04-18 04:25:50.223 [main] ERROR c.s.s.w.a.ApplicationDirectory - Application encountered an error: Failed to bind to 0.0.0.0/0.0.0.0:7681
+java.io.IOException: Failed to bind to 0.0.0.0/0.0.0.0:7681
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:344)
+	at org.eclipse.jetty.server.ServerConnector.open(ServerConnector.java:304)
+	at org.eclipse.jetty.server.Server.lambda$doStart$0(Server.java:402)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(Unknown Source)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(Unknown Source)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(Unknown Source)
+	at java.base/java.util.stream.ReferencePipeline.forEach(Unknown Source)
+	at org.eclipse.jetty.server.Server.doStart(Server.java:398)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:93)
+	at com.simiacryptus.skyenet.webui.application.ApplicationDirectory.start(ApplicationDirectory.kt:175)
+	at com.simiacryptus.skyenet.webui.application.ApplicationDirectory._main(ApplicationDirectory.kt:93)
+	at com.simiacryptus.skyenet.AppServer.access$_main(AppServer.kt:29)
+	at com.simiacryptus.skyenet.AppServer$Companion.handleServer(AppServer.kt:81)
+	at com.simiacryptus.skyenet.AppServer$Companion.main(AppServer.kt:56)
+	at com.simiacryptus.skyenet.AppServer.main(AppServer.kt)
+Caused by: java.net.BindException: Address already in use
+	at java.base/sun.nio.ch.Net.bind0(Native Method)
+	at java.base/sun.nio.ch.Net.bind(Unknown Source)
+	at java.base/sun.nio.ch.ServerSocketChannelImpl.netBind(Unknown Source)
+	at java.base/sun.nio.ch.ServerSocketChannelImpl.bind(Unknown Source)
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:339)
+	... 20 common frames omitted

@@ -22,6 +22,8 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest
 import java.awt.SystemTray
+import java.io.BufferedWriter
+import java.net.ServerSocket
 
 
 open class AppServer(
@@ -30,6 +32,8 @@ open class AppServer(
     localName = localName, publicName = publicName, port = port
 ) {
     private var systemTrayManager: SystemTrayManager? = null
+    private var socketServer: ServerSocket? = null
+    private var socketThread: Thread? = null
 
     companion object {
       private val log = LoggerFactory.getLogger(AppServer::class.java.name)
@@ -44,6 +48,10 @@ open class AppServer(
                 when (args[0].lowercase()) {
                     "server" -> handleServer(*args.sliceArray(1 until args.size))
                     "help", "-h", "--help" -> printUsage()
+                    "daemon" -> {
+                        // For compatibility: allow launching as a daemon
+                        handleServer(*args.sliceArray(1 until args.size))
+                    }
                     else -> {
                         handleServer()
                     }
@@ -69,6 +77,7 @@ open class AppServer(
                 port = options.port
             )
             server?.initSystemTray()
+            server?.startSocketServer(options.port)
             server?._main(*args)
         }
         private fun printUsage() {
@@ -84,13 +93,13 @@ open class AppServer(
             """.trimIndent())
         }
     private data class ServerOptions(
-        val port: Int = 8081,
+        val port: Int = 7681,
         val host: String = "localhost", 
         val publicName: String = "apps.simiacrypt.us"
     )
 
         private fun parseServerOptions(vararg args: String): ServerOptions {
-        var port = 8081
+        var port = 7681
         var host = "localhost"
         var publicName = "apps.simiacrypt.us"
         var i = 0
@@ -136,6 +145,7 @@ open class AppServer(
     }
     fun stopServer() {
         systemTrayManager?.remove()
+        stopSocketServer()
     }
     open val api2 = OpenAIClient()
 
@@ -181,7 +191,11 @@ open class AppServer(
             ChildWebApp("/library_generator", LibraryGeneratorApp(), "coding.png"),
         )
     }
-
+    
+    protected open fun onMessage(line: String?) {
+        log.info("Received command from DaemonClient: $line")
+    }
+    
     private fun fetchPlaintextSecret(secretArn: String, region: Region) =
         SecretsManagerClient.builder()
             .region(region)
@@ -191,5 +205,74 @@ open class AppServer(
                     .secretId(secretArn)
                     .build()
             ).secretString()
-
+    
+    /**
+     * Start a simple socket server to listen for commands from DaemonClient.
+     * Responds with a simple acknowledgment for now.
+     */
+    private fun startSocketServer(port: Int) {
+        if (socketServer != null) {
+            log.warn("Socket server already started on port $port")
+            return
+        }
+        socketThread = Thread {
+            try {
+                socketServer = ServerSocket(port)
+                log.info("Socket server started on port $port")
+                while (!socketServer!!.isClosed) {
+                    val client = try {
+                        socketServer!!.accept()
+                    } catch (e: java.io.IOException) {
+                        log.info("Socket server stopped accepting connections: ${e.message}")
+                        break
+                    }
+                    Thread {
+                        var output: BufferedWriter? = null
+                        try {
+                            val input = client.getInputStream().bufferedReader()
+                            output = client.getOutputStream().bufferedWriter()
+                            val line = input.readLine()
+                            if (line != null) {
+                                onMessage(line)
+                                output.write("OK: $line\n")
+                            } else {
+                                output.write("ERROR: No command received\n")
+                            }
+                        } catch (e: Exception) {
+                            output?.write("ERROR: ${(e.message ?: e.toString()).replace('\n', ' ')}\n")
+                            log.error("Socket handler error: ${e.message}", e)
+                        } finally {
+                            output?.flush()
+                            try {
+                                client.close()
+                            } catch (_: Exception) {
+                            }
+                        }
+                    }.start()
+                }
+            } catch (e: Exception) {
+                log.error("Socket server error: ${e.message}", e)
+            } finally {
+                try {
+                    socketServer?.close()
+                } catch (_: Exception) {
+                }
+                socketServer = null
+                log.info("Socket server thread exiting")
+            }
+        }
+        socketThread?.isDaemon = true
+        socketThread?.name = "AppServer-SocketThread"
+        socketThread?.start()
+    }
+    
+    private fun stopSocketServer() {
+        try {
+            socketServer?.close()
+        } catch (_: Exception) {
+        }
+        socketThread?.interrupt()
+        socketServer = null
+        socketThread = null
+    }
 }
