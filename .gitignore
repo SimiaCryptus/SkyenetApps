@@ -6,3 +6,4 @@ build
 google-credentials.json
 .skyenet/
 *.log
+*.pid

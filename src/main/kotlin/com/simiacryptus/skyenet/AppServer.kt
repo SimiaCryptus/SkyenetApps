@@ -1,4 +1,5 @@
 package com.simiacryptus.skyenet
+
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.skyenet.apps.code.*
 import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
@@ -17,14 +18,12 @@ import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
-import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest
+import java.awt.Desktop
 import java.awt.SystemTray
 import java.io.BufferedWriter
 import java.io.IOException
 import java.net.ServerSocket
+import java.net.URI
 
 
 open class AppServer(
@@ -35,11 +34,11 @@ open class AppServer(
     private var systemTrayManager: SystemTrayManager? = null
     private var socketServer: ServerSocket? = null
     private var socketThread: Thread? = null
-
+    
     companion object {
-      private val log = LoggerFactory.getLogger(AppServer::class.java.name)
+        private val log = LoggerFactory.getLogger(AppServer::class.java.name)
         private const val MAX_PORT_ATTEMPTS = 10
-      
+        
         @JvmStatic
         fun main(args: Array<String>) {
             try {
@@ -55,6 +54,7 @@ open class AppServer(
                         // For compatibility: allow launching as a daemon
                         handleServer(*args.sliceArray(1 until args.size))
                     }
+                    
                     else -> {
                         handleServer()
                     }
@@ -69,6 +69,7 @@ open class AppServer(
                 System.exit(1)
             }
         }
+        
         private var server: AppServer? = null
         private fun handleServer(vararg args: String) {
             log.info("Parsing server options...")
@@ -124,7 +125,8 @@ open class AppServer(
         }
         
         private fun printUsage() {
-            println("""
+            println(
+                """
                 SkyenetApps Server
                 Usage:
                   skyenet <command> [options]
@@ -133,43 +135,48 @@ open class AppServer(
                   help      Show this help message
                 For server options:
                   skyenet server --help
-            """.trimIndent())
+            """.trimIndent()
+            )
         }
+    
     private data class ServerOptions(
         val port: Int = 7681,
-        val host: String = "localhost", 
+        val host: String = "localhost",
         val publicName: String = "apps.simiacrypt.us"
     )
-
+        
         private fun parseServerOptions(vararg args: String): ServerOptions {
-        var port = 7681
-        var host = "localhost"
-        var publicName = "apps.simiacrypt.us"
-        var i = 0
-        while (i < args.size) {
-            when (args[i]) {
-                "--port" -> {
-                    if (i + 1 < args.size) {
-                        log.debug("Setting port to: ${args[i + 1]}")
-                        port = args[++i].toIntOrNull() ?: run {
-                            log.error("Invalid port number: ${args[i]}")
-                            System.exit(1)
-                            throw IllegalArgumentException("Invalid port number: ${args[i]}")
+            var port = 7681
+            var host = "localhost"
+            var publicName = "apps.simiacrypt.us"
+            var i = 0
+            while (i < args.size) {
+                when (args[i]) {
+                    "--port" -> {
+                        if (i + 1 < args.size) {
+                            log.debug("Setting port to: ${args[i + 1]}")
+                            port = args[++i].toIntOrNull() ?: run {
+                                log.error("Invalid port number: ${args[i]}")
+                                System.exit(1)
+                                throw IllegalArgumentException("Invalid port number: ${args[i]}")
+                            }
                         }
                     }
+                    
+                    "--host" -> if (i + 1 < args.size) host = args[++i]
+                    "--public-name" -> if (i + 1 < args.size) publicName = args[++i]
+                    else -> {
+                        log.error("Unknown server option: ${args[i]}")
+                        throw IllegalArgumentException("Unknown server option: ${args[i]}")
+                    }
                 }
-                "--host" -> if (i + 1 < args.size) host = args[++i]
-                "--public-name" -> if (i + 1 < args.size) publicName = args[++i]
-                else -> {
-                    log.error("Unknown server option: ${args[i]}")
-                    throw IllegalArgumentException("Unknown server option: ${args[i]}")
-                }}
-            i++
-        }
-        log.debug("Server options parsed successfully")
-        return ServerOptions(port, host, publicName)
+                i++
+            }
+            log.debug("Server options parsed successfully")
+            return ServerOptions(port, host, publicName)
     }
     }
+    
     private fun initSystemTray() {
         if (!SystemTray.isSupported()) {
             log.warn("System tray is not supported")
@@ -180,22 +187,24 @@ open class AppServer(
             host = localName,
             apps = childWebApps,
             onExit = {
-            log.info("Exit requested from system tray")
-            stopServer()
-            System.exit(0)
+                log.info("Exit requested from system tray")
+                stopServer()
+                System.exit(0)
             })
         systemTrayManager?.initialize()
     }
+    
     fun stopServer() {
         systemTrayManager?.remove()
         stopSocketServer()
     }
+    
     open val api2 = OpenAIClient()
-
+    
     override fun authenticatedWebsite() = object : OAuthBase("") {
         override fun configure(context: WebAppContext, addFilter: Boolean) = context
     }
-
+    
     override fun setupPlatform() {
         super.setupPlatform()
         val mockUser = User(
@@ -217,7 +226,7 @@ open class AppServer(
             ): Boolean = true
         }
     }
-
+    
     override val childWebApps by lazy {
         listOf(
             ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName), "IllustratedStorybook.png"),
@@ -237,17 +246,12 @@ open class AppServer(
     
     protected open fun onMessage(line: String?) {
         log.info("Received command from DaemonClient: $line")
+        try {
+            Desktop.getDesktop().browse(URI("$domainName/#${line.urlEncode()}"))
+        } catch (e: Throwable) {
+            // Ignore
+        }
     }
-    
-    private fun fetchPlaintextSecret(secretArn: String, region: Region) =
-        SecretsManagerClient.builder()
-            .region(region)
-            .credentialsProvider(DefaultCredentialsProvider.create())
-            .build().getSecretValue(
-                GetSecretValueRequest.builder()
-                    .secretId(secretArn)
-                    .build()
-            ).secretString()
     
     /**
      * Start a simple socket server to listen for commands from DaemonClient.
@@ -338,4 +342,15 @@ open class AppServer(
         socketServer = null
         socketThread = null
     }
+    
+    override fun browse() {}
+    
+}
+
+private fun String?.urlEncode(): String {
+    return this?.let {
+        java.net.URLEncoder.encode(it, "UTF-8")
+            .replace("+", "%20") // Replace '+' with '%20' for spaces
+            .replace("%7E", "~") // Restore '~' character
+    } ?: ""
 }
