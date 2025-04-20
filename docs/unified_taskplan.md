@@ -127,7 +127,7 @@ settings: {
 }
 ```
 
-OK: Redirect to app session page
+OK: Redirect to app session page e.g. `http://localhost:7681/autoPlan/#U-20250420-92wb`
 
 
 

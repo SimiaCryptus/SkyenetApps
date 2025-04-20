@@ -1,8 +1,838 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to SkyeNet</title>
+  <style>
+      body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 20px;
+      }
+
+      h1 {
+          color: #2c3e50;
+          border-bottom: 2px solid #3498db;
+          padding-bottom: 10px;
+      }
+
+      .card {
+          background-color: #f9f9f9;
+          border-radius: 8px;
+          padding: 20px;
+          margin-bottom: 20px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+
+      a {
+          color: #3498db;
+          text-decoration: none;
+      }
+
+      a:hover {
+          text-decoration: underline;
+      }
+
+      .tabs {
+          display: flex;
+          margin-bottom: 20px;
+          border-bottom: 1px solid #ddd;
+      }
+
+      .tab {
+          padding: 10px 20px;
+          cursor: pointer;
+          border: 1px solid transparent;
+          border-bottom: none;
+          margin-right: 5px;
+          border-radius: 5px 5px 0 0;
+      }
+
+      .tab.active {
+          background-color: #f9f9f9;
+          border-color: #ddd;
+          border-bottom-color: #f9f9f9;
+          font-weight: bold;
+      }
+
+      .tab-content {
+          display: none;
+      }
+
+      .tab-content.active {
+          display: block;
+      }
+
+      .form-group {
+          margin-bottom: 15px;
+      }
+
+      .form-group label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: bold;
+      }
+
+      .form-group input[type="text"],
+      .form-group textarea,
+      .form-group select {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+      }
+
+      .form-group textarea {
+          height: 150px;
+          font-family: monospace;
+      }
+
+      .button-group {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 20px;
+      }
+
+      .button {
+          background-color: #3498db;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 16px;
+      }
+
+      .button:hover {
+          background-color: #2980b9;
+      }
+
+      .button.secondary {
+          background-color: #95a5a6;
+      }
+
+      .button.secondary:hover {
+          background-color: #7f8c8d;
+      }
+
+      .api-key-group {
+          display: flex;
+          margin-bottom: 10px;
+      }
+
+      .api-key-group label {
+          width: 120px;
+          padding-top: 8px;
+      }
+
+      .api-key-group input {
+          flex-grow: 1;
+      }
+
+      .task-toggle {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          margin-bottom: 5px;
+      }
+
+      .task-toggle:hover {
+          background-color: #f5f5f5;
+      }
+
+      .tooltip {
+          position: relative;
+          display: inline-block;
+          margin-left: 5px;
+      }
+
+      .tooltip .tooltiptext {
+          visibility: hidden;
+          width: 300px;
+          background-color: #555;
+          color: #fff;
+          text-align: left;
+          border-radius: 6px;
+          padding: 10px;
+          position: absolute;
+          z-index: 1;
+          bottom: 125%;
+          left: 50%;
+          margin-left: -150px;
+          opacity: 0;
+          transition: opacity 0.3s;
+      }
+
+      .tooltip:hover .tooltiptext {
+          visibility: visible;
+          opacity: 1;
+      }
+
+      .loading {
+          display: none;
+          text-align: center;
+          padding: 20px;
+      }
+
+      .spinner {
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #3498db;
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          animation: spin 2s linear infinite;
+          margin: 0 auto 10px;
+      }
+
+      @keyframes spin {
+          0% {
+              transform: rotate(0deg);
+          }
+          100% {
+              transform: rotate(360deg);
+          }
+      }
+  </style>
 </head>
 <body>
-PLACEHOLDER
+<h1>Welcome to SkyeNet</h1>
+
+<div class="card">
+  <h2>Configure Your AI Development Session</h2>
+  <p>Set up your AI-powered development environment before launching. Configure API keys, task settings, and choose your
+    cognitive mode.</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="api-settings">API Settings</div>
+  <div class="tab" data-tab="task-settings">Task Settings</div>
+  <div class="tab" data-tab="cognitive-mode">Cognitive Mode</div>
+  <div class="tab" data-tab="launch">Launch</div>
+</div>
+
+<div id="api-settings" class="tab-content active">
+  <h3>API Configuration</h3>
+  <p>Configure your API keys for different AI providers:</p>
+  <div id="api-keys-container">
+    <!-- API keys will be populated here -->
+  </div>
+  <div class="button-group">
+    <button class="button secondary" id="reset-api-settings">Reset</button>
+    <button class="button" id="save-api-settings">Save API Settings</button>
+  </div>
+</div>
+
+<div id="task-settings" class="tab-content">
+  <h3>Task Configuration</h3>
+  <p>Configure which tasks are enabled and their settings:</p>
+
+  <div class="form-group">
+    <label for="model-selection">Default Model:</label>
+    <select id="model-selection">
+      <option value="GPT4o">GPT-4o</option>
+      <option value="GPT4">GPT-4</option>
+      <option value="GPT35Turbo">GPT-3.5 Turbo</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="parsing-model">Parsing Model:</label>
+    <select id="parsing-model">
+      <option value="GPT4oMini">GPT-4o Mini</option>
+      <option value="GPT35Turbo">GPT-3.5 Turbo</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="working-dir">Working Directory:</label>
+    <input type="text" id="working-dir" value=".">
+  </div>
+
+  <h4>Available Tasks</h4>
+  <div id="task-toggles">
+    <!-- Task toggles will be populated here -->
+  </div>
+
+  <div class="button-group">
+    <button class="button secondary" id="reset-task-settings">Reset</button>
+    <button class="button" id="save-task-settings">Save Task Settings</button>
+  </div>
+</div>
+
+<div id="cognitive-mode" class="tab-content">
+  <h3>Cognitive Mode</h3>
+  <p>Select how you want the AI to approach your tasks:</p>
+
+  <div class="form-group">
+    <div class="task-toggle">
+      <div>
+        <input type="radio" id="single-task-mode" name="cognitive-mode" value="single-task" checked>
+        <label for="single-task-mode">Single Task Mode</label>
+        <span class="tooltip">?
+          <span
+            class="tooltiptext">Execute single tasks with AI assistance. Perfect for focused, one-off operations.</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="task-toggle">
+      <div>
+        <input type="radio" id="auto-plan-mode" name="cognitive-mode" value="auto-plan">
+        <label for="auto-plan-mode">Auto Plan Mode</label>
+        <span class="tooltip">?
+          <span class="tooltiptext">Let AI automatically plan and execute complex development tasks with minimal guidance.</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="task-toggle">
+      <div>
+        <input type="radio" id="plan-ahead-mode" name="cognitive-mode" value="plan-ahead">
+        <label for="plan-ahead-mode">Plan Ahead Mode</label>
+        <span class="tooltip">?
+          <span class="tooltiptext">Work with AI to create detailed plans before execution, with more control over the process.</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="button-group">
+    <button class="button secondary" id="reset-cognitive-mode">Reset</button>
+    <button class="button" id="save-cognitive-mode">Save Cognitive Mode</button>
+  </div>
+</div>
+
+<div id="launch" class="tab-content">
+  <h3>Launch Your Session</h3>
+  <p>Review your configuration and launch your AI development session:</p>
+
+  <div class="form-group">
+    <h4>API Settings</h4>
+    <div id="api-settings-summary"></div>
+  </div>
+
+  <div class="form-group">
+    <h4>Task Settings</h4>
+    <div id="task-settings-summary"></div>
+  </div>
+
+  <div class="form-group">
+    <h4>Cognitive Mode</h4>
+    <div id="cognitive-mode-summary"></div>
+  </div>
+
+  <div class="button-group">
+    <button class="button" id="launch-session">Launch Session</button>
+  </div>
+</div>
+
+<div id="loading" class="loading">
+  <div class="spinner"></div>
+  <p>Setting up your session...</p>
+</div>
+
+<footer style="margin-top: 40px; text-align: center; font-size: 0.8em; color: #7f8c8d;">
+  <p>SkyeNet - AI-Powered Development Tools</p>
+</footer>
+<script>
+  // Configuration and state management
+  let sessionId = generateSessionId();
+  let apiSettings = {};
+  let taskSettings = {
+    defaultModel: 'GPT4o',
+    parsingModel: 'GPT4oMini',
+    workingDir: '.',
+    taskSettings: {},
+  };
+  let cognitiveMode = 'single-task';
+  // Task type definitions with descriptions
+  const taskTypes = [
+    {
+      id: 'InquiryTask',
+      name: 'Inquiry Task',
+      description: 'Analyze code and provide detailed explanations of implementation patterns',
+      tooltip: 'Provides detailed answers and insights about code implementation by analyzing specified files.',
+    },
+    {
+      id: 'FileModificationTask',
+      name: 'File Modification Task',
+      description: 'Create new files or modify existing code with AI-powered assistance',
+      tooltip: 'Creates or modifies source files with AI assistance while maintaining code quality.',
+    },
+    {
+      id: 'RunShellCommandTask',
+      name: 'Run Shell Command Task',
+      description: 'Execute shell commands safely',
+      tooltip: 'Executes shell commands in a controlled environment.',
+    },
+    {
+      id: 'CommandAutoFixTask',
+      name: 'Command Auto Fix Task',
+      description: 'Run a command and automatically fix any issues that arise',
+      tooltip: 'Executes a command and automatically fixes any issues that arise.',
+    },
+    {
+      id: 'FileSearchTask',
+      name: 'File Search Task',
+      description: 'Search project files using patterns with contextual results',
+      tooltip: 'Performs pattern-based searches across project files with context.',
+    },
+    {
+      id: 'TaskPlanningTask',
+      name: 'Task Planning Task',
+      description: 'Break down and coordinate complex development tasks with dependency management',
+      tooltip: 'Orchestrates complex development tasks by breaking them down into manageable subtasks.',
+    },
+    {
+      id: 'ForeachTask',
+      name: 'Foreach Task',
+      description: 'Execute subtasks for each item in a list',
+      tooltip: 'Executes a set of subtasks for each item in a given list.',
+    },
+    {
+      id: 'CrawlerAgentTask',
+      name: 'Web Search Task',
+      description: 'Search Google, fetch top results, and analyze content',
+      tooltip: 'Searches Google for specified queries and analyzes the top results.',
+    },
+    {
+      id: 'EmbeddingSearchTask',
+      name: 'Embedding Search Task',
+      description: 'Perform semantic search using AI embeddings',
+      tooltip: 'Performs semantic search using AI embeddings across indexed content.',
+    },
+    {
+      id: 'GitHubSearchTask',
+      name: 'GitHub Search Task',
+      description: 'Search GitHub repositories, code, issues and users',
+      tooltip: 'Performs comprehensive searches across GitHub\'s content.',
+    },
+    {
+      id: 'KnowledgeIndexingTask',
+      name: 'Knowledge Indexing Task',
+      description: 'Index content for semantic search capabilities',
+      tooltip: 'Indexes documents and code for semantic search capabilities.',
+    },
+    {
+      id: 'SeleniumSessionTask',
+      name: 'Selenium Session Task',
+      description: 'Automate browser interactions with Selenium',
+      tooltip: 'Automates browser interactions using Selenium WebDriver.',
+    },
+    {
+      id: 'CommandSessionTask',
+      name: 'Command Session Task',
+      description: 'Manage interactive command-line sessions',
+      tooltip: 'Manages interactive command-line sessions with state persistence.',
+    },
+    {
+      id: 'SoftwareGraphPlanningTask',
+      name: 'Software Graph Planning Task',
+      description: 'Generate and execute task plans based on software graph structure',
+      tooltip: 'Creates task plans using software graph context.',
+    },
+    {
+      id: 'SoftwareGraphModificationTask',
+      name: 'Software Graph Modification Task',
+      description: 'Modify an existing software graph representation',
+      tooltip: 'Loads, modifies and saves software graph representations.',
+    },
+    {
+      id: 'SoftwareGraphGenerationTask',
+      name: 'Software Graph Generation Task',
+      description: 'Generate a SoftwareGraph representation of the codebase',
+      tooltip: 'Generates a comprehensive SoftwareGraph representation of the codebase.',
+    },
+    {
+      id: 'DataTableCompilationTask',
+      name: 'Data Table Compilation Task',
+      description: 'Compile structured data tables from multiple files',
+      tooltip: 'Extracts and compiles structured data from multiple files into a unified table.',
+    },
+  ];
+  // API providers
+  const apiProviders = [
+    { id: 'OpenAI', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1' },
+    { id: 'Anthropic', name: 'Anthropic', baseUrl: 'https://api.anthropic.com/v1' },
+    { id: 'Google', name: 'Google', baseUrl: 'https://generativelanguage.googleapis.com' },
+    { id: 'Groq', name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1' },
+    { id: 'Mistral', name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1' },
+    { id: 'AWS', name: 'AWS', baseUrl: 'https://api.openai.aws' },
+    { id: 'Perplexity', name: 'Perplexity', baseUrl: 'https://api.perplexity.ai' },
+    { id: 'ModelsLab', name: 'ModelsLab', baseUrl: 'https://modelslab.com/api/v6' },
+    { id: 'DeepSeek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com' },
+  ];
+  // Initialize the application when the DOM is fully loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    // Set up tab navigation
+    setupTabs();
+    // Initialize API settings tab
+    initializeApiSettings();
+    // Initialize task settings tab
+    initializeTaskSettings();
+    // Set up event listeners for buttons
+    setupEventListeners();
+    // Load settings from server if available
+    loadSettingsFromServer();
+  });
+
+  // Set up tab navigation
+  function setupTabs() {
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remove active class from all tabs and content
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        // Add active class to clicked tab and corresponding content
+        tab.classList.add('active');
+        const tabContent = document.getElementById(tab.getAttribute('data-tab'));
+        tabContent.classList.add('active');
+        // If launch tab is selected, update summaries
+        if (tab.getAttribute('data-tab') === 'launch') {
+          updateLaunchSummaries();
+        }
+      });
+    });
+  }
+
+  // Initialize API settings tab
+  function initializeApiSettings() {
+    const container = document.getElementById('api-keys-container');
+    // Create form elements for each API provider
+    apiProviders.forEach(provider => {
+      const keyGroup = document.createElement('div');
+      keyGroup.className = 'api-key-group';
+      const label = document.createElement('label');
+      label.textContent = provider.name + ':';
+      label.setAttribute('for', `api-key-${provider.id}`);
+      const input = document.createElement('input');
+      input.type = 'password';
+      input.id = `api-key-${provider.id}`;
+      input.placeholder = `Enter ${provider.name} API key`;
+      keyGroup.appendChild(label);
+      keyGroup.appendChild(input);
+      container.appendChild(keyGroup);
+    });
+  }
+
+  // Initialize task settings tab
+  function initializeTaskSettings() {
+    const container = document.getElementById('task-toggles');
+    // Create toggle for each task type
+    taskTypes.forEach(task => {
+      const taskToggle = document.createElement('div');
+      taskToggle.className = 'task-toggle';
+      const toggleContent = document.createElement('div');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = `task-${task.id}`;
+      checkbox.value = task.id;
+      // Set default enabled state for InquiryTask and FileModificationTask
+      if (task.id === 'InquiryTask' || task.id === 'FileModificationTask') {
+        checkbox.checked = true;
+      }
+      const label = document.createElement('label');
+      label.textContent = task.name;
+      label.setAttribute('for', `task-${task.id}`);
+      const tooltip = document.createElement('span');
+      tooltip.className = 'tooltip';
+      tooltip.textContent = '?';
+      const tooltipText = document.createElement('span');
+      tooltipText.className = 'tooltiptext';
+      tooltipText.innerHTML = task.tooltip;
+      tooltip.appendChild(tooltipText);
+      toggleContent.appendChild(checkbox);
+      toggleContent.appendChild(label);
+      toggleContent.appendChild(tooltip);
+      taskToggle.appendChild(toggleContent);
+      container.appendChild(taskToggle);
+    });
+  }
+
+  // Set up event listeners for buttons
+  function setupEventListeners() {
+    // API Settings
+    document.getElementById('save-api-settings').addEventListener('click', saveApiSettings);
+    document.getElementById('reset-api-settings').addEventListener('click', resetApiSettings);
+    // Task Settings
+    document.getElementById('save-task-settings').addEventListener('click', saveTaskSettings);
+    document.getElementById('reset-task-settings').addEventListener('click', resetTaskSettings);
+    // Cognitive Mode
+    document.getElementById('save-cognitive-mode').addEventListener('click', saveCognitiveMode);
+    document.getElementById('reset-cognitive-mode').addEventListener('click', resetCognitiveMode);
+    // Launch
+    document.getElementById('launch-session').addEventListener('click', launchSession);
+  }
+
+  // Save API settings
+  function saveApiSettings() {
+    const apiKeys = {};
+    const apiBase = {};
+    apiProviders.forEach(provider => {
+      const keyInput = document.getElementById(`api-key-${provider.id}`);
+      apiKeys[provider.id] = keyInput.value;
+      apiBase[provider.id] = provider.baseUrl;
+    });
+    apiSettings = { apiKeys, apiBase };
+    // Save to server
+    fetch('/userSettings/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        'action': 'save',
+        'settings': JSON.stringify(apiSettings),
+      }),
+    })
+      .then(response => {
+        if (response.ok) {
+          alert('API settings saved successfully!');
+          // Move to next tab
+          document.querySelector('.tab[data-tab="task-settings"]').click();
+        } else {
+          alert('Failed to save API settings.');
+        }
+      })
+      .catch(error => {
+        console.error('Error saving API settings:', error);
+        alert('Error saving API settings: ' + error.message);
+      });
+  }
+
+  // Reset API settings
+  function resetApiSettings() {
+    apiProviders.forEach(provider => {
+      document.getElementById(`api-key-${provider.id}`).value = '';
+    });
+  }
+
+  // Save task settings
+  function saveTaskSettings() {
+    // Get model selections
+    taskSettings.defaultModel = document.getElementById('model-selection').value;
+    taskSettings.parsingModel = document.getElementById('parsing-model').value;
+    taskSettings.workingDir = document.getElementById('working-dir').value;
+    // Get task toggles
+    const taskSettingsObj = {};
+    taskTypes.forEach(task => {
+      const checkbox = document.getElementById(`task-${task.id}`);
+      taskSettingsObj[task.id] = {
+        task_type: task.id,
+        enabled: checkbox.checked,
+      };
+    });
+    taskSettings.taskSettings = taskSettingsObj;
+    // Save to session
+    saveSessionSettings();
+    alert('Task settings saved!');
+    // Move to next tab
+    document.querySelector('.tab[data-tab="cognitive-mode"]').click();
+  }
+
+  // Reset task settings
+  function resetTaskSettings() {
+    document.getElementById('model-selection').value = 'GPT4o';
+    document.getElementById('parsing-model').value = 'GPT4oMini';
+    document.getElementById('working-dir').value = '.';
+    taskTypes.forEach(task => {
+      const checkbox = document.getElementById(`task-${task.id}`);
+      checkbox.checked = (task.id === 'InquiryTask' || task.id === 'FileModificationTask');
+    });
+  }
+
+  // Save cognitive mode
+  function saveCognitiveMode() {
+    const modeElements = document.getElementsByName('cognitive-mode');
+    for (const element of modeElements) {
+      if (element.checked) {
+        cognitiveMode = element.value;
+        break;
+      }
+    }
+    alert('Cognitive mode saved!');
+    // Move to next tab
+    document.querySelector('.tab[data-tab="launch"]').click();
+  }
+
+  // Reset cognitive mode
+  function resetCognitiveMode() {
+    document.getElementById('single-task-mode').checked = true;
+    cognitiveMode = 'single-task';
+  }
+
+  // Update launch summaries
+  function updateLaunchSummaries() {
+    // API Settings Summary
+    const apiSummary = document.getElementById('api-settings-summary');
+    apiSummary.innerHTML = '';
+    if (apiSettings.apiKeys) {
+      const ul = document.createElement('ul');
+      for (const [provider, key] of Object.entries(apiSettings.apiKeys)) {
+        if (key) {
+          const li = document.createElement('li');
+          li.textContent = `${provider}: API key configured`;
+          ul.appendChild(li);
+        }
+      }
+      apiSummary.appendChild(ul);
+    } else {
+      apiSummary.textContent = 'No API keys configured';
+    }
+    // Task Settings Summary
+    const taskSummary = document.getElementById('task-settings-summary');
+    taskSummary.innerHTML = '';
+    const taskList = document.createElement('ul');
+    const modelLi = document.createElement('li');
+    modelLi.textContent = `Default Model: ${taskSettings.defaultModel}`;
+    taskList.appendChild(modelLi);
+    const parsingLi = document.createElement('li');
+    parsingLi.textContent = `Parsing Model: ${taskSettings.parsingModel}`;
+    taskList.appendChild(parsingLi);
+    const dirLi = document.createElement('li');
+    dirLi.textContent = `Working Directory: ${taskSettings.workingDir}`;
+    taskList.appendChild(dirLi);
+    const enabledTasksLi = document.createElement('li');
+    enabledTasksLi.textContent = 'Enabled Tasks: ';
+    if (taskSettings.taskSettings) {
+      const enabledTasks = [];
+      for (const [taskId, settings] of Object.entries(taskSettings.taskSettings)) {
+        if (settings.enabled) {
+          const taskType = taskTypes.find(t => t.id === taskId);
+          if (taskType) {
+            enabledTasks.push(taskType.name);
+          }
+        }
+      }
+      if (enabledTasks.length > 0) {
+        enabledTasksLi.textContent += enabledTasks.join(', ');
+      } else {
+        enabledTasksLi.textContent += 'None';
+      }
+    } else {
+      enabledTasksLi.textContent += 'None';
+    }
+    taskList.appendChild(enabledTasksLi);
+    taskSummary.appendChild(taskList);
+    // Cognitive Mode Summary
+    const modeSummary = document.getElementById('cognitive-mode-summary');
+    modeSummary.innerHTML = '';
+    let modeText = '';
+    switch (cognitiveMode) {
+      case 'single-task':
+        modeText = 'Single Task Mode - Execute single tasks with AI assistance';
+        break;
+      case 'auto-plan':
+        modeText = 'Auto Plan Mode - Let AI automatically plan and execute complex tasks';
+        break;
+      case 'plan-ahead':
+        modeText = 'Plan Ahead Mode - Work with AI to create detailed plans before execution';
+        break;
+    }
+    modeSummary.textContent = modeText;
+  }
+
+  // Launch session
+  function launchSession() {
+    // Show loading indicator
+    document.getElementById('loading').style.display = 'block';
+    // Save all settings one last time
+    saveSessionSettings()
+      .then(() => {
+        // Determine which endpoint to use based on cognitive mode
+        let endpoint;
+        switch (cognitiveMode) {
+          case 'single-task':
+            endpoint = '/singleTask';
+            break;
+          case 'auto-plan':
+            endpoint = '/autoPlan';
+            break;
+          case 'plan-ahead':
+            endpoint = '/planAhead';
+            break;
+        }
+        // Redirect to the appropriate endpoint with the session ID
+        window.location.href = `${endpoint}/#${sessionId}`;
+      })
+      .catch(error => {
+        console.error('Error saving session settings:', error);
+        alert('Error launching session: ' + error.message);
+        document.getElementById('loading').style.display = 'none';
+      });
+  }
+
+  // Save session settings to server
+  function saveSessionSettings() {
+    return fetch(`/singleTask/settings?sessionId=${sessionId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        'sessionId': sessionId,
+        'action': 'save',
+        'settings': JSON.stringify(taskSettings),
+      }),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to save session settings');
+        }
+        return response;
+      });
+  }
+
+  // Load settings from server
+  function loadSettingsFromServer() {
+    // Load API settings
+    fetch('/userSettings/')
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const textarea = doc.querySelector('textarea[name="settings"]');
+        if (textarea) {
+          try {
+            const settings = JSON.parse(textarea.textContent);
+            apiSettings = settings;
+            // Populate API key fields with asterisks if keys exist
+            if (settings.apiKeys) {
+              for (const [provider, key] of Object.entries(settings.apiKeys)) {
+                const input = document.getElementById(`api-key-${provider}`);
+                if (input && key) {
+                  input.value = '********'; // Mask the actual key
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Error parsing API settings:', e);
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error loading API settings:', error);
+      });
+  }
+
+  // Generate a unique session ID
+  function generateSessionId() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    // Random 4-character string
+    const randomChars = Math.random().toString(36).substring(2, 6);
+    return `U-${year}${month}${day}-${randomChars}`;
+  }
+</script>
 </body>
 </html>
