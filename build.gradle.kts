@@ -24,6 +24,14 @@ tasks.register<JavaExec>("runServer") {
   mainClass.set("com.simiacryptus.skyenet.AppServer")
   args = listOf("server")
 }
+// Create a task to stop the server
+tasks.register<JavaExec>("stopServer") {
+  group = "application"
+  description = "Stop the running server"
+  classpath = sourceSets["main"].runtimeClasspath
+  mainClass.set("com.simiacryptus.skyenet.DaemonClient")
+  args = listOf("--stop")
+}
 
 
 // Set jpackage type to 'deb' on Linux to avoid 'rpm' errors
@@ -220,6 +228,11 @@ fun installContextMenuAction(os: String) {
 
             [HKEY_CLASSES_ROOT\Directory\shell\${appDisplayName}\command]
             @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"%1\""
+              [HKEY_CLASSES_ROOT\Directory\shell\Stop SkyenetApps Server]
+              @="Stop SkyenetApps Server"
+              "Icon"="\"%ProgramFiles%\\$appName\\$appName.exe\""
+              [HKEY_CLASSES_ROOT\Directory\shell\Stop SkyenetApps Server\command]
+              @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"--stop\""
         """.trimIndent()
       )
       println("Wrote context menu .reg file to: $regFile")
@@ -287,6 +300,64 @@ fun installContextMenuAction(os: String) {
             </plist>
         """.trimIndent()
       )
+      // Add a separate Quick Action for stopping the server
+      val stopScriptDir = scriptPath.resolve("StopSkyenetApps.workflow/Contents")
+      stopScriptDir.mkdirs()
+      val stopPlistFile = stopScriptDir.resolve("info.plist")
+      stopPlistFile.writeText(
+        """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+              <key>CFBundleIdentifier</key>
+              <string>com.simiacryptus.skyenetapps.stop.workflow</string>
+              <key>CFBundleName</key>
+              <string>Stop SkyenetApps Server</string>
+              <key>NSServices</key>
+              <array>
+                <dict>
+                  <key>NSMenuItem</key>
+                  <dict>
+                    <key>default</key>
+                    <string>Stop SkyenetApps Server</string>
+                  </dict>
+                  <key>NSMessage</key>
+                  <string>runWorkflowAsService</string>
+                </dict>
+              </array>
+            </dict>
+            </plist>
+        """.trimIndent()
+      )
+      val stopScript = stopScriptDir.resolve("document.wflow")
+      stopScript.writeText(
+        """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+              <key>actions</key>
+              <array>
+                <dict>
+                  <key>action</key>
+                  <string>com.apple.cocoa.application.run.shellscript</string>
+                  <key>parameters</key>
+                  <dict>
+                    <key>inputMethod</key>
+                    <string>arguments</string>
+                    <key>script</key>
+                    <string>open -a "$appName" --args --stop</string>
+                  </dict>
+                </dict>
+              </array>
+              <key>workflowTypeIdentifier</key>
+              <string>com.apple.Automator.services</string>
+            </dict>
+            </plist>
+        """.trimIndent()
+      )
+      println("Wrote stop server Quick Action to: ${stopScript.parentFile}")
       println("Wrote context menu Quick Action to: ${script.parentFile}")
     }
     
@@ -486,6 +557,11 @@ tasks.register("prepareLinuxDesktopFile") {
       MimeType=inode/directory;text/plain;
       Terminal=false
       StartupNotify=true
+      Actions=StopServer;
+      [Desktop Action StopServer]
+      Name=Stop SkyenetApps Server
+      Exec=/opt/skyenetapps/bin/SkyenetApps --stop
+      Icon=/opt/skyenetapps/lib/icon.png
       """.trimIndent()
     )
       

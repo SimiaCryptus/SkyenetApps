@@ -8,6 +8,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.nio.file.Files
 import java.nio.file.Paths
+import kotlin.system.exitProcess
 
 /**
  * Entry point for the daemon client.
@@ -15,7 +16,7 @@ import java.nio.file.Paths
  * reconnect if possible, and dispatch commands to the server.
  */
 object DaemonClient {
-    private const val DEFAULT_PORT = 7681
+    private const val DEFAULT_PORT = 7683
     private const val DEFAULT_HOST = "localhost"
     private const val PID_FILE = "skyenet_server.pid"
     private const val MAX_PORT_ATTEMPTS = 10
@@ -24,6 +25,13 @@ object DaemonClient {
     @JvmStatic
     fun main(args: Array<String>) {
         log.info("DaemonClient starting. PID: ${ManagementFactory.getRuntimeMXBean().name}. Args: ${args.joinToString(" ")}")
+        // Check if the first argument is "stop"
+        if (args.isNotEmpty() && args[0].equals("--stop", ignoreCase = true)) {
+            log.info("Stop command received, attempting to stop the server")
+            stopServer()
+            exitProcess(0)
+        }
+        
         
         // Check if the first argument is "server"
         if (args.isNotEmpty() && args[0].equals("server", ignoreCase = true)) {
@@ -62,6 +70,77 @@ object DaemonClient {
                 log.warn("No command specified. Use: daemonclient <command> [args]")
                 println("No command specified. Use: daemonclient <command> [args]")
             }
+        }
+    }
+    /**
+     * Stops the running server by sending a shutdown command or killing the process
+     */
+    private fun stopServer() {
+        val host = DEFAULT_HOST
+        val port = DEFAULT_PORT
+        // First try to send a shutdown command via socket
+        if (isServerRunning(host, port)) {
+            try {
+                log.info("Sending shutdown command to server at $host:${port + SOCKET_PORT_OFFSET}")
+                println("Sending shutdown command to server...")
+                Socket(host, port + SOCKET_PORT_OFFSET).use { socket ->
+                    val out = PrintWriter(socket.getOutputStream(), true)
+                    val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                    out.println("shutdown")
+                    val response = input.readLine()
+                    if (response != null) {
+                        log.info("Server response to shutdown: $response")
+                        println("Server response: $response")
+                    }
+                }
+                // Wait for server to shut down
+                var attempts = 0
+                while (isServerRunning(host, port) && attempts < 10) {
+                    log.info("Waiting for server to shut down...")
+                    println("Waiting for server to shut down...")
+                    Thread.sleep(500)
+                    attempts++
+                }
+                if (!isServerRunning(host, port)) {
+                    log.info("Server successfully stopped")
+                    println("Server successfully stopped")
+                    return
+                }
+            } catch (e: Exception) {
+                log.warn("Failed to stop server via socket: ${e.message}", e)
+                println("Failed to stop server via socket: ${e.message}")
+            }
+        }
+        // If socket method failed or server still running, try to kill the process using PID file
+        try {
+            val pidFile = File(PID_FILE)
+            if (pidFile.exists()) {
+                val pid = pidFile.readText().trim().toLong()
+                log.info("Attempting to kill server process with PID: $pid")
+                println("Attempting to kill server process with PID: $pid")
+                val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+                val processBuilder = if (isWindows) {
+                    ProcessBuilder("taskkill", "/F", "/PID", pid.toString())
+                } else {
+                    ProcessBuilder("kill", "-9", pid.toString())
+                }
+                val process = processBuilder.start()
+                val exitCode = process.waitFor()
+                if (exitCode == 0) {
+                    log.info("Server process killed successfully")
+                    println("Server process killed successfully")
+                    pidFile.delete()
+                } else {
+                    log.warn("Failed to kill server process, exit code: $exitCode")
+                    println("Failed to kill server process, exit code: $exitCode")
+                }
+            } else {
+                log.warn("PID file not found: $PID_FILE")
+                println("PID file not found. Server may not be running or was started without creating a PID file.")
+            }
+        } catch (e: Exception) {
+            log.error("Error stopping server: ${e.message}", e)
+            println("Error stopping server: ${e.message}")
         }
     }
     

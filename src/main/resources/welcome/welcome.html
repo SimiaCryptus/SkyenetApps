@@ -308,6 +308,26 @@
     <label for="working-dir">Working Directory:</label>
     <input type="text" id="working-dir" value=".">
   </div>
+  <div class="form-group">
+    <label for="temperature">Temperature:</label>
+    <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.2">
+    <span id="temperature-value">0.2</span>
+    <span class="tooltip">?
+          <span class="tooltiptext">Controls randomness in AI responses. Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.</span>
+        </span>
+  </div>
+  <div class="form-group">
+    <div class="task-toggle">
+      <div>
+        <input type="checkbox" id="auto-fix" name="auto-fix">
+        <label for="auto-fix">Enable Auto Fix</label>
+        <span class="tooltip">?
+              <span class="tooltiptext">Automatically attempt to fix errors encountered during task execution.</span>
+            </span>
+      </div>
+    </div>
+  </div>
+
 
   <h4>Available Tasks</h4>
   <div id="task-toggles">
@@ -434,6 +454,7 @@
     defaultModel: 'GPT4o',
     parsingModel: 'GPT4oMini',
     workingDir: '.',
+    autoFix: false,
     maxTaskHistoryChars: 20000,
     maxTasksPerIteration: 3,
     maxIterations: 100,
@@ -461,30 +482,34 @@
       description: 'Execute shell commands safely',
       tooltip: 'Executes shell commands in a controlled environment.',
     },
+/*
     {
       id: 'CommandAutoFixTask',
       name: 'Command Auto Fix Task',
       description: 'Run a command and automatically fix any issues that arise',
       tooltip: 'Executes a command and automatically fixes any issues that arise.',
     },
+*/
     {
       id: 'FileSearchTask',
       name: 'File Search Task',
       description: 'Search project files using patterns with contextual results',
       tooltip: 'Performs pattern-based searches across project files with context.',
     },
-    {
-      id: 'TaskPlanningTask',
-      name: 'Task Planning Task',
-      description: 'Break down and coordinate complex development tasks with dependency management',
-      tooltip: 'Orchestrates complex development tasks by breaking them down into manageable subtasks.',
-    },
-    {
+    /*
+        {
+          id: 'TaskPlanningTask',
+          name: 'Task Planning Task',
+          description: 'Break down and coordinate complex development tasks with dependency management',
+          tooltip: 'Orchestrates complex development tasks by breaking them down into manageable subtasks.',
+        },
+    */
+    /*{
       id: 'ForeachTask',
       name: 'Foreach Task',
       description: 'Execute subtasks for each item in a list',
       tooltip: 'Executes a set of subtasks for each item in a given list.',
-    },
+    },*/
     {
       id: 'CrawlerAgentTask',
       name: 'Web Search Task',
@@ -492,22 +517,23 @@
       tooltip: 'Searches Google for specified queries and analyzes the top results.',
     },
     {
-      id: 'EmbeddingSearchTask',
-      name: 'Embedding Search Task',
-      description: 'Perform semantic search using AI embeddings',
-      tooltip: 'Performs semantic search using AI embeddings across indexed content.',
-    },
-    {
       id: 'GitHubSearchTask',
       name: 'GitHub Search Task',
       description: 'Search GitHub repositories, code, issues and users',
       tooltip: 'Performs comprehensive searches across GitHub\'s content.',
     },
+/*
     {
       id: 'KnowledgeIndexingTask',
       name: 'Knowledge Indexing Task',
       description: 'Index content for semantic search capabilities',
       tooltip: 'Indexes documents and code for semantic search capabilities.',
+    },
+    {
+      id: 'EmbeddingSearchTask',
+      name: 'Embedding Search Task',
+      description: 'Perform semantic search using AI embeddings',
+      tooltip: 'Performs semantic search using AI embeddings across indexed content.',
     },
     {
       id: 'SeleniumSessionTask',
@@ -545,6 +571,7 @@
       description: 'Compile structured data tables from multiple files',
       tooltip: 'Extracts and compiles structured data from multiple files into a unified table.',
     },
+*/
   ];
   // API providers
   const apiProviders = [
@@ -557,6 +584,8 @@
     { id: 'Perplexity', name: 'Perplexity', baseUrl: 'https://api.perplexity.ai' },
     { id: 'ModelsLab', name: 'ModelsLab', baseUrl: 'https://modelslab.com/api/v6' },
     { id: 'DeepSeek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com' },
+    { id: 'Github', name: 'GitHub', baseUrl: 'https://api.github.com' },
+    { id: 'GoogleSearch', name: 'Google Search', baseUrl: '' },
   ];
   // Available models by provider
   const availableModels = {
@@ -640,7 +669,29 @@
       const input = document.createElement('input');
       input.type = 'password';
       input.id = `api-key-${provider.id}`;
-      input.placeholder = `Enter ${provider.name} API key`;
+
+      // Special handling for Google Search
+      if (provider.id === 'GoogleSearch') {
+        input.placeholder = `Enter Google API key for search`;
+
+        // Add Search Engine ID field for Google Search
+        const searchEngineGroup = document.createElement('div');
+        searchEngineGroup.className = 'api-key-group';
+        const searchEngineLabel = document.createElement('label');
+        searchEngineLabel.textContent = 'Search Engine ID:';
+        searchEngineLabel.setAttribute('for', `api-base-${provider.id}`);
+        const searchEngineInput = document.createElement('input');
+        searchEngineInput.type = 'text';
+        searchEngineInput.id = `api-base-${provider.id}`;
+        searchEngineInput.placeholder = 'Enter Google Search Engine ID';
+        searchEngineInput.setAttribute('aria-label', 'Google Search Engine ID');
+        searchEngineGroup.appendChild(searchEngineLabel);
+        searchEngineGroup.appendChild(searchEngineInput);
+        container.appendChild(searchEngineGroup);
+      } else {
+        input.placeholder = `Enter ${provider.name} API key`;
+      }
+      
       input.setAttribute('aria-label', `${provider.name} API key`);
       keyGroup.appendChild(label);
       keyGroup.appendChild(input);
@@ -653,6 +704,12 @@
     const container = document.getElementById('task-toggles');
     // Populate model selection dropdown based on available API keys
     populateModelSelections();
+    // Add event listener for temperature slider
+    const temperatureSlider = document.getElementById('temperature');
+    const temperatureValue = document.getElementById('temperature-value');
+    temperatureSlider.addEventListener('input', function() {
+      temperatureValue.textContent = this.value;
+    });
     
     // Create toggle for each task type
     taskTypes.forEach(task => {
@@ -768,7 +825,18 @@
     apiProviders.forEach(provider => {
       const keyInput = document.getElementById(`api-key-${provider.id}`);
       apiKeys[provider.id] = keyInput.value;
-      apiBase[provider.id] = provider.baseUrl;
+
+      // Handle special case for Google Search Engine ID
+      if (provider.id === 'GoogleSearch') {
+        const baseInput = document.getElementById(`api-base-${provider.id}`);
+        if (baseInput) {
+          apiBase[provider.id] = baseInput.value;
+        } else {
+          apiBase[provider.id] = provider.baseUrl;
+        }
+      } else {
+        apiBase[provider.id] = provider.baseUrl;
+      }
     });
     apiSettings = { apiKeys, apiBase };
     // Update model selections based on new API keys
@@ -847,6 +915,8 @@
     taskSettings.defaultModel = document.getElementById('model-selection').value;
     taskSettings.parsingModel = document.getElementById('parsing-model').value;
     taskSettings.workingDir = document.getElementById('working-dir').value;
+    taskSettings.temperature = parseFloat(document.getElementById('temperature').value);
+    taskSettings.autoFix = document.getElementById('auto-fix').checked;
     // Get task toggles
     const taskSettingsObj = {};
     taskTypes.forEach(task => {
@@ -869,6 +939,9 @@
     document.getElementById('model-selection').value = 'GPT4o';
     document.getElementById('parsing-model').value = 'GPT4oMini';
     document.getElementById('working-dir').value = '.';
+    document.getElementById('temperature').value = '0.2';
+    document.getElementById('temperature-value').textContent = '0.2';
+    document.getElementById('auto-fix').checked = false;
     taskTypes.forEach(task => {
       const checkbox = document.getElementById(`task-${task.id}`);
       checkbox.checked = (task.id === 'InquiryTask' || task.id === 'FileModificationTask');
@@ -945,6 +1018,12 @@
     const dirLi = document.createElement('li');
     dirLi.textContent = `Working Directory: ${taskSettings.workingDir}`;
     taskList.appendChild(dirLi);
+    const tempLi = document.createElement('li');
+    tempLi.textContent = `Temperature: ${taskSettings.temperature}`;
+    taskList.appendChild(tempLi);
+    const autoFixLi = document.createElement('li');
+    autoFixLi.textContent = `Auto Fix: ${taskSettings.autoFix ? 'Enabled' : 'Disabled'}`;
+    taskList.appendChild(autoFixLi);
     const enabledTasksLi = document.createElement('li');
     enabledTasksLi.textContent = 'Enabled Tasks: ';
     if (taskSettings.taskSettings) {
@@ -1121,6 +1200,16 @@
                   input.value = '********'; // Mask the actual key
                 }
               }
+              // Handle special case for Google Search Engine ID
+              if (settings.apiBase) {
+                for (const [provider, baseUrl] of Object.entries(settings.apiBase)) {
+                  const baseInput = document.getElementById(`api-base-${provider}`);
+                  if (baseInput && baseUrl) {
+                    baseInput.value = baseUrl;
+                  }
+                }
+              }
+              
               // Update model selections based on loaded API keys
               populateModelSelections();
             }
