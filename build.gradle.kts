@@ -108,23 +108,16 @@ dependencies {
   implementation(group = "com.simiacryptus.skyenet", name = "core", version = skyenet_version)
   implementation(group = "com.simiacryptus.skyenet", name = "groovy", version = skyenet_version)
   implementation(group = "com.simiacryptus.skyenet", name = "kotlin", version = skyenet_version)
-  implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
+  //implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
   implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
 
-//  implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.16.1")
   implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.27.23")
   implementation("org.jsoup:jsoup:1.19.1")
-
-//  implementation("com.google.api-client:google-api-client:1.35.2")
-//  implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
-//  implementation("com.google.apis:google-api-services-gmail:v1-rev110-1.25.0")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
   
   implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
   implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
   implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jackson_version)
   
-  implementation(kotlin("stdlib"))
   implementation(group = "com.google.guava", name = "guava", version = "32.1.3-jre")
   implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
   implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
@@ -132,6 +125,16 @@ dependencies {
   implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version = "5.2.3")
   implementation(group = "com.google.code.gson", name = "gson", version = "2.10.1")
   implementation(group = "com.h2database", name = "h2", version = "2.2.224")
+  
+  implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.8.0-RC")
+  implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version = "0.3.8")
+  implementation(kotlin("stdlib"))
+  implementation(kotlin("scripting-jsr223"))
+  implementation(kotlin("scripting-jvm"))
+  implementation(kotlin("scripting-jvm-host"))
+  implementation(kotlin("script-runtime"))
+  implementation(kotlin("scripting-compiler-embeddable"))
+  implementation(kotlin("compiler-embeddable"))
   
   implementation(group = "org.scala-lang", name = "scala-library", version = scala_version)
   implementation(group = "org.scala-lang", name = "scala-compiler", version = scala_version)

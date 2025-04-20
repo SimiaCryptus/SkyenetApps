@@ -1,26 +1,28 @@
 package com.simiacryptus.skyenet
 
+import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.skyenet.apps.code.*
-import com.simiacryptus.skyenet.apps.general.IllustratedStorybookApp
-import com.simiacryptus.skyenet.apps.general.OutlineApp
-import com.simiacryptus.skyenet.apps.general.VocabularyApp
-import com.simiacryptus.skyenet.apps.hybrid.IncrementalCodeGenApp
-import com.simiacryptus.skyenet.apps.meta.MetaAgentApp
-import com.simiacryptus.skyenet.apps.premium.DebateApp
-import com.simiacryptus.skyenet.apps.premium.PresentationDesignerApp
+import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.jopenai.models.OpenAIModels
+import com.simiacryptus.skyenet.apps.general.UnifiedPlanApp
+import com.simiacryptus.skyenet.apps.plan.PlanSettings
+import com.simiacryptus.skyenet.apps.plan.cognitive.AutoPlanMode
+import com.simiacryptus.skyenet.apps.plan.cognitive.PlanAheadMode
+import com.simiacryptus.skyenet.apps.plan.cognitive.SingleTaskMode
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
 import com.simiacryptus.skyenet.core.platform.model.AuthenticationInterface
 import com.simiacryptus.skyenet.core.platform.model.AuthorizationInterface
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.application.ApplicationDirectory
+import com.simiacryptus.skyenet.webui.chat.BasicChatApp
 import com.simiacryptus.skyenet.webui.servlet.OAuthBase
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
 import java.awt.Desktop
 import java.awt.SystemTray
 import java.io.BufferedWriter
+import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.URI
@@ -182,6 +184,7 @@ open class AppServer(
             log.warn("System tray is not supported")
             return
         }
+    try {
         systemTrayManager = SystemTrayManager(
             port = port,
             host = localName,
@@ -192,6 +195,9 @@ open class AppServer(
                 System.exit(0)
             })
         systemTrayManager?.initialize()
+    } catch (e: Exception) {
+        log.warn("Failed to initialize system tray: ${e.message}")
+    }
     }
     
     fun stopServer() {
@@ -228,20 +234,49 @@ open class AppServer(
         }
     }
     
+    val describer = AbbrevWhitelistYamlDescriber(
+        "com.simiacryptus", "com.simiacryptus"
+    )
     override val childWebApps by lazy {
+        val model = OpenAIModels.GPT4o
+        val parsingModel = OpenAIModels.GPT4oMini
+        val planSettings = PlanSettings(
+            defaultModel = model,
+            parsingModel = parsingModel,
+            workingDir = "."
+        )
         listOf(
-            ChildWebApp("/illustrated_storybook", IllustratedStorybookApp(domainName = domainName), "IllustratedStorybook.png"),
-            ChildWebApp("/incremental_codegen", IncrementalCodeGenApp(domainName = domainName), null),
-            ChildWebApp("/idea_mapper", OutlineApp(domainName = domainName, api2 = api2), "outline.png"),
-            ChildWebApp("/meta_agent", MetaAgentApp(), "MetaAgent.png"),
-            ChildWebApp("/debate", DebateApp(api2 = api2), "Debate.png"),
-            ChildWebApp("/presentation", PresentationDesignerApp(), "PresentationDesigner.png"),
-            ChildWebApp("/vocabulary", VocabularyApp(), "Vocabulary.png"),
-            ChildWebApp("/aws", AwsCodingApp(), "awscoding.png"),
-            ChildWebApp("/bash", BashCodingApp(), "bashcoding.png"),
-            ChildWebApp("/powershell", PowershellCodingApp(), "powershell.png"),
-            ChildWebApp("/jdbc", JDBCCodingApp(), "JDBCCoding.png"),
-            ChildWebApp("/library_generator", LibraryGeneratorApp(), "coding.png"),
+            ChildWebApp("/chat", BasicChatApp(".".toFile(), ChatClient(), model, parsingModel)),
+            ChildWebApp("/singleTask", UnifiedPlanApp(
+                applicationName = "Task-Runner",
+                planSettings = planSettings,
+                model = model,
+                parsingModel = parsingModel,
+                domainName = publicName,
+                api2 = api2,
+                cognitiveStrategy = SingleTaskMode,
+                describer = describer
+            )),
+            ChildWebApp("/autoPlan", UnifiedPlanApp(
+                applicationName = "Auto-Plan",
+                planSettings = planSettings,
+                model = model,
+                parsingModel = parsingModel,
+                domainName = publicName,
+                api2 = api2,
+                cognitiveStrategy = AutoPlanMode,
+                describer = describer
+            )),
+            ChildWebApp("/planAhead", UnifiedPlanApp(
+                applicationName = "Plan-Ahead",
+                planSettings = planSettings,
+                model = model,
+                parsingModel = parsingModel,
+                domainName = publicName,
+                api2 = api2,
+                cognitiveStrategy = PlanAheadMode,
+                describer = describer
+            ))
         )
     }
     
@@ -347,6 +382,8 @@ open class AppServer(
     override fun browse() {}
     
 }
+
+private fun String.toFile(): File = File(this)
 
 private fun String?.urlEncode(): String {
     return this?.let {
