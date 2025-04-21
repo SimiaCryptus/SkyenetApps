@@ -271,7 +271,7 @@
   <div class="tab" data-tab="launch">Launch</div>
 </div>
 
-<div id="api-settings" class="tab-content active">
+<div id="api-settings" class="tab-content">
   <h3>API Configuration</h3>
   <p>Configure your API keys for different AI providers:</p>
   <div id="api-keys-container">
@@ -340,7 +340,7 @@
   </div>
 </div>
 
-<div id="cognitive-mode" class="tab-content">
+<div id="cognitive-mode" class="tab-content active">
   <h3>Cognitive Mode</h3>
   <p>Select how you want the AI to approach your tasks:</p>
 
@@ -375,7 +375,7 @@
         </span>
       </div>
     </div>
-    <div class="task-toggle">
+    <!--<div class="task-toggle">
       <div>
         <input type="radio" id="graph-mode" name="cognitive-mode" value="graph">
         <label for="graph-mode">Graph Mode</label>
@@ -383,7 +383,7 @@
             <span class="tooltiptext">Use a predefined graph file to guide the planning and execution process.</span>
           </span>
       </div>
-    </div>
+    </div>-->
     <div id="graph-settings"
          style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
       <div class="form-group">
@@ -435,6 +435,7 @@
 
   <div class="button-group">
     <button class="button" id="launch-session">Launch Session</button>
+    <button class="button secondary" id="open-basic-chat" type="button" style="margin-left:10px;">Basic Chat</button>
   </div>
 </div>
 
@@ -581,8 +582,8 @@
     { id: 'Groq', name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1' },
     { id: 'Mistral', name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1' },
     { id: 'AWS', name: 'AWS', baseUrl: 'https://api.openai.aws' },
-    { id: 'Perplexity', name: 'Perplexity', baseUrl: 'https://api.perplexity.ai' },
-    { id: 'ModelsLab', name: 'ModelsLab', baseUrl: 'https://modelslab.com/api/v6' },
+    // { id: 'Perplexity', name: 'Perplexity', baseUrl: 'https://api.perplexity.ai' },
+    // { id: 'ModelsLab', name: 'ModelsLab', baseUrl: 'https://modelslab.com/api/v6' },
     { id: 'DeepSeek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com' },
     { id: 'Github', name: 'GitHub', baseUrl: 'https://api.github.com' },
     { id: 'GoogleSearch', name: 'Google Search', baseUrl: '' },
@@ -590,17 +591,18 @@
   // Available models by provider
   const availableModels = {
     OpenAI: [
-      { id: 'GPT4o', name: 'GPT-4o', description: 'OpenAI\'s most capable model' },
+      { id: 'GPT4o', name: 'GPT-4o', description: 'OpenAI\'s capable vision model' },
       { id: 'GPT4oMini', name: 'GPT-4o Mini', description: 'Smaller, faster version of GPT-4o' },
-      { id: 'GPT45', name: 'GPT-4.5', description: 'Advanced preview model' },
       { id: 'O1', name: 'o1', description: 'OpenAI\'s reasoning-focused model' },
       { id: 'O1Mini', name: 'o1-mini', description: 'Smaller version of o1' },
+      { id: 'O1Preview', name: 'o1-preview', description: 'Preview version of o1' },
       { id: 'O3', name: 'o3', description: 'OpenAI\'s advanced reasoning model' },
       { id: 'O3Mini', name: 'o3-mini', description: 'Smaller version of o3' },
       { id: 'O4Mini', name: 'o4-mini', description: 'Latest mini reasoning model' },
       { id: 'GPT41', name: 'GPT-4.1', description: 'Latest GPT-4 series model' },
       { id: 'GPT41Mini', name: 'GPT-4.1 Mini', description: 'Smaller version of GPT-4.1' },
       { id: 'GPT41Nano', name: 'GPT-4.1 Nano', description: 'Smallest version of GPT-4.1' },
+      { id: 'GPT45', name: 'GPT-4.5', description: 'Advanced preview model' },
     ],
     Anthropic: [
       { id: 'Claude35Sonnet', name: 'Claude 3.5 Sonnet', description: 'Anthropic\'s advanced model' },
@@ -611,12 +613,33 @@
       { id: 'Claude3Haiku', name: 'Claude 3 Haiku', description: 'Fast, efficient Claude model' },
     ],
     Groq: [
-      { id: 'GroqLlama3', name: 'Llama 3 (Groq)', description: 'Fast Llama 3 inference' },
-      { id: 'GroqMixtral', name: 'Mixtral (Groq)', description: 'Fast Mixtral inference' },
+      { id: 'Llama33_70bVersatile', name: 'Llama 3.3 70B Versatile', description: 'Fast Llama 3.3 inference' },
+      { id: 'Llama33_70bSpecDec', name: 'Llama 3.3 70B SpecDec', description: 'Specialized Llama 3.3 model' },
+      { id: 'Llama31_8bInstant', name: 'Llama 3.1 8B Instant', description: 'Fast, small Llama model' },
+      { id: 'Gemma2_9b', name: 'Gemma 2 9B', description: 'Google\'s Gemma model on Groq' },
+      { id: 'MistralSaba24b', name: 'Mistral Saba 24B', description: 'Mistral\'s Saba model' },
+      { id: 'Qwen25_32b', name: 'Qwen 2.5 32B', description: 'Qwen model on Groq' },
     ],
     Mistral: [
-      { id: 'Mistral', name: 'Mistral', description: 'Mistral\'s base model' },
-      { id: 'MistralLarge', name: 'Mistral Large', description: 'Mistral\'s larger model' },
+      { id: 'Mistral7B', name: 'Mistral 7B', description: 'Mistral\'s base model' },
+      { id: 'MistralSmall', name: 'Mistral Small', description: 'Mistral\'s small model' },
+      { id: 'MistralMedium', name: 'Mistral Medium', description: 'Mistral\'s medium model' },
+      { id: 'MistralLarge', name: 'Mistral Large', description: 'Mistral\'s large model' },
+      { id: 'Mixtral8x7B', name: 'Mixtral 8x7B', description: 'Mistral\'s Mixtral model' },
+      { id: 'Mixtral8x22B', name: 'Mixtral 8x22B', description: 'Mistral\'s larger Mixtral model' },
+      { id: 'Codestral', name: 'Codestral', description: 'Mistral\'s code-focused model' },
+    ],
+    DeepSeek: [
+      { id: 'DeepSeekChat', name: 'DeepSeek Chat', description: 'DeepSeek\'s general chat model' },
+      { id: 'DeepSeekCoder', name: 'DeepSeek Coder', description: 'DeepSeek\'s code-focused model' },
+      { id: 'DeepSeekReasoner', name: 'DeepSeek Reasoner', description: 'DeepSeek\'s reasoning model' },
+    ],
+    AWS: [
+      { id: 'AWSLLaMA31_405bChat', name: 'Llama 3.1 405B', description: 'Largest Llama model on AWS' },
+      { id: 'AWSLLaMA31_70bChat', name: 'Llama 3.1 70B', description: 'Large Llama model on AWS' },
+      { id: 'Claude35Sonnet', name: 'Claude 3.5 Sonnet (AWS)', description: 'Claude on AWS' },
+      { id: 'Claude37Sonnet', name: 'Claude 3.7 Sonnet (AWS)', description: 'Latest Claude on AWS' },
+      { id: 'MistralLarge2407', name: 'Mistral Large 2407', description: 'Latest Mistral Large on AWS' },
     ],
   };
   
@@ -798,6 +821,10 @@
     
     // Launch
     document.getElementById('launch-session').addEventListener('click', launchSession);
+    // Basic Chat button
+    document.getElementById('open-basic-chat').addEventListener('click', function() {
+      window.location.href = `/chat/#${sessionId}`;
+    });
     // Add keyboard navigation for tabs
     document.addEventListener('keydown', function(e) {
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
@@ -1264,16 +1291,12 @@
               option.textContent = `${model.name} (${provider})`;
               option.title = model.description;
               modelSelect.appendChild(option);
-              // Add to parsing model dropdown (only add smaller/faster models)
-              if (model.id.includes('Mini') || model.id.includes('Haiku') ||
-                model.id.includes('Nano') || model.id === 'O1Mini' ||
-                model.id === 'O3Mini' || model.id === 'O4Mini') {
-                const parsingOption = document.createElement('option');
-                parsingOption.value = model.id;
-                parsingOption.textContent = `${model.name} (${provider})`;
-                parsingOption.title = model.description;
-                parsingModelSelect.appendChild(parsingOption);
-              }
+              // Add to parsing model dropdown (all models)
+              const parsingOption = document.createElement('option');
+              parsingOption.value = model.id;
+              parsingOption.textContent = `${model.name} (${provider})`;
+              parsingOption.title = model.description;
+              parsingModelSelect.appendChild(parsingOption);
               addedModels.add(model.id);
             }
           });

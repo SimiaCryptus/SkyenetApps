@@ -7,3 +7,4 @@ google-credentials.json
 .skyenet/
 *.log
 *.pid
+nohup.out
