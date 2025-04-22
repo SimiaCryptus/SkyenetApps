@@ -468,13 +468,17 @@ tasks.register("packageDeb", JPackageTask::class) {
       """.trimIndent()
     )
     postinstFile.setExecutable(true)
-    
-    // Create a pre-remove script to clean up desktop files
+
+    // Create a pre-remove script to stop the app and clean up desktop files
     val prermFile = File(resourcesDir, "prerm")
     prermFile.writeText(
       """
       #!/bin/sh
       set -e
+      # Stop the running SkyenetApps server if any
+      if [ -x "/opt/skyenetapps/bin/SkyenetApps" ]; then
+        "/opt/skyenetapps/bin/SkyenetApps" --stop || true
+      fi
       # Remove desktop files
       rm -f /usr/share/applications/skyenetapps.desktop
       rm -f /usr/share/applications/skyenetapps-folder-action.desktop
@@ -584,13 +588,17 @@ tasks.register("prepareLinuxDesktopFile") {
       """.trimIndent()
     )
     installScript.setExecutable(true)
-    
-    // Create a shell script to remove the desktop files
+
+    // Create a shell script to remove the desktop files and stop the app
     val uninstallScript = File(resourcesDir, "prerm")
     uninstallScript.writeText(
       """
       #!/bin/sh
       set -e
+      # Stop the running SkyenetApps server if any
+      if [ -x "/opt/skyenetapps/bin/SkyenetApps" ]; then
+        "/opt/skyenetapps/bin/SkyenetApps" --stop || true
+      fi
       # Remove desktop files
       rm -f /usr/share/applications/skyenetapps.desktop
       rm -f /usr/share/applications/skyenetapps-folder-action.desktop

@@ -286,18 +286,30 @@ open class AppServer(
     )
   }
   
-  protected open fun onMessage(line: String?) {
+  protected open fun onMessage(line: String?): String {
     log.info("Received command from DaemonClient: $line")
-    try {
-      Desktop.getDesktop().browse(URI("$domainName/#${line.urlEncode()}"))
-    } catch (e: Throwable) {
-      // Ignore
+    if (line != null && line.trim().equals("shutdown", ignoreCase = true)) {
+      log.info("Shutdown command received via socket. Stopping server...")
+      // Respond before shutting down
+      Thread {
+        Thread.sleep(100) // Let response go out before shutdown
+        stopServer()
+        System.exit(0)
+      }.start()
+      return "Server shutting down"
+    } else {
+      try {
+        Desktop.getDesktop().browse(URI("$domainName/#${line.urlEncode()}"))
+      } catch (e: Throwable) {
+        // Ignore
+      }
+      return "OK: $line"
     }
   }
   
   /**
    * Start a simple socket server to listen for commands from DaemonClient.
-   * Responds with a simple acknowledgment for now.
+   * Responds with a simple acknowledgment or shutdown message.
    */
   private fun startSocketServer(port: Int) {
     if (socketServer != null) {
@@ -341,12 +353,8 @@ open class AppServer(
               val input = client.getInputStream().bufferedReader()
               output = client.getOutputStream().bufferedWriter()
               val line = input.readLine()
-              if (line != null) {
-                onMessage(line)
-                output.write("OK: $line\n")
-              } else {
-                output.write("ERROR: No command received\n")
-              }
+              val response = if (line != null) onMessage(line) else "ERROR: No command received"
+              output.write("$response\n")
             } catch (e: Exception) {
               output?.write("ERROR: ${(e.message ?: e.toString()).replace('\n', ' ')}\n")
               log.error("Socket handler error: ${e.message}", e)
